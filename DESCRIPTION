@@ -1,0 +1,25 @@
+Package: zanicc
+Title: Zero-and-N-inflated count-compositional models.
+Version: 0.0.1
+Authors@R: c(person(given = "André F. B.", family = "Menezes", role = c("aut", "cre"), email = "andrefelipemaringa@gmail.com", comment = c(ORCID = "0000-0002-3320-9834")),
+    person(given = "Keefe", family = "Murphy", role = "ctb", comment = c(ORCID = "0000-0002-5668-7046")))
+Maintainer: André F. B. Menezes <andrefelipemaringa@gmail.com>
+Description: Provides a collection of models for analysis of zero-inflated count-compositional data, including the zero-and-N-inflated multinomial (ZANIM)-BART and ZANIM-Lognormal (ZANIM-LN)-BART models.
+License: GPL (>= 3)
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.2
+LinkingTo: 
+    Rcpp,
+    RcppArmadillo
+Imports: 
+    Rcpp
+Suggests: 
+    knitr,
+    rmarkdown,
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3
+Depends: 
+    R (>= 3.5)
+LazyData: true
+VignetteBuilder: knitr
