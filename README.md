@@ -11,11 +11,12 @@ $N$-inflated count-compositional data. Its main contribution is an
 implementation of the models introduced in
 
 The `zanicc` R package implements the novel models proposed in the paper
-“Bayesian nonparametric models for zero-inflated count-compositional
-data using ensembles of regression trees” by André F. B. Menezes, Andrew
+[“Bayesian nonparametric models for zero-inflated count-compositional
+data using ensembles of regression
+trees”](https://arxiv.org/abs/2601.08067) by André F. B. Menezes, Andrew
 C. Parnell, and Keefe Murphy, along with other related models from the
-literature such as the multinomial-BART and the ZANIDM regression
-models.
+literature such as the multinomial logistic BART and the ZANIDM
+regression models.
 
 You can install the development version of `zanicc` from GitHub with:
 
