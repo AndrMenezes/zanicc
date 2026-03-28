@@ -8,13 +8,12 @@
 
 The zanicc R package implements Bayesian models for zero- and
 $N$-inflated count-compositional data. Its main contribution is an
-implementation of the models introduced in the paper
-[“Bayesian nonparametric models for zero-inflated count-compositional
-data using ensembles of regression
-trees”](https://arxiv.org/abs/2601.08067) by André F. B. Menezes, Andrew
-C. Parnell, and Keefe Murphy, along with other related models from the
-literature such as the multinomial logistic BART and the ZANIDM
-regression models.
+implementation of the models introduced in the paper [“Bayesian
+nonparametric models for zero-inflated count-compositional data using
+ensembles of regression trees”](https://arxiv.org/abs/2601.08067) by
+André F. B. Menezes, Andrew C. Parnell, and Keefe Murphy, along with
+other related models from the literature such as the multinomial
+logistic BART and the ZANIDM regression models.
 
 You can install the development version of `zanicc` from GitHub with:
 
@@ -22,5 +21,6 @@ You can install the development version of `zanicc` from GitHub with:
 remotes::install_github("AndrMenezes/zanicc")
 ```
 
-The script located at `inst/toy_example.R` reproduces the simulation
-study presented in Section 3.1 of the main paper.
+> Code to reproduce the simulations and the real data analyses presented
+> in the paper can be found in
+> [AndrMenezes/zanicc_paper](https://github.com/AndrMenezes/zanicc_paper).
