@@ -1,5 +1,31 @@
-inst/doc
-*.pdf
-*.png
+# R files
+*.Rproj.user
+*.Rhistory
+*.RData
+*.Ruserdata
+*.bkp
+*.DS_Store
+*.rda
+
+
+# Do not version data files
+*.parquet
+*.txt
+*.csv
+*.rds
+*.xlsx
+*.xls
+*.rdb
+*.rdx
 *.bin
+
+# Do not version documents/figures
+*.pdf
+*.dvi
+*.png
+*.html
+*.svg
+*.zip
 .Rproj.user
+
+*.vscode
