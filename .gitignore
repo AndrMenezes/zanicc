@@ -1,0 +1,5 @@
+inst/doc
+*.pdf
+*.png
+*.bin
+.Rproj.user
