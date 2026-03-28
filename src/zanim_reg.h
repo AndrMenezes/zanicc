@@ -1,14 +1,14 @@
-#ifndef ZANIMLINEARREG
-#define ZANIMLINEARREG
+#ifndef ZANIMREG_H
+#define ZANIMREG_H
 
 #include <RcppArmadillo.h>
 
-class ZANIMLinearReg {
+class ZANIMReg {
 
 public:
-  ZANIMLinearReg(const arma::umat &Y, const arma::mat &X_theta,
+  ZANIMReg(const arma::umat &Y, const arma::mat &X_theta,
                  const arma::mat &X_zeta);
-  ~ZANIMLinearReg();
+  ~ZANIMReg();
 
   // Fields
   arma::umat Y;

@@ -3,7 +3,7 @@
 
 constexpr double PI_2 = 6.283185307179586231996;
 
-ZANIDMLinearReg::ZANIDMLinearReg(const arma::umat &Y, const arma::mat &X_alpha,
+ZANIDMReg::ZANIDMReg(const arma::umat &Y, const arma::mat &X_alpha,
                                const arma::mat &X_zeta) : Y(Y), X_alpha(X_alpha), X_zeta(X_zeta) {
   d = Y.n_cols;
   n = Y.n_rows;
@@ -12,20 +12,26 @@ ZANIDMLinearReg::ZANIDMLinearReg(const arma::umat &Y, const arma::mat &X_alpha,
   n_trials = arma::sum(Y, 1);
 }
 
-ZANIDMLinearReg::~ZANIDMLinearReg(){};
+ZANIDMReg::~ZANIDMReg(){};
 
 
-void ZANIDMLinearReg::SetMCMC(std::vector<double> sd_prior_beta_alpha_,
-                             arma::mat sigma_prior_beta_zeta_,
-                             int ndpost_, int nskip_, int nthin_) {
+void ZANIDMReg::SetMCMC(std::vector<double> sd_prior_beta_alpha_,
+                        arma::mat sigma_prior_beta_zeta_, int ndpost_, int nskip_,
+                        int nthin_, int keep_draws_, int save_draws_,
+                        std::string dir_draws_) {
+
+  Rcpp::RNGScope scope;
   sd_prior_beta_alpha = sd_prior_beta_alpha_;
   sigma_prior_beta_zeta = sigma_prior_beta_zeta_;
   ndpost = ndpost_;
   nskip = nskip_;
   nthin = nthin_;
+  keep_draws = keep_draws_;
+  save_draws = save_draws_;
+  dir_draws = dir_draws_;
 
   // Initialise the reg coefficients
-  betas_alpha = arma::randn<arma::mat>(p_alpha, d);
+  betas_alpha = arma::zeros<arma::mat>(p_alpha, d);
   betas_zeta = arma::randn<arma::mat>(p_zeta, d);
 
   // Initialise the linear predictions coefficients
@@ -83,9 +89,10 @@ void ZANIDMLinearReg::SetMCMC(std::vector<double> sd_prior_beta_alpha_,
     }
   }
 
+  std::cout << "ZANIDM-reg model set up!\n\n";
 }
 
-double ZANIDMLinearReg::LogTargetBetasAlpha(arma::vec &beta_cur, int &j) {
+double ZANIDMReg::LogTargetBetasAlpha(arma::vec &beta_cur, int &j) {
 
   arma::vec alphas = exp(X_alpha * beta_cur);
   double t1 = 0.0;
@@ -95,7 +102,7 @@ double ZANIDMLinearReg::LogTargetBetasAlpha(arma::vec &beta_cur, int &j) {
   return t1;
 }
 
-arma::vec ZANIDMLinearReg::UpdateBetasAlphaESS(int &j) {
+arma::vec ZANIDMReg::UpdateBetasAlphaESS(int &j) {
 
   arma::vec beta_cur = betas_alpha.col(j);
   // Draw from the prior
@@ -123,12 +130,12 @@ arma::vec ZANIDMLinearReg::UpdateBetasAlphaESS(int &j) {
 }
 
 
-arma::vec ZANIDMLinearReg::UpdateBetasZetaChib(int &j) {
+arma::vec ZANIDMReg::UpdateBetasZetaChib(int &j) {
   arma::vec beta_tilde = sigma_inv_probit * (X_zeta.t() * Z_probit.col(j));
   return beta_tilde + rmvnorm(p_zeta, sigma_chol_inv_probit);
 }
 
-void ZANIDMLinearReg::UpdateLatentVariables() {
+void ZANIDMReg::UpdateLatentVariables() {
   for (int j=0; j < d; j++) {
     // Compute the linear predictions
     eta_zetas.col(j) = X_zeta * betas_zeta.col(j);
@@ -136,6 +143,7 @@ void ZANIDMLinearReg::UpdateLatentVariables() {
     // Update z_{ij}, then \lambda_{ij} | z_{ij} (marginal first, conditional later)
     for (int i = 0; i < n; i++) {
       lambdas(i, j) = R::rgamma(Y(i, j) + alphas(i, j), 1.0) / (1.0 + phi(i));
+      if (lambdas(i, j) < 1e-100) lambdas(i, j) = 1e-100;
     }
     for(int k = 0; k < sum_col_zeros_Y(j); k++) {
       int cur_indice = zero_indices[j][k];
@@ -167,12 +175,22 @@ void ZANIDMLinearReg::UpdateLatentVariables() {
 
 }
 
-void ZANIDMLinearReg::RunMCMC() {
+void ZANIDMReg::RunMCMC() {
+
+  if (keep_draws) {
+    // Initialise container for keep the draws
+    draws_betas_alpha = arma::zeros<arma::cube>(p_alpha, d, ndpost);
+    draws_betas_zeta = arma::zeros<arma::cube>(p_zeta, d, ndpost);
+    draws_varthetas = arma::zeros<arma::cube>(n, d, ndpost);
+    draws_alphas = arma::zeros<arma::cube>(n, d, ndpost);
+    draws_zetas = arma::zeros<arma::cube>(n, d, ndpost);
+    //draws_phi = arma::zeros<arma::mat>(n, ndpost);
+  }
 
   std::cout << "Doing the warm-up (burn-in) of " << nskip << "\n\n";
   double progress = 0;
-  for (int t=0; t < nskip; t++) {
-    progress = (double) 100 * t / nskip;
+  for (int k=0; k < nskip; k++) {
+    progress = (double) 100 * k / nskip;
     Rprintf("%3.2f%% Warm-up completed", progress);
     Rprintf("\r");
     // Update latent variables
@@ -187,20 +205,16 @@ void ZANIDMLinearReg::RunMCMC() {
     }
   }
 
-  // // Initialise container for keep the draws
-  draws_betas_alpha = arma::zeros<arma::cube>(p_alpha, d, ndpost);
-  draws_betas_zeta = arma::zeros<arma::cube>(p_zeta, d, ndpost);
-  draws_varthetas = arma::zeros<arma::cube>(n, d, ndpost);
-  draws_alphas = arma::zeros<arma::cube>(n, d, ndpost);
-  draws_zetas = arma::zeros<arma::cube>(n, d, ndpost);
-  draws_phi = arma::zeros<arma::mat>(n, ndpost);
+  // Open file to write regression coefficient draws beta_{jk}
+  std::ofstream ff_a(dir_draws + "/draws_betas_alpha.bin", std::ios::binary | std::ios::app);
+  std::ofstream ff_z(dir_draws + "/draws_betas_zeta.bin", std::ios::binary | std::ios::app);
 
   // Run the post-burn in iterations
   std::cout << "Starting post-burn-in iterations of " << ndpost << "\n\n";
   progress = 0;
 
-  for (int t=0; t < ndpost; t++) {
-    progress = (double) 100 * t / ndpost;
+  for (int k=0; k < ndpost; k++) {
+    progress = (double) 100 * k / ndpost;
     Rprintf("%3.2f%% Posterior samples completed", progress);
     Rprintf("\r");
     // Update latent variables
@@ -212,14 +226,24 @@ void ZANIDMLinearReg::RunMCMC() {
       // Update \beta^{(\zeta)}_{j,k} using Abert-Chib probit DA.
       betas_zeta.col(j) = UpdateBetasZetaChib(j);
     }
-    draws_phi.col(t) = phi;
-    // Save draws
-    draws_betas_alpha.slice(t) = betas_alpha;
-    draws_betas_zeta.slice(t) = betas_zeta;
-    draws_varthetas.slice(t) = lambdas.each_col() / arma::sum(lambdas, 1);
-    draws_alphas.slice(t) = alphas;
-    draws_zetas.slice(t) = eta_zetas;
+
+    // Save draws of the regression coefficients
+    if (save_draws) {
+      ff_a.write(reinterpret_cast<const char*>(betas_alpha.memptr()), sizeof(double)*p_alpha*d);
+      ff_z.write(reinterpret_cast<const char*>(betas_zeta.memptr()), sizeof(double)*p_zeta*d);
+    }
+
+    // Keep draws
+    if (keep_draws) {
+      //draws_phi.col(t) = phi;
+      draws_betas_alpha.slice(k) = betas_alpha;
+      draws_betas_zeta.slice(k) = betas_zeta;
+      draws_varthetas.slice(k) = lambdas.each_col() / arma::sum(lambdas, 1);
+      draws_alphas.slice(k) = alphas;
+      draws_zetas.slice(k) = eta_zetas;
+    }
   }
+  ff_a.close(); ff_z.close();
 }
 
 // Exposing a C++ class in R
@@ -227,22 +251,22 @@ void ZANIDMLinearReg::RunMCMC() {
 RCPP_MODULE(zanidm_linear_reg) {
 
   // Expose class on the R side
-  Rcpp::class_<ZANIDMLinearReg>("ZANIDMLinearReg")
+  Rcpp::class_<ZANIDMReg>("ZANIDMReg")
 
   // Exposing constructor
   .constructor<arma::umat, arma::mat, arma::mat>()
 
   // Exposing member functions
-  .method("SetMCMC", &ZANIDMLinearReg::SetMCMC)
-  .method("RunMCMC", &ZANIDMLinearReg::RunMCMC)
+  .method("SetMCMC", &ZANIDMReg::SetMCMC)
+  .method("RunMCMC", &ZANIDMReg::RunMCMC)
 
   // Exposing some attributes
-  .field("draws_betas_alpha", &ZANIDMLinearReg::draws_betas_alpha)
-  .field("draws_betas_zeta", &ZANIDMLinearReg::draws_betas_zeta)
-  .field("draws_phi", &ZANIDMLinearReg::draws_phi)
-  .field("draws_abundance", &ZANIDMLinearReg::draws_varthetas)
-  .field("draws_alphas", &ZANIDMLinearReg::draws_alphas)
-  .field("draws_zetas", &ZANIDMLinearReg::draws_zetas)
+  .field("draws_betas_alpha", &ZANIDMReg::draws_betas_alpha)
+  .field("draws_betas_zeta", &ZANIDMReg::draws_betas_zeta)
+  .field("draws_phi", &ZANIDMReg::draws_phi)
+  .field("draws_abundance", &ZANIDMReg::draws_varthetas)
+  .field("draws_alphas", &ZANIDMReg::draws_alphas)
+  .field("draws_zetas", &ZANIDMReg::draws_zetas)
   ;
 
 }

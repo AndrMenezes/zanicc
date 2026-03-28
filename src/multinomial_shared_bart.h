@@ -1,28 +1,20 @@
-#ifndef MULTINOMIALBART_H
-#define MULTINOMIALBART_H
+#ifndef MULTINOMIALSHAREDBART_H
+#define MULTINOMIALSHAREDBART_H
 
 #include <RcppArmadillo.h>
 #include "node.h"
 #include "rng.h"
-#include "rng2.h"
 
-
-class MultinomialBART {
-private:
-  RNG2 rng;
+class MultinomialSharedBART {
 public:
-  MultinomialBART(const arma::umat &Y, const arma::mat &X);
-  MultinomialBART(int d, int p);
-  ~MultinomialBART();
+  MultinomialSharedBART(const arma::umat &Y, const arma::mat &X);
+  ~MultinomialSharedBART();
 
   // Data attributes
   arma::umat Y;
   arma::uvec n_trials;
   arma::mat X;
   int n, d, p;
-
-  // Iterator for the categories
-  int j_cat;
 
   // log-marginal likelihood
   double lml(Node *leaf);
@@ -37,8 +29,8 @@ public:
                int numcut_, double power_ , double base_,
                std::vector<double> proposals_prob_,
                int update_sd_prior_, double s2_0_, double w_ss_,
-               std::vector<std::vector<double>> list_splitprobs_, int sparse_,
-               std::vector<double> sparse_parms_, std::vector<double> alpha_sparse_,
+               std::vector<double> list_splitprobs_, int sparse_,
+               std::vector<double> sparse_parms_, double alpha_sparse_,
                int alpha_random_, arma::mat xinfo, std::string forests_dir_,
                int keep_draws_, int save_trees_);
 
@@ -46,22 +38,20 @@ public:
 
   // Prior parameters for the leaf node
   double c_shape, d_rate, c_logd_lgamc, sigma, s2_0, w_ss;
-  int update_sd_prior;
+  int update_sd_prior, save_trees, keep_draws;
   std::vector<double> sigma_mcmc;
 
   // List of trees
-  std::vector<std::vector<Node*>> trees;
+  std::vector<Node*> trees;
 
   arma::cube g_trees;
   arma::mat x_breaks;
-  int ntrees, numcut, ndpost, nskip, sparse, k_grid, alpha_random, keep_draws, save_trees;
-  double power, base, logprob_grow, logprob_prune;
-  std::vector<double> proposals_prob, sparse_parms, alpha_sparse;
+  int ntrees, numcut, ndpost, nskip, sparse, k_grid, alpha_random;
+  double power, base, logprob_grow, logprob_prune, alpha_sparse;
+  std::vector<double> proposals_prob, sparse_parms;
 
   // Path to save the trees
   std::string forests_dir;
-  // List with split probs for each category!
-  std::vector<std::vector<double>> list_splitprobs;
   std::vector<double> splitprobs;
 
   // Common concentration prior parameter \alpha for the Dirichlet sparse prior
@@ -70,41 +60,30 @@ public:
   // flag variables to track the acceptance rate of grow, prune and change
   int flag_grow, flag_prune, flag_change;
 
-  void BackFit(int &j, int &t);
-  arma::vec rt, fit_h;
-  arma::mat f_mu, f_lambda;
-  // Aux int to identify which move perform in the MH step
-  int move;
-
   // Run MCMC
   void RunMCMC();
-  arma::cube draws_prob;
-  arma::mat draws_phi;
+  arma::cube draws;
   // Storage object for number of leaves, depth and acceptance ratio
-  arma::umat avg_leaves, avg_depth, accept_rate;
-  // arma::umat ar_grow, ar_prune, ar_change;
+  arma::uvec avg_leaves, avg_depth, accept_rate;
   // Latent variable \phi and the "fit" but except the tree h times \phi
-  arma::vec phi, fit_h_phi;
-
+  arma::vec phi;
+  arma::mat fit_h_phi;
 
   // Number of times that variable is used in a tree decision rule (over all trees).
   void ComputeVarCount(Node *tree, arma::uvec &varcount);
-  arma::uvec GetVarCount(int j);
-  arma::ucube GetVarCount2(int p, int d, int n_samples, int ntrees,
-                           std::string forests_dir);
-  arma::ucube varcount_mcmc;
-  arma::uvec vc;
+  arma::uvec GetVarCount();
+  // arma::ucube GetVarCount2(int p, int d, int n_samples, int ntrees,
+  //                          std::string forests_dir);
+  arma::umat varcount_mcmc;
 
   // Predictions for a new data set
-  void Predict(arma::mat &X_, int n_samples, int ntrees, std::string forests_dir,
-               std::string path, int verbose);
-  double GetMu(Node *tree, const arma::rowvec &x);
+  arma::cube Predict(arma::mat &X_, int d, int n_samples, int ntrees,
+                     std::string forests_dir);
+  arma::vec GetMu(Node *tree, const arma::rowvec &x);
   //arma::vec PredictMu(int j);
 
   double UpdateSigmaPrior();
 
-  void UpdateAlphaDART(int &j);
-  double slp;
 
 };
 

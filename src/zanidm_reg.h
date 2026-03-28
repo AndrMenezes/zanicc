@@ -1,14 +1,14 @@
-#ifndef ZANIDMLINEARREG
-#define ZANIDMLINEARREG
+#ifndef ZANIDMREG_H
+#define ZANIDMREG_H
 
 #include <RcppArmadillo.h>
 
-class ZANIDMLinearReg {
+class ZANIDMReg {
 
 public:
-  ZANIDMLinearReg(const arma::umat &Y, const arma::mat &X_alpha,
+  ZANIDMReg(const arma::umat &Y, const arma::mat &X_alpha,
                   const arma::mat &X_zeta);
-  ~ZANIDMLinearReg();
+  ~ZANIDMReg();
 
   // Fields
   arma::umat Y;
@@ -17,11 +17,13 @@ public:
   int n, d, p_alpha, p_zeta;
 
   void SetMCMC(std::vector<double> sd_prior_beta_alpha_,
-               arma::mat sigma_prior_beta_zeta_,
-               int ndpost_, int nskip_, int nthin_);
+               arma::mat sigma_prior_beta_zeta_, int ndpost_, int nskip_,
+               int nthin_, int keep_draws_, int save_draws_,
+               std::string dir_draws_);
   std::vector<double> sd_prior_beta_alpha;
   arma::mat sigma_prior_beta_zeta;
-  int ndpost, nskip,  nthin;
+  int ndpost, nskip, nthin, keep_draws, save_draws;
+  std::string dir_draws;
 
   double LogTargetBetasAlpha(arma::vec &beta_cur, int &j);
   arma::vec UpdateBetasAlphaESS(int &j);

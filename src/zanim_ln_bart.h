@@ -1,16 +1,16 @@
-#ifndef ZANIMLOGNORMALBART_H
-#define ZANIMLOGNORMALBART_H
+#ifndef ZANIMLNBART_H
+#define ZANIMLNBART_H
 
 #include <RcppArmadillo.h>
 #include "node.h"
-#include "probit_bart.h"
+#include "probit.h"
 #include "multinomial_bart.h"
 
-class ZANIMLogNormalBART {
+class ZANIMLNBART {
 public:
-  ZANIMLogNormalBART(const arma::umat &Y, const arma::mat &X_theta,
-                       const arma::mat &X_zeta);
-  ~ZANIMLogNormalBART();
+  ZANIMLNBART(const arma::umat &Y, const arma::mat &X_theta, const arma::mat &X_zeta);
+  ZANIMLNBART(int d, int p_theta, int p_zeta);
+  ~ZANIMLNBART();
 
   // Fields
   arma::umat Y;
@@ -38,24 +38,25 @@ public:
                int update_sd_prior_, double s2_0_, double w_ss_,
                std::vector<double> splitprobs_zi,
                std::vector<std::vector<double>> splitprobs_mult,
-               int sparse_zi_,
                int sparse_mult_,
-               std::vector<double> sparse_parms_zi_,
+               int sparse_zi_,
                std::vector<double> sparse_parms_mult_,
-               std::vector<double> alpha_sparse_zi_,
+               std::vector<double> sparse_parms_zi_,
                std::vector<double> alpha_sparse_mult_,
-               int alpha_random_zi_,
+               std::vector<double> alpha_sparse_zi_,
                int alpha_random_mult_,
-               arma::mat xinfo, std::string path_out_, int keep_draws_);
+               int alpha_random_zi_,
+               arma::mat xinfo, std::string forests_dir_, int keep_draws_,
+               int save_trees_);
   int ntrees_theta, ntrees_zeta, ndpost, nskip, sparse_mult,
    alpha_random_mult, sparse_zi, alpha_random_zi, update_sd_prior, covariance_type,
-   q_factors, keep_draws;
-  std::string path_out;
+   q_factors, keep_draws, save_trees;
+  std::string forests_dir;
   std::vector<double> proposals_prob, sparse_parms_zi, sparse_parms_mult,
    alpha_sparse_zi, alpha_sparse_mult, sigma_mult_mcmc;
   std::vector<std::vector<double>> list_splitprobs_mult, list_splitprobs_zi;
 
-  // hyper-prior on the variance
+  // Factor analytic hyper-prior on the covariance of random effect
   double a_sigma, b_sigma, sigma2_gamma, a_psi, b_psi;
 
   // Common concentration prior parameter \alpha for the Dirichlet sparse prior
@@ -103,8 +104,8 @@ public:
 
   // ESS algorithm to update the latent variables u_i
   arma::vec ESSDiag(arma::vec &v, arma::uvec &y, arma::vec &sigmas,
-                    arma::uvec &z, arma::vec &lambda, double phi);
-  arma::vec ESSFull(arma::vec &u, arma::uvec &y, arma::uvec &z, arma::vec &lambda);
+                    arma::uvec &z, arma::vec &lambda);
+  arma::vec ESSFull(arma::vec &v, arma::uvec &y, arma::uvec &z, arma::vec &lambda);
   // Different methods to update the \Sigma
   void UpdateSigmaDiag();
   void UpdateSigmaFull();
@@ -119,13 +120,14 @@ public:
   void UpdateLocalShrinkage();
   void UpdateGlobalShrinkage();
 
+  // Auxiliary variables used for the random effects and its covariance
   double shape_post_sigma, df_wishart, shape_psis, rt_psis, shape_lsphis,
   shape_post_lsphis, a1_gs, a2_gs, rt_gs, shape_post_gs_delta1;
   arma::mat Gamma, GammaPsis, Hmat, Iq, M, Q, Q_chol, Q_chol_inv, HtH, HVp, W_eigen, R_psis, Phis_ls, GammaPhi;
   arma::vec psis, s_eigen, taus_gs, deltas_gs, mu_gamma_chol;
 
   // Cube to keep the draws
-  arma::cube draws_Sigma_U, draws_theta, draws_zeta, draws_vartheta, draws_Gamma;
+  arma::cube draws_Sigma_U, draws_chol_Sigma_V, draws_theta, draws_zeta, draws_vartheta, draws_Gamma;
 
   // Function to run the MCMC
   void RunMCMC();
@@ -140,9 +142,9 @@ public:
   // Predict functions
   arma::vec GetMu(Node *tree, const arma::rowvec &x);
   void ComputePredictProb(arma::mat &X_, int n_samples, int ntrees,
-                          std::string path_out, std::string path, int verbose);
+                          std::string forests_dir, std::string output_dir, int verbose);
   void ComputePredictProbZero(arma::mat &X_, int n_samples, int ntrees,
-                              std::string path_out, std::string path, int verbose);
+                              std::string forests_dir, std::string output_dir, int verbose);
 
   void ComputeVarCount(Node *tree, arma::uvec &varcount);
   arma::ucube GetVarCount(int n_samples, int ntrees, std::string parm_name,

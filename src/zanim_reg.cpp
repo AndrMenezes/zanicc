@@ -3,7 +3,7 @@
 
 constexpr double PI_2 = 6.283185307179586231996;
 
-ZANIMLinearReg::ZANIMLinearReg(const arma::umat &Y, const arma::mat &X_theta,
+ZANIMReg::ZANIMReg(const arma::umat &Y, const arma::mat &X_theta,
                                const arma::mat &X_zeta) : Y(Y), X_theta(X_theta), X_zeta(X_zeta) {
   d = Y.n_cols;
   n = Y.n_rows;
@@ -12,12 +12,13 @@ ZANIMLinearReg::ZANIMLinearReg(const arma::umat &Y, const arma::mat &X_theta,
   n_trials = arma::sum(Y, 1);
 }
 
-ZANIMLinearReg::~ZANIMLinearReg(){};
+ZANIMReg::~ZANIMReg(){};
 
 
-void ZANIMLinearReg::SetMCMC(std::vector<double> sd_prior_beta_theta_,
+void ZANIMReg::SetMCMC(std::vector<double> sd_prior_beta_theta_,
                              arma::mat sigma_prior_beta_zeta_,
                              int ndpost_, int nskip_, int nthin_) {
+  Rcpp::RNGScope scope;
   sd_prior_beta_theta = sd_prior_beta_theta_;
   sigma_prior_beta_zeta = sigma_prior_beta_zeta_;
   ndpost = ndpost_;
@@ -75,7 +76,7 @@ void ZANIMLinearReg::SetMCMC(std::vector<double> sd_prior_beta_theta_,
 
 }
 
-double ZANIMLinearReg::LogTargetBetasTheta(arma::vec &beta_cur, int &j) {
+double ZANIMReg::LogTargetBetasTheta(arma::vec &beta_cur, int &j) {
 
   arma::vec eta = X_theta * beta_cur;
   arma::vec e_eta_phi = exp(eta) % phi;
@@ -91,7 +92,7 @@ double ZANIMLinearReg::LogTargetBetasTheta(arma::vec &beta_cur, int &j) {
   return t1 - t2;
 }
 
-arma::vec ZANIMLinearReg::UpdateBetasThetaESS(int &j) {
+arma::vec ZANIMReg::UpdateBetasThetaESS(int &j) {
 
   arma::vec beta_cur = betas_theta.col(j);
   // Draw from the prior
@@ -119,12 +120,12 @@ arma::vec ZANIMLinearReg::UpdateBetasThetaESS(int &j) {
 }
 
 
-arma::vec ZANIMLinearReg::UpdateBetasZetaChib(int &j) {
+arma::vec ZANIMReg::UpdateBetasZetaChib(int &j) {
   arma::vec beta_tilde = sigma_inv_probit * (X_zeta.t() * Z_probit.col(j));
   return beta_tilde + rmvnorm(p_zeta, sigma_chol_inv_probit);
 }
 
-void ZANIMLinearReg::UpdateLatentVariables() {
+void ZANIMReg::UpdateLatentVariables() {
   for (int j=0; j < d; j++) {
     // Compute the linear predictions, eta^{\lambda}_{ij} and eta^{\zeta}_{ij}
     eta_zetas.col(j) = X_zeta * betas_zeta.col(j);
@@ -172,7 +173,7 @@ void ZANIMLinearReg::UpdateLatentVariables() {
 
 }
 
-void ZANIMLinearReg::RunMCMC() {
+void ZANIMReg::RunMCMC() {
 
   std::cout << "Doing the warm-up (burn-in) of " << nskip << "\n\n";
   double progress = 0;
@@ -190,6 +191,14 @@ void ZANIMLinearReg::RunMCMC() {
       // Update \beta^{(\zeta)}_{j,k} using Abert-Chib probit DA.
       betas_zeta.col(j) = UpdateBetasZetaChib(j);
     }
+    // Sum-to-zero (gambiarra), for identifiability
+    for (int l=0; l < p_theta; l++) {
+      double mu = arma::accu(betas_theta.row(l)) / d;
+      for (int j = 0; j < d; j ++) {
+        betas_theta.row(l).col(j) -= mu;
+      }
+    }
+
   }
 
   // // Initialise container for keep the draws
@@ -198,7 +207,7 @@ void ZANIMLinearReg::RunMCMC() {
   draws_thetas = arma::zeros<arma::cube>(n, d, ndpost);
   draws_varthetas = arma::zeros<arma::cube>(n, d, ndpost);
   draws_zetas = arma::zeros<arma::cube>(n, d, ndpost);
-  draws_phi = arma::zeros<arma::mat>(n, ndpost);
+  // draws_phi = arma::zeros<arma::mat>(n, ndpost);
 
   // Run the post-burn in iterations
   std::cout << "Starting post-burn-in iterations of " << ndpost << "\n\n";
@@ -217,13 +226,22 @@ void ZANIMLinearReg::RunMCMC() {
       // Update \beta^{(\zeta)}_{j,k} using Abert-Chib probit DA.
       betas_zeta.col(j) = UpdateBetasZetaChib(j);
     }
-    draws_phi.col(t) = phi;
+
+    // Sum-to-zero (gambiarra), for identifiability
+    for (int l=0; l < p_theta; l++) {
+      double mu = arma::accu(betas_theta.row(l)) / d;
+      for (int j = 0; j < d; j ++) {
+        betas_theta.row(l).col(j) -= mu;
+      }
+    }
+
     // Save draws
     draws_betas_theta.slice(t) = betas_theta;
     draws_betas_zeta.slice(t) = betas_zeta;
     draws_thetas.slice(t) = eta_lambdas.each_col() / arma::sum(eta_lambdas, 1);
     draws_varthetas.slice(t) = varthetas;
     draws_zetas.slice(t) = eta_zetas;
+    // draws_phi.col(t) = phi;
   }
 }
 
@@ -232,22 +250,22 @@ void ZANIMLinearReg::RunMCMC() {
 RCPP_MODULE(zanim_linear_reg) {
 
   // Expose class on the R side
-  Rcpp::class_<ZANIMLinearReg>("ZANIMLinearReg")
+  Rcpp::class_<ZANIMReg>("ZANIMReg")
 
   // Exposing constructor
   .constructor<arma::umat, arma::mat, arma::mat>()
 
   // Exposing member functions
-  .method("SetMCMC", &ZANIMLinearReg::SetMCMC)
-  .method("RunMCMC", &ZANIMLinearReg::RunMCMC)
+  .method("SetMCMC", &ZANIMReg::SetMCMC)
+  .method("RunMCMC", &ZANIMReg::RunMCMC)
 
   // Exposing some attributes
-  .field("draws_betas_theta", &ZANIMLinearReg::draws_betas_theta)
-  .field("draws_betas_zeta", &ZANIMLinearReg::draws_betas_zeta)
-  .field("draws_phi", &ZANIMLinearReg::draws_phi)
-  .field("draws_thetas", &ZANIMLinearReg::draws_thetas)
-  .field("draws_varthetas", &ZANIMLinearReg::draws_varthetas)
-  .field("draws_zetas", &ZANIMLinearReg::draws_zetas)
+  .field("draws_betas_theta", &ZANIMReg::draws_betas_theta)
+  .field("draws_betas_zeta", &ZANIMReg::draws_betas_zeta)
+  .field("draws_phi", &ZANIMReg::draws_phi)
+  .field("draws_thetas", &ZANIMReg::draws_thetas)
+  .field("draws_varthetas", &ZANIMReg::draws_varthetas)
+  .field("draws_zetas", &ZANIMReg::draws_zetas)
   ;
 
 }

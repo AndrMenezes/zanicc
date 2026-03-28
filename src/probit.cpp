@@ -1,7 +1,7 @@
 #include <RcppArmadillo.h>
 #include <vector>
 #include "rng.h"
-#include "probit_bart.h"
+#include "probit.h"
 #include "tree_mcmc.h"
 #include "write_read.h"
 

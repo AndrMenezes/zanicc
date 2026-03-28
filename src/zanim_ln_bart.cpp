@@ -1,6 +1,6 @@
 #include "zanim_ln_bart.h"
 #include "multinomial_bart.h"
-#include "probit_bart.h"
+#include "probit.h"
 #include "tree_mcmc.h"
 #include "write_read.h"
 #include "pmfs.h"
@@ -8,7 +8,7 @@
 
 constexpr double PI_2 = 6.283185307179586231996;
 
-ZANIMLogNormalBART::ZANIMLogNormalBART(const arma::umat &Y,
+ZANIMLNBART::ZANIMLNBART(const arma::umat &Y,
                                            const arma::mat &X_theta,
                                            const arma::mat &X_zeta)
   : Y(Y), X_theta(X_theta), X_zeta(X_zeta) {
@@ -18,13 +18,15 @@ ZANIMLogNormalBART::ZANIMLogNormalBART(const arma::umat &Y,
   dm1 = d - 1;
   p_theta = X_theta.n_cols;
   p_zeta = X_zeta.n_cols;
-
 }
+// Constructor for loading a fitted model
+ZANIMLNBART::ZANIMLNBART(int d, int p_theta, int p_zeta)
+  : d(d), p_theta(p_theta), p_zeta(p_zeta) {}
 
-ZANIMLogNormalBART::~ZANIMLogNormalBART(){};
+ZANIMLNBART::~ZANIMLNBART(){};
 
 // Set up the model
-void ZANIMLogNormalBART::SetMCMC(double v0_theta, double k_zeta,
+void ZANIMLNBART::SetMCMC(double v0_theta, double k_zeta,
                                  int ntrees_theta_, int ntrees_zeta_,
                                  arma::mat B_, int covariance_type_,
                                  double a_sigma_, double b_sigma_,
@@ -39,19 +41,22 @@ void ZANIMLogNormalBART::SetMCMC(double v0_theta, double k_zeta,
                                  int update_sd_prior_, double s2_0_,
                                  double w_ss_, std::vector<double> splitprobs_zi,
                                  std::vector<std::vector<double>> splitprobs_mult,
-                                 int sparse_zi_, int sparse_mult_,
-                                 std::vector<double> sparse_parms_zi_,
+                                 int sparse_mult_,
+                                 int sparse_zi_,
                                  std::vector<double> sparse_parms_mult_,
-                                 std::vector<double> alpha_sparse_zi_,
+                                 std::vector<double> sparse_parms_zi_,
                                  std::vector<double> alpha_sparse_mult_,
-                                 int alpha_random_zi_, int alpha_random_mult_,
-                                 arma::mat xinfo, std::string path_out_,
-                                 int keep_draws_) {
+                                 std::vector<double> alpha_sparse_zi_,
+                                 int alpha_random_mult_,
+                                 int alpha_random_zi_,
+                                 arma::mat xinfo, std::string forests_dir_,
+                                 int keep_draws_, int save_trees_) {
 
+  //Rcpp::RNGScope scope;
   // Setting up fields
   ntrees_theta = ntrees_theta_;
   ntrees_zeta = ntrees_zeta_;
-  path_out = path_out_;
+  forests_dir = forests_dir_;
   keep_draws = keep_draws_;
   proposals_prob = proposals_prob_;
   ndpost = ndpost_;
@@ -79,13 +84,15 @@ void ZANIMLogNormalBART::SetMCMC(double v0_theta, double k_zeta,
   shape_lsphis = shape_lsphis_;
   a1_gs = a1_gs_;
   a2_gs = a2_gs_,
+  save_trees = save_trees_;
 
   // Initialize multinomial BART
   bart_mult = new MultinomialBART(Y, X_theta);
   bart_mult->SetMCMC(v0_theta, ntrees_theta_, ndpost, nskip, numcut,
                      power, base, proposals_prob_, update_sd_prior_, s2_0_, w_ss_,
                      splitprobs_mult, sparse_mult, sparse_parms_mult,
-                     alpha_sparse_mult, alpha_random_mult, xinfo, path_out_);
+                     alpha_sparse_mult, alpha_random_mult, xinfo, forests_dir_,
+                     keep_draws, save_trees);
   // For each category initialize the BART zero-inflation model
   list_bart_zi.reserve(d);
   for (int j = 0; j < d; j++) {
@@ -93,7 +100,7 @@ void ZANIMLogNormalBART::SetMCMC(double v0_theta, double k_zeta,
     ProbitBART *m = new ProbitBART(yy, X_zeta);
     m->SetMCMC(k_zeta, ntrees_zeta_, ndpost, nskip, 1, numcut, power,
                base, proposals_prob_, splitprobs_zi, sparse_zi, sparse_parms_zi,
-               alpha_sparse_zi[j], alpha_random_zi, xinfo, path_out_);
+               alpha_sparse_zi[j], alpha_random_zi, xinfo, forests_dir_);
     list_bart_zi.push_back(m);
   }
 
@@ -139,13 +146,16 @@ void ZANIMLogNormalBART::SetMCMC(double v0_theta, double k_zeta,
   Sigma_U = U.t() * U / n;
 
   if (covariance_type == 0) {
+    Sigma_V = arma::zeros<arma::mat>(dm1, dm1);
     sigmas = arma::zeros<arma::vec>(dm1);
     shape_post_sigma = (double)n/2.0 + a_sigma;
     for (int j=0; j < dm1; j++) {
       double sv = arma::dot(V.col(j), V.col(j));
       sigmas[j] = 1.0 / R::rgamma(shape_post_sigma, 1.0 / (sv/2.0 + b_sigma));
+      Sigma_V(j, j) = sigmas[j];
       sigmas[j] = sqrt(sigmas[j]);
     }
+    chol_Sigma_V = arma::chol(Sigma_V);
   } else if (covariance_type == 1){
     Sigma_V = V.t() * V / n;
     chol_Sigma_V = arma::chol(Sigma_V);
@@ -247,11 +257,11 @@ void ZANIMLogNormalBART::SetMCMC(double v0_theta, double k_zeta,
   accept_rate_theta = arma::zeros<arma::umat>(3, d);
   accept_rate_zeta = arma::zeros<arma::umat>(3, d);
 
-  std::cout << "ZANIMLogNormal BART model set up!! \n\n";
+  std::cout << "ZANIM-LN-BART model set up! \n\n";
 }
 
 // Back-fit for the multinomial part
-void ZANIMLogNormalBART::BackFitMultinomial(int &j, int &t) {
+void ZANIMLNBART::BackFitMultinomial(int &j, int &t) {
   // Set split-probs of category j, this is used in the Grow, Prune, Change
   bart_mult->splitprobs = list_splitprobs_mult[j];
   // Back-fit
@@ -264,7 +274,7 @@ void ZANIMLogNormalBART::BackFitMultinomial(int &j, int &t) {
   }
   // Update tree
   bart_mult->UpdateTree(bart_mult->trees[j][t]);
-  // Perform the tree movement
+  // Sample a move and perform it
   move = 0;
   if (bart_mult->trees[j][t]->NLeaves() > 1L)
     move = sample_discrete(proposals_prob, 3.0);
@@ -289,7 +299,7 @@ void ZANIMLogNormalBART::BackFitMultinomial(int &j, int &t) {
 }
 
 // Back-fit for the zero-inflation part
-void ZANIMLogNormalBART::BackFitZI(int &j, int &t) {
+void ZANIMLNBART::BackFitZI(int &j, int &t) {
   // Back-fit with partial residuals
   fit_0_h = f0_mu.col(j) - list_bart_zi[j]->g_trees.col(t);
   list_bart_zi[j]->z_h = list_bart_zi[j]->z - fit_0_h;
@@ -320,7 +330,7 @@ void ZANIMLogNormalBART::BackFitZI(int &j, int &t) {
 }
 
 // Update the latent variables
-void ZANIMLogNormalBART::UpdateLatentVariables() {
+void ZANIMLNBART::UpdateLatentVariables() {
   // f_lambda = exp(f_mu);
   f_lambda = exp(f_mu + U);
   for (int j=0; j < d; j++) {
@@ -358,22 +368,22 @@ void ZANIMLogNormalBART::UpdateLatentVariables() {
 
 
 // Update split probabilities
-void ZANIMLogNormalBART::UpdateSplitProbsMult(int &j) {
+void ZANIMLNBART::UpdateSplitProbsMult(int &j) {
   list_splitprobs_mult[j] = UpdateSplitProbs(vc_mult, alpha_sparse_mult[j], p_theta);
 }
-void ZANIMLogNormalBART::UpdateSplitProbsZI(int &j) {
+void ZANIMLNBART::UpdateSplitProbsZI(int &j) {
   list_bart_zi[j]->splitprobs = UpdateSplitProbs(vc_zi, alpha_sparse_zi[j], p_zeta);
 }
 
 
 // Update concentration parameter of Dirichlet prior
-void ZANIMLogNormalBART::UpdateAlphaMult(int &j) {
+void ZANIMLNBART::UpdateAlphaMult(int &j) {
   slp = 0.0;
   for (int k = 0; k < p_theta; k++) slp += std::log(list_splitprobs_mult[j][k]);
   alpha_sparse_mult[j] = UpdateAlphaDirchlet(alphas_grid_mult, lp_alpha_sparse_mult,
                                              slp, (double)p_theta, k_grid);
 }
-void ZANIMLogNormalBART::UpdateAlphaZI(int &j) {
+void ZANIMLNBART::UpdateAlphaZI(int &j) {
   slp = 0.0;
   for (int k = 0; k < p_zeta; k++) slp += std::log(list_bart_zi[j]->splitprobs[k]);
   alpha_sparse_zi[j] = UpdateAlphaDirchlet(alphas_grid_zi, lp_alpha_sparse_zi,
@@ -381,7 +391,7 @@ void ZANIMLogNormalBART::UpdateAlphaZI(int &j) {
 }
 
 // Log-target of u_i without marginalised phi_i
-double ZANIMLogNormalBART::LogTargetU_phi(arma::vec &u, arma::uvec &y,
+double ZANIMLNBART::LogTargetU_phi(arma::vec &u, arma::uvec &y,
                                       arma::uvec &z, double &phi,
                                       arma::vec &lambda) {
   double l = 0.0;
@@ -391,7 +401,7 @@ double ZANIMLogNormalBART::LogTargetU_phi(arma::vec &u, arma::uvec &y,
 }
 
 // Log-target of u_i with marginalised phi_i
-double ZANIMLogNormalBART::LogTargetU(arma::vec &u, arma::uvec &y,
+double ZANIMLNBART::LogTargetU(arma::vec &u, arma::uvec &y,
                                       arma::uvec &z, arma::vec &lambda) {
 
   int idx = 0;
@@ -405,14 +415,14 @@ double ZANIMLogNormalBART::LogTargetU(arma::vec &u, arma::uvec &y,
     // Rprintf("%i, %i, %i, %f, %f", j, y[j], z[j], lambda[j], u[j]);
     // Rprintf("\r");
   }
-  if (lterms.empty()) return l;
+  if (lterms.empty()) return l; // Need to return prob = 1, i.e. l=0.
   return l - n_trials * log_sum_exp(lterms);
 }
 
 
 // ESS for update v_i under the diagonal covariance prior
-arma::vec ZANIMLogNormalBART::ESSDiag(arma::vec &v, arma::uvec &y, arma::vec &sigmas,
-                                      arma::uvec &z, arma::vec &lambda, double phi) {
+arma::vec ZANIMLNBART::ESSDiag(arma::vec &v, arma::uvec &y, arma::vec &sigmas,
+                               arma::uvec &z, arma::vec &lambda) {
   // Draw from the prior
   arma::vec nu = arma::zeros<arma::vec>(dm1);
   for (int j=0; j < dm1; j++) nu[j] = R::norm_rand() * sigmas[j];
@@ -442,7 +452,7 @@ arma::vec ZANIMLogNormalBART::ESSDiag(arma::vec &v, arma::uvec &y, arma::vec &si
 }
 
 // ESS for update v_i under the "full" covariance prior (also work for the factor model)
-arma::vec ZANIMLogNormalBART::ESSFull(arma::vec &v, arma::uvec &y, arma::uvec &z,
+arma::vec ZANIMLNBART::ESSFull(arma::vec &v, arma::uvec &y, arma::uvec &z,
                                       arma::vec &lambda) {
   // Draw from the prior
   arma::rowvec ep = arma::randn<arma::rowvec>(dm1);
@@ -471,7 +481,7 @@ arma::vec ZANIMLogNormalBART::ESSFull(arma::vec &v, arma::uvec &y, arma::uvec &z
 
 // Update \Sigma = I_d diag(\sigma_1, ..., \sigma_{d-1}) using inv-gamma conjugate
 // priors
-void ZANIMLogNormalBART::UpdateSigmaDiag() {
+void ZANIMLNBART::UpdateSigmaDiag() {
   // Update \mathbf{u}_{i} using ESS
   for (int k=0; k < n; k++) {
     v_cur = V.row(k).t();
@@ -479,7 +489,7 @@ void ZANIMLogNormalBART::UpdateSigmaDiag() {
     for (int j=0; j < d; j++) z_cur[j] = 1 - list_bart_zi[j]->y[k];
     // lambda_cur = f_lambda.row(k).t();
     lambda_cur = f_mu.row(k).t();
-    v_cur = ESSDiag(v_cur, y_cur, sigmas, z_cur, lambda_cur, bart_mult->phi(k));
+    v_cur = ESSDiag(v_cur, y_cur, sigmas, z_cur, lambda_cur);
     V.row(k) = v_cur.t();
   }
   // Transform back for other updates
@@ -489,13 +499,15 @@ void ZANIMLogNormalBART::UpdateSigmaDiag() {
   for (int j=0; j < dm1; j++) {
     double sv = arma::dot(V.col(j), V.col(j));
     sigmas[j] = 1 / R::rgamma(shape_post_sigma, 1 / (sv/2 + b_sigma));
+    Sigma_V(j, j) = sigmas[j];
     sigmas[j] = sqrt(sigmas[j]);
   }
+  chol_Sigma_V = arma::chol(Sigma_V);
 
 }
 
 // Update \Sigma using inv-Wishart conjugate prior
-void ZANIMLogNormalBART::UpdateSigmaFull() {
+void ZANIMLNBART::UpdateSigmaFull() {
   // Update \mathbf{u}_{i} using ESS
   for (int k=0; k < n; k++) {
     v_cur = V.row(k).t();
@@ -514,7 +526,7 @@ void ZANIMLogNormalBART::UpdateSigmaFull() {
   Sigma_U = B * Sigma_V * Bt;
 }
 
-void ZANIMLogNormalBART::UpdateSigmaFactorModel() {
+void ZANIMLNBART::UpdateSigmaFactorModel() {
   // Update \mathbf{u}_{i} using ESS
   for (int k=0; k < n; k++) {
     v_cur = V.row(k).t();
@@ -534,7 +546,7 @@ void ZANIMLogNormalBART::UpdateSigmaFactorModel() {
   Sigma_U = B * Sigma_V * Bt;
 }
 
-void ZANIMLogNormalBART::UpdateSigmaFactorModelMGP() {
+void ZANIMLNBART::UpdateSigmaFactorModelMGP() {
   // Update \mathbf{u}_{i} using ESS
   for (int k=0; k < n; k++) {
     v_cur = V.row(k).t();
@@ -556,8 +568,8 @@ void ZANIMLogNormalBART::UpdateSigmaFactorModelMGP() {
   Sigma_U = B * Sigma_V * Bt;
 }
 
-// Full conditional of F
-void ZANIMLogNormalBART::UpdateH() {
+// Full conditional of H = eta_i
+void ZANIMLNBART::UpdateH() {
   GammaPsis = Gamma;
   GammaPsis.each_col() /= psis;
   if (q_factors == 1) {
@@ -577,7 +589,7 @@ void ZANIMLogNormalBART::UpdateH() {
 }
 
 // Full conditional of Gamma
-void ZANIMLogNormalBART::UpdateGamma() {
+void ZANIMLNBART::UpdateGamma() {
   HtH = Hmat.t() * Hmat;
   arma::eig_sym(s_eigen, W_eigen, HtH);
   HVp = Hmat.t() * V;
@@ -591,7 +603,7 @@ void ZANIMLogNormalBART::UpdateGamma() {
 }
 
 // Full conditional of Gamma under MGP prior
-void ZANIMLogNormalBART::UpdateGammaChol() {
+void ZANIMLNBART::UpdateGammaChol() {
   HtH = Hmat.t() * Hmat;
   HVp = Hmat.t() * V;
   HVp.each_row() /= psis.t();
@@ -611,7 +623,7 @@ void ZANIMLogNormalBART::UpdateGammaChol() {
 }
 
 // Full conditional of the local shrinkage parameters, \phi_{jk}
-void ZANIMLogNormalBART::UpdateLocalShrinkage() {
+void ZANIMLNBART::UpdateLocalShrinkage() {
   for (int j=0; j < dm1; j++) {
     for (int k=0; k < q_factors; k++) {
       Phis_ls(j, k) = R::rgamma(shape_post_lsphis, 2.0 / (shape_lsphis + taus_gs(k) * std::pow(Gamma(j, k), 2.0)));
@@ -619,7 +631,7 @@ void ZANIMLogNormalBART::UpdateLocalShrinkage() {
   }
 }
 
-void ZANIMLogNormalBART::UpdateGlobalShrinkage() {
+void ZANIMLNBART::UpdateGlobalShrinkage() {
   GammaPhi = Phis_ls % arma::pow(Gamma, 2.0);
   // Rate parameter of first delta_1, arma::dot is sum of elementwise multiplication.
   rt_gs = 1.0 + 0.5 * arma::dot(taus_gs, arma::sum(GammaPhi, 0).t()) / deltas_gs[0];
@@ -635,7 +647,7 @@ void ZANIMLogNormalBART::UpdateGlobalShrinkage() {
 
 
 // Full conditional of \psis
-void ZANIMLogNormalBART::UpdatePsis() {
+void ZANIMLNBART::UpdatePsis() {
   R_psis = V - Hmat * Gamma.t();
   for (int j=0; j < dm1; j++) {
     rt_psis = arma::dot(R_psis.col(j), R_psis.col(j));
@@ -643,10 +655,8 @@ void ZANIMLogNormalBART::UpdatePsis() {
   }
 }
 
-
-
 // Run MCMC for ZANIM-LogNormal BART model
-void ZANIMLogNormalBART::RunMCMC() {
+void ZANIMLNBART::RunMCMC() {
 
   // Aux to keep the varcount
   vc_mult = arma::zeros<arma::uvec>(p_theta);
@@ -656,9 +666,10 @@ void ZANIMLogNormalBART::RunMCMC() {
     draws_vartheta = arma::zeros<arma::cube>(n, d, ndpost);
     draws_theta = arma::zeros<arma::cube>(n, d, ndpost);
     draws_zeta = arma::zeros<arma::cube>(n, d, ndpost);
-    draws_Sigma_U = arma::zeros<arma::cube>(d, d, ndpost);
-    draws_Gamma = arma::zeros<arma::cube>(dm1, q_factors, ndpost);
-    draws_phi = arma::zeros<arma::mat>(n, ndpost);
+    draws_chol_Sigma_V = arma::zeros<arma::cube>(dm1, dm1, ndpost);
+    //draws_Sigma_U = arma::zeros<arma::cube>(d, d, ndpost);
+    //draws_Gamma = arma::zeros<arma::cube>(dm1, q_factors, ndpost);
+    //draws_phi = arma::zeros<arma::mat>(n, ndpost);
   }
   //draws_rt = arma::zeros<arma::mat>(n, ndpost);
 
@@ -679,16 +690,16 @@ void ZANIMLogNormalBART::RunMCMC() {
       for (int t = 0; t < ntrees_theta; t++) BackFitMultinomial(j, t);
       for (int t = 0; t < ntrees_zeta; t++) BackFitZI(j, t);
       // Update the DART parameters if required
-      // if (sparse_mult) {
-      //   vc_mult = bart_mult->GetVarCount(j);
-      //   UpdateSplitProbsMult(j);
-      //   if (alpha_random_mult) UpdateAlphaMult(j);
-      // }
-      // if (sparse_zi) {
-      //   vc_zi = list_bart_zi[j]->GetVarCount();
-      //   UpdateSplitProbsZI(j);
-      //   if (alpha_random_zi) UpdateAlphaZI(j);
-      // }
+      if (sparse_mult) {
+        vc_mult = bart_mult->GetVarCount(j);
+        UpdateSplitProbsMult(j);
+        if (alpha_random_mult) UpdateAlphaMult(j);
+      }
+      if (sparse_zi) {
+        vc_zi = list_bart_zi[j]->GetVarCount();
+        UpdateSplitProbsZI(j);
+        if (alpha_random_zi) UpdateAlphaZI(j);
+      }
     }
     switch (covariance_type) {
       case 0: UpdateSigmaDiag(); break;
@@ -709,13 +720,13 @@ void ZANIMLogNormalBART::RunMCMC() {
   // Open file to write the forests FOR each category
   std::vector<std::ofstream> files_theta, files_zeta;
   for (int j=0; j < d; j++) {
-    std::string ff1 = path_out + "/forests_theta_" + std::to_string(j) + ".bin";
+    std::string ff1 = forests_dir + "/forests_theta_" + std::to_string(j) + ".bin";
     files_theta.emplace_back(ff1, std::ios::binary | std::ios::app);
-    std::string ff2 = path_out + "/forests_zeta_" + std::to_string(j) + ".bin";
+    std::string ff2 = forests_dir + "/forests_zeta_" + std::to_string(j) + ".bin";
     files_zeta.emplace_back(ff2, std::ios::binary | std::ios::app);
   }
-  // std::ofstream ff_Sigma_U(path_out + "/Sigma_U.bin", std::ios::binary | std::ios::app);
-  std::ofstream ff_Sigma_V(path_out + "/chol_Sigma_V.bin", std::ios::binary | std::ios::app);
+  // std::ofstream ff_Sigma_U(forests_dir + "/Sigma_U.bin", std::ios::binary | std::ios::app);
+  std::ofstream ff_Sigma_V(forests_dir + "/chol_Sigma_V.bin", std::ios::binary | std::ios::app);
 
   // Run the actual posterior samples
   std::cout << "Starting post-burn-in iterations of " << ndpost << "\n\n";
@@ -731,12 +742,12 @@ void ZANIMLogNormalBART::RunMCMC() {
       bart_mult->j_cat = j;
       for (int t = 0; t < ntrees_theta; t++) {
         BackFitMultinomial(j, t);
-        serialise_tree(bart_mult->trees[j][t], files_theta[j], np_t);
+        if (save_trees) serialise_tree(bart_mult->trees[j][t], files_theta[j], np_t);
         avg_leaves_theta(t, j) += bart_mult->trees[j][t]->NLeaves();
       }
       for (int t = 0; t < ntrees_zeta; t++) {
         BackFitZI(j, t);
-        serialise_tree(list_bart_zi[j]->trees[t], files_zeta[j], np_z);
+        if (save_trees) serialise_tree(list_bart_zi[j]->trees[t], files_zeta[j], np_z);
         avg_leaves_zeta(t, j) += list_bart_zi[j]->trees[t]->NLeaves();
       }
       vc_mult = bart_mult->GetVarCount(j);
@@ -777,15 +788,25 @@ void ZANIMLogNormalBART::RunMCMC() {
     }
 
     // Save the draws of cholesky of Sigma_V
-    if (covariance_type > 0) ff_Sigma_V.write(reinterpret_cast<const char*>(chol_Sigma_V.memptr()), sizeof(double)*dm1*dm1);
+    if (save_trees) {
+      ff_Sigma_V.write(reinterpret_cast<const char*>(chol_Sigma_V.memptr()), sizeof(double)*dm1*dm1);
+    }
     // Save draws
     if (keep_draws) {
-      draws_Sigma_U.slice(i) = Sigma_U;
+      //draws_Sigma_U.slice(i) = Sigma_U;
+      //if (covariance_type > 0)
+      draws_chol_Sigma_V.slice(i) = chol_Sigma_V;
+
+      f_lambda = exp(f_mu);
       draws_theta.slice(i) = f_lambda.each_col() / arma::sum(f_lambda, 1);
+
+      // f_lambda = exp(f_mu + U);
+      // draws_theta2.slice(i) = f_lambda.each_col() / arma::sum(f_lambda, 1);
+
       draws_vartheta.slice(i) = varthetas; // abundance
       draws_zeta.slice(i) = f0_mu;
-      // draws_Gamma.slice(i) = Gamma; // factor loadings
-      draws_phi.col(i) = bart_mult->phi;
+      //if (covariance_type >= 2) draws_Gamma.slice(i) = Gamma; // factor loadings
+      //draws_phi.col(i) = bart_mult->phi;
     }
   }
   // Close the files
@@ -801,15 +822,15 @@ void ZANIMLogNormalBART::RunMCMC() {
 }
 
 // Predict functions
-arma::vec ZANIMLogNormalBART::GetMu(Node *tree, const arma::rowvec &x) {
+arma::vec ZANIMLNBART::GetMu(Node *tree, const arma::rowvec &x) {
   if (tree->is_leaf) return tree->mu;
   if (x[tree->predictor] <= tree->cutoff) return GetMu(tree->left, x);
   else return GetMu(tree->right, x);
 }
 
-void ZANIMLogNormalBART::ComputePredictProb(arma::mat &X_, int n_samples,
-                                            int ntrees, std::string path_out,
-                                            std::string path, int verbose) {
+void ZANIMLNBART::ComputePredictProb(arma::mat &X_, int n_samples,
+                                     int ntrees, std::string forests_dir,
+                                     std::string output_dir, int verbose) {
   int np = 1;
   int n_ = X_.n_rows;
   arma::mat f_pred = arma::zeros<arma::mat>(n_, d);
@@ -817,23 +838,23 @@ void ZANIMLogNormalBART::ComputePredictProb(arma::mat &X_, int n_samples,
   // Open files to read the the forests
   std::vector<std::ifstream> files;
   for (int j=0; j < d; j++) {
-    std::string ff = path + "/forests_theta_" + std::to_string(j) + ".bin";
+    std::string ff = forests_dir + "/forests_theta_" + std::to_string(j) + ".bin";
     files.emplace_back(ff, std::ios::binary);
   }
   // Open file for the Sigma_U
-  std::ifstream ff_Sigma_V(path + "/chol_Sigma_V.bin", std::ios::binary);
-  arma::cube chol_Sigma_V_(dm1, dm1, n_samples);
-  arma::vec V_(dm1);
+  // std::ifstream ff_Sigma_V(forests_dir + "/chol_Sigma_V.bin", std::ios::binary);
+  // arma::cube chol_Sigma_V_(dm1, dm1, n_samples);
+  // arma::vec V_(dm1);
   // arma::cube U_ = arma::zeros<arma::cube>(n_, d, n_samples);
-  arma::mat U_ = arma::zeros<arma::mat>(n_, d);
+  // arma::mat U_ = arma::zeros<arma::mat>(n_, d);
   // arma::cube draws_out = arma::zeros<arma::cube>(n_, d, n_samples);
 
   // Import the chol_Sigma_V
-  ff_Sigma_V.read(reinterpret_cast<char*>(chol_Sigma_V_.memptr()),
-                  sizeof(double) * dm1 * dm1 * n_samples);
+  // ff_Sigma_V.read(reinterpret_cast<char*>(chol_Sigma_V_.memptr()),
+  //                 sizeof(double) * dm1 * dm1 * n_samples);
 
   // Open file to save the predictions
-  std::ofstream fout(path_out + "/theta_ij.bin", std::ios::app | std::ios::binary);
+  std::ofstream fout(output_dir + "/theta_ij.bin", std::ios::app | std::ios::binary);
 
   // Iterate over the MCMC samples
   for (int t = 0; t < n_samples; t++) {
@@ -844,10 +865,10 @@ void ZANIMLogNormalBART::ComputePredictProb(arma::mat &X_, int n_samples,
     }
 
     // from v_i ~ N_{d-1}[0, \Sigma_V], then u_i = B v_i
-    for (int i=0; i < n_; i++) {
-      V_ = (arma::randn<arma::rowvec>(dm1) * chol_Sigma_V_.slice(t)).t();
-      U_.row(i) = (B * V_).t();
-    }
+    // for (int i=0; i < n_; i++) {
+    //   V_ = (arma::randn<arma::rowvec>(dm1) * chol_Sigma_V_.slice(t)).t();
+    //   U_.row(i) = (B * V_).t();
+    // }
 
     // Initialise vector to keep the predictions of \theta_ij
     f_pred = arma::zeros<arma::mat>(n_, d);
@@ -868,25 +889,23 @@ void ZANIMLogNormalBART::ComputePredictProb(arma::mat &X_, int n_samples,
       }
     }
 
-    f_pred = exp(f_pred + U_); //
+    f_pred = exp(f_pred); // + U_
     f_pred = f_pred.each_col() / arma::sum(f_pred, 1);
     // Save prediction of sample t and category j
     fout.write(reinterpret_cast<const char*>(f_pred.memptr()), sizeof(double)*n_*d);
     //draws_out.slice(t) = f_pred;
   }
 
-
   // Close files
-  ff_Sigma_V.close();
+  // ff_Sigma_V.close();
   //fout.close();
   for (int j=0; j<d; j++) files[j].close();
   // return draws_out;
 }
 
-void ZANIMLogNormalBART::ComputePredictProbZero(arma::mat &X_, int n_samples,
-                                             int ntrees,
-                                             std::string path_out,
-                                             std::string path, int verbose) {
+void ZANIMLNBART::ComputePredictProbZero(arma::mat &X_, int n_samples, int ntrees,
+                                         std::string forests_dir, std::string output_dir,
+                                         int verbose) {
   int np = 1;
   int n_ = X_.n_rows;
   arma::vec f = arma::zeros<arma::vec>(n_);
@@ -894,12 +913,12 @@ void ZANIMLogNormalBART::ComputePredictProbZero(arma::mat &X_, int n_samples,
   // Open files to read the the forests
   std::vector<std::ifstream> files;
   for (int j=0; j < d; j++) {
-    std::string ff = path + "/forests_zeta_" + std::to_string(j) + ".bin";
+    std::string ff = forests_dir + "/forests_zeta_" + std::to_string(j) + ".bin";
     files.emplace_back(ff, std::ios::binary);
   }
 
   // Open file to save the predictions
-  std::ofstream fout(path_out + "/zeta_ij.bin", std::ios::app | std::ios::binary);
+  std::ofstream fout(output_dir + "/zeta_ij.bin", std::ios::app | std::ios::binary);
 
   // Iterate over posterior samples/draws
   double progress = 0.0;
@@ -935,7 +954,7 @@ void ZANIMLogNormalBART::ComputePredictProbZero(arma::mat &X_, int n_samples,
 
 // Count number of times a variable appears in the decision rule across all the
 // trees
-void ZANIMLogNormalBART::ComputeVarCount(Node *tree, arma::uvec &varcount) {
+void ZANIMLNBART::ComputeVarCount(Node *tree, arma::uvec &varcount) {
   if (tree->is_leaf == 0) {
     int id_j = tree->predictor;
     varcount(id_j)++;
@@ -944,7 +963,7 @@ void ZANIMLogNormalBART::ComputeVarCount(Node *tree, arma::uvec &varcount) {
   }
 }
 
-arma::ucube ZANIMLogNormalBART::GetVarCount(int n_samples, int ntrees,
+arma::ucube ZANIMLNBART::GetVarCount(int n_samples, int ntrees,
                                               std::string parm_name,
                                               std::string path) {
   int p = parm_name == "theta" ? p_theta : p_zeta;
@@ -981,42 +1000,44 @@ arma::ucube ZANIMLogNormalBART::GetVarCount(int n_samples, int ntrees,
 
 // Exposing a C++ class in R
 //using namespace Rcpp;
-RCPP_MODULE(zanim_lognormal_bart) {
+RCPP_MODULE(zanim_ln_bart) {
 
   // Expose class
-  Rcpp::class_<ZANIMLogNormalBART>("ZANIMLogNormalBART")
+  Rcpp::class_<ZANIMLNBART>("ZANIMLNBART")
 
   // Exposing constructor
   .constructor<arma::umat, arma::mat, arma::mat>()
+  .constructor<int, int, int>()
 
   // Exposing member functions
-  .method("SetMCMC", &ZANIMLogNormalBART::SetMCMC)
-  .method("RunMCMC", &ZANIMLogNormalBART::RunMCMC)
-  .method("ComputePredictProb", &ZANIMLogNormalBART::ComputePredictProb)
-  .method("ComputePredictProbZero", &ZANIMLogNormalBART::ComputePredictProbZero)
-  .method("GetVarCount", &ZANIMLogNormalBART::GetVarCount)
+  .method("SetMCMC", &ZANIMLNBART::SetMCMC)
+  .method("RunMCMC", &ZANIMLNBART::RunMCMC)
+  .method("ComputePredictProb", &ZANIMLNBART::ComputePredictProb)
+  .method("ComputePredictProbZero", &ZANIMLNBART::ComputePredictProbZero)
+  .method("GetVarCount", &ZANIMLNBART::GetVarCount)
 
   // Exposing some attributes
-  .field("draws_phi", &ZANIMLogNormalBART::draws_phi)
-  .field("draws_Sigma_U", &ZANIMLogNormalBART::draws_Sigma_U)
-  .field("draws_theta", &ZANIMLogNormalBART::draws_theta)
-  .field("draws_zeta", &ZANIMLogNormalBART::draws_zeta)
-  .field("draws_vartheta", &ZANIMLogNormalBART::draws_vartheta)
-  // .field("draws_Gamma", &ZANIMLogNormalBART::draws_Gamma)
+  .field("draws_phi", &ZANIMLNBART::draws_phi)
+  .field("draws_chol_Sigma_V", &ZANIMLNBART::draws_chol_Sigma_V)
+  .field("draws_theta", &ZANIMLNBART::draws_theta)
+  .field("draws_zeta", &ZANIMLNBART::draws_zeta)
+  .field("draws_vartheta", &ZANIMLNBART::draws_vartheta)
+  .field("draws_Gamma", &ZANIMLNBART::draws_Gamma)
 
-  .field("varcount_mcmc_theta", &ZANIMLogNormalBART::varcount_mcmc_theta)
-  .field("varcount_mcmc_zeta", &ZANIMLogNormalBART::varcount_mcmc_zeta)
-  .field("alpha_sparse_mult", &ZANIMLogNormalBART::alpha_mult_post_mean)
-  .field("alpha_sparse_zi", &ZANIMLogNormalBART::alpha_zi_post_mean)
-  .field("splitprobs_mult", &ZANIMLogNormalBART::list_splitprobs_mult)
+  .field("varcount_mcmc_theta", &ZANIMLNBART::varcount_mcmc_theta)
+  .field("varcount_mcmc_zeta", &ZANIMLNBART::varcount_mcmc_zeta)
+  .field("alpha_sparse_mult", &ZANIMLNBART::alpha_mult_post_mean)
+  .field("alpha_sparse_zi", &ZANIMLNBART::alpha_zi_post_mean)
+  .field("splitprobs_mult", &ZANIMLNBART::list_splitprobs_mult)
 
-  .field("sigma_mult_mcmc", &ZANIMLogNormalBART::sigma_mult_mcmc)
-  .field("avg_leaves_theta", &ZANIMLogNormalBART::avg_leaves_theta)
-  .field("avg_leaves_zeta", &ZANIMLogNormalBART::avg_leaves_zeta)
+  .field("sigma_mult_mcmc", &ZANIMLNBART::sigma_mult_mcmc)
+  .field("avg_leaves_theta", &ZANIMLNBART::avg_leaves_theta)
+  .field("avg_leaves_zeta", &ZANIMLNBART::avg_leaves_zeta)
 
   // Acceptance rate
-  .field("accept_rate_theta", &ZANIMLogNormalBART::accept_rate_theta)
-  .field("accept_rate_zeta", &ZANIMLogNormalBART::accept_rate_zeta)
+  .field("accept_rate_theta", &ZANIMLNBART::accept_rate_theta)
+  .field("accept_rate_zeta", &ZANIMLNBART::accept_rate_zeta)
+  .field("covariance_type", &ZANIMLNBART::covariance_type)
   ;
 
 }

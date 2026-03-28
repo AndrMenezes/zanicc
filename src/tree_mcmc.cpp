@@ -1,7 +1,10 @@
 #include <RcppArmadillo.h>
 #include "tree_mcmc.h"
 #include "multinomial_bart.h"
-#include "probit_bart.h"
+#include "multinomial_shared_bart.h"
+#include "multinomial_ln_bart.h"
+#include "shared_logit_bart.h"
+#include "probit.h"
 
 double prob_tree_split(int depth, double a, double b) {
   return(a * pow(1.0 + depth, -b));
@@ -183,6 +186,18 @@ void Change(Node *tree, ModelType &Model) {
 template void Grow<MultinomialBART>(Node*, MultinomialBART&);
 template void Prune<MultinomialBART>(Node*, MultinomialBART&);
 template void Change<MultinomialBART>(Node*, MultinomialBART&);
+
+template void Grow<MultinomialSharedBART>(Node*, MultinomialSharedBART&);
+template void Prune<MultinomialSharedBART>(Node*, MultinomialSharedBART&);
+template void Change<MultinomialSharedBART>(Node*, MultinomialSharedBART&);
+
+template void Grow<MultinomialLNBART>(Node*, MultinomialLNBART&);
+template void Prune<MultinomialLNBART>(Node*, MultinomialLNBART&);
+template void Change<MultinomialLNBART>(Node*, MultinomialLNBART&);
+
+template void Grow<SharedLogitBART>(Node*, SharedLogitBART&);
+template void Prune<SharedLogitBART>(Node*, SharedLogitBART&);
+template void Change<SharedLogitBART>(Node*, SharedLogitBART&);
 
 template void Grow<ProbitBART>(Node*, ProbitBART&);
 template void Prune<ProbitBART>(Node*, ProbitBART&);

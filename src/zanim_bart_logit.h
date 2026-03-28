@@ -1,16 +1,16 @@
-#ifndef ZANIMPROBIT_H
-#define ZANIMPROBIT_H
+#ifndef ZANIMBARTLOGIT_H
+#define ZANIMBARTLOGIT_H
 
 #include <RcppArmadillo.h>
 #include "node.h"
-#include "probit_bart.h"
+#include "shared_logit_bart.h"
 #include "multinomial_bart.h"
 
-class ZANIMBARTProbit {
+class ZANIMBARTLogit {
 public:
-  ZANIMBARTProbit(const arma::umat &Y, const arma::mat &X_theta,
+  ZANIMBARTLogit(const arma::umat &Y, const arma::mat &X_theta,
                        const arma::mat &X_zeta);
-  ~ZANIMBARTProbit();
+  ~ZANIMBARTLogit();
 
   // Fields
   arma::umat Y;
@@ -21,10 +21,10 @@ public:
   MultinomialBART *bart_mult;
 
   // List of SharedLogitBART class
-  std::vector<ProbitBART*> list_bart_zi;
+  std::vector<SharedLogitBART*> list_bart_zi;
 
   // Method to set-up the model
-  void SetMCMC(double v0_theta, double k_zeta,
+  void SetMCMC(double v0_theta, double v0_zeta,
                int ntrees_theta_, int ntrees_zeta_, int ndpost_,
                int nskip_,
                int numcut, double power, double base,
@@ -40,11 +40,14 @@ public:
                std::vector<double> alpha_sparse_mult_,
                int alpha_random_zi_,
                int alpha_random_mult_,
-               arma::mat xinfo, std::string path_out_, int keep_draws_);
-  int ntrees_theta, ntrees_zeta, ndpost, nskip, sparse_mult, alpha_random_mult, sparse_zi, alpha_random_zi, update_sd_prior,keep_draws;
+               arma::mat xinfo, std::string path_out_, int keep_draws_,
+               int save_trees_);
+  int ntrees_theta, ntrees_zeta, ndpost, nskip, sparse_mult, alpha_random_mult,
+   sparse_zi, alpha_random_zi, update_sd_prior, keep_draws, save_trees;
   std::string path_out;
-  std::vector<double> proposals_prob, sparse_parms_zi, sparse_parms_mult, alpha_sparse_zi, alpha_sparse_mult, sigma_mult_mcmc;
-  std::vector<std::vector<double>> list_splitprobs_mult, list_splitprobs_zi;
+  std::vector<double> proposals_prob, sparse_parms_zi, sparse_parms_mult,
+   alpha_sparse_zi, alpha_sparse_mult, sigma_mult_mcmc;
+  std::vector<std::vector<double>> list_splitprobs_mult;
 
   // Common concentration prior parameter \alpha for the Dirichlet sparse prior
   int k_grid;
@@ -52,23 +55,15 @@ public:
 
   // Vector and matrices for multinomial BART
   arma::vec rt, fit_h;
-  arma::mat f_mu, f_lambda, varthetas;
-  // Vector and matrices for ZI probit BART
-  arma::vec fit_0_h;
-  arma::mat f0_mu;
-  arma::mat draws_phi;
-  arma::cube draws_theta, draws_zeta, draws_vartheta;
-  arma::uvec vc_mult, vc_zi;
-  arma::umat Zs;
-  arma::ucube draws_Z;
+  arma::mat f_mu, f_lambda, thetas, varthetas;
+  // Vector and matrices for ZI shared logit BART
+  arma::vec fit_0_h, fit_1_h;
+  arma::mat rt_zi, f0_mu, f1_mu, f1_lambda, zetas;
 
   // Vector with zero indices and the latent variable z_{ij} indicator for
   // sampling or structural zero
   std::vector<std::vector<int>> zero_indices, zs;
   arma::uvec sum_col_zeros_Y;
-
-  // Aux to compute sum(log(splitprobs))
-  double slp = 0.0;
 
   // Wrapper functions to perform the back-fit and update the latent variables
   int move, cur_indice;
@@ -76,13 +71,10 @@ public:
   void BackFitMultinomial(int &j, int &t);
   void BackFitZI(int &j, int &t);
   void UpdateLatentVariables();
-  void UpdateSplitProbsMult(int &j);
-  void UpdateSplitProbsZI(int &j);
-  void UpdateAlphaMult(int &j);
-  void UpdateAlphaZI(int &j);
 
   void RunMCMC();
-  //arma::cube draws_theta, draws_zeta;
+  arma::cube draws_theta, draws_zeta, draws_vartheta;
+  arma::mat draws_phi;
 
   // Storage object for number of leaves
   arma::umat avg_leaves_theta, avg_leaves_zeta;
@@ -104,10 +96,6 @@ public:
   arma::ucube varcount_mcmc_theta;
   arma::ucube varcount_mcmc_zeta;
 
-  // Keep the posterior mean of concentration parameter \alpha
-  arma::vec alpha_mult_post_mean, alpha_zi_post_mean;
-  // std::vector<double> split_post_mean;
-
   // Compute the predictive density p(y* \mid x*, \theta^{(t)}) for given data
   // (y*, x*) over the MCMC posterior samples of \theta^{(t)}.
   std::vector<double> LogPredictiveDensity(std::vector<int> &y, arma::rowvec &x,
@@ -125,12 +113,11 @@ public:
                                    int n_samples, int ntrees_theta,
                                    int ntrees_zeta, std::string path);
 
-  // arma::mat SampleInversePosterior(std::vector<int> &y, arma::rowvec &x_init,
-  //                                  double mean_prior, double sd_prior,
-  //                                  int ndpost, int nskip, int printevery,
-  //                                  int n_samples, int ntrees_theta,
-  //                                  int ntrees_zeta, std::string path);
-
+  arma::mat SampleInversePosterior(std::vector<int> &y, arma::rowvec &x_init,
+                                   double mean_prior, double sd_prior,
+                                   int ndpost, int nskip, int printevery,
+                                   int n_samples, int ntrees_theta,
+                                   int ntrees_zeta, std::string path);
   std::vector<double> GetNormaliseProbsIS(std::vector<int> &y,
                                           arma::vec &x_prior, int n_grid,
                                           int n_samples, int ntrees_theta,

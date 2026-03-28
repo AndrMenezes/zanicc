@@ -95,12 +95,19 @@ BEGIN_RCPP
 END_RCPP
 }
 
+RcppExport SEXP _rcpp_module_boot_dm_linear_reg();
 RcppExport SEXP _rcpp_module_boot_multinomial_bart();
+RcppExport SEXP _rcpp_module_boot_multinomial_lognormal_bart();
+RcppExport SEXP _rcpp_module_boot_multinomial_shared_bart();
 RcppExport SEXP _rcpp_module_boot_probit_bart();
+RcppExport SEXP _rcpp_module_boot_shared_logit_bart();
 RcppExport SEXP _rcpp_module_boot_zanidm_linear_reg();
+RcppExport SEXP _rcpp_module_boot_zanim_bart_logit();
 RcppExport SEXP _rcpp_module_boot_zanim_bart_probit();
-RcppExport SEXP _rcpp_module_boot_zanim_lognormal_bart();
+RcppExport SEXP _rcpp_module_boot_zanim_ln_bart();
+RcppExport SEXP _rcpp_module_boot_zanim_ln_reg();
 RcppExport SEXP _rcpp_module_boot_zanim_linear_reg();
+RcppExport SEXP _rcpp_module_boot_zanim_shared_bart_probit();
 
 static const R_CallMethodDef CallEntries[] = {
     {"_zanicc_log_pmf_zanim", (DL_FUNC) &_zanicc_log_pmf_zanim, 3},
@@ -109,12 +116,19 @@ static const R_CallMethodDef CallEntries[] = {
     {"_zanicc_log_pmf_zanidm", (DL_FUNC) &_zanicc_log_pmf_zanidm, 3},
     {"_zanicc_rtnorm", (DL_FUNC) &_zanicc_rtnorm, 3},
     {"_zanicc_compute_crps", (DL_FUNC) &_zanicc_compute_crps, 3},
+    {"_rcpp_module_boot_dm_linear_reg", (DL_FUNC) &_rcpp_module_boot_dm_linear_reg, 0},
     {"_rcpp_module_boot_multinomial_bart", (DL_FUNC) &_rcpp_module_boot_multinomial_bart, 0},
+    {"_rcpp_module_boot_multinomial_lognormal_bart", (DL_FUNC) &_rcpp_module_boot_multinomial_lognormal_bart, 0},
+    {"_rcpp_module_boot_multinomial_shared_bart", (DL_FUNC) &_rcpp_module_boot_multinomial_shared_bart, 0},
     {"_rcpp_module_boot_probit_bart", (DL_FUNC) &_rcpp_module_boot_probit_bart, 0},
+    {"_rcpp_module_boot_shared_logit_bart", (DL_FUNC) &_rcpp_module_boot_shared_logit_bart, 0},
     {"_rcpp_module_boot_zanidm_linear_reg", (DL_FUNC) &_rcpp_module_boot_zanidm_linear_reg, 0},
+    {"_rcpp_module_boot_zanim_bart_logit", (DL_FUNC) &_rcpp_module_boot_zanim_bart_logit, 0},
     {"_rcpp_module_boot_zanim_bart_probit", (DL_FUNC) &_rcpp_module_boot_zanim_bart_probit, 0},
-    {"_rcpp_module_boot_zanim_lognormal_bart", (DL_FUNC) &_rcpp_module_boot_zanim_lognormal_bart, 0},
+    {"_rcpp_module_boot_zanim_ln_bart", (DL_FUNC) &_rcpp_module_boot_zanim_ln_bart, 0},
+    {"_rcpp_module_boot_zanim_ln_reg", (DL_FUNC) &_rcpp_module_boot_zanim_ln_reg, 0},
     {"_rcpp_module_boot_zanim_linear_reg", (DL_FUNC) &_rcpp_module_boot_zanim_linear_reg, 0},
+    {"_rcpp_module_boot_zanim_shared_bart_probit", (DL_FUNC) &_rcpp_module_boot_zanim_shared_bart_probit, 0},
     {NULL, NULL, 0}
 };
 

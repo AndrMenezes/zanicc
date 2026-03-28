@@ -2,12 +2,17 @@
 #include "tree_mcmc.h"
 #include "write_read.h"
 
-MultinomialBART::MultinomialBART(const arma::umat &Y, const arma::mat &X) : Y(Y), X(X) {
+// Constructor for running MCMC
+MultinomialBART::MultinomialBART(const arma::umat &Y, const arma::mat &X)
+  : Y(Y), X(X) { //, rng()
   d = Y.n_cols;
   n = X.n_rows;
   p = X.n_cols;
   n_trials = sum(Y, 1);
 }
+
+// Constructor for loading a fitted model
+MultinomialBART::MultinomialBART(int d, int p): d(d), p(p) {}
 
 MultinomialBART::~MultinomialBART() {
   for (int j=0; j < d; j++) {
@@ -15,7 +20,6 @@ MultinomialBART::~MultinomialBART() {
       delete trees[j][h];
     }
   }
-  // delete prior;
 }
 
 double MultinomialBART::lml(Node *leaf) {
@@ -75,17 +79,8 @@ void MultinomialBART::ComputeVarCount(Node *tree, arma::uvec &varcount) {
   }
 }
 
-// void ComputeVarCount(Node *tree, arma::uvec &varcount) {
-//   if (tree->is_leaf == 0) {
-//     int id_j = tree->predictor;
-//     varcount(id_j)++;
-//     ComputeVarCount(tree->left, varcount);
-//     ComputeVarCount(tree->right, varcount);
-//   }
-// }
-
 arma::ucube MultinomialBART::GetVarCount2(int p, int d, int n_samples, int ntrees,
-                                          std::string path_out) {
+                                          std::string forests_dir) {
 
   int np = 1;
   arma::ucube varcount = arma::zeros<arma::ucube>(p, d, n_samples);
@@ -94,7 +89,7 @@ arma::ucube MultinomialBART::GetVarCount2(int p, int d, int n_samples, int ntree
   // Iterate over categories (this can be done in parallel)
   for (int j = 0; j < d; j++) {
     // Open file of category j
-    std::ifstream is(path_out + "/forests_j" + std::to_string(j) + ".bin");
+    std::ifstream is(forests_dir + "/forests_j" + std::to_string(j) + ".bin");
     // Iterate over the mcmc samples
     for (int t = 0; t < n_samples; t++) {
       // Initialise vector to keep the var-count for category j-tree
@@ -125,26 +120,32 @@ double MultinomialBART::GetMu(Node *tree, const arma::rowvec &x) {
   else return GetMu(tree->right, x);
 }
 
-arma::cube MultinomialBART::Predict(arma::mat &X_, int d, int n_samples,
-                                    int ntrees, std::string path_out) {
+void MultinomialBART::Predict(arma::mat &X_, int n_samples,
+                              int ntrees, std::string forests_dir,
+                              std::string output_dir, int verbose) {
   int np = 1;
   int n_ = X_.n_rows;
   arma::mat f_pred;
-  arma::cube draws_pred = arma::zeros<arma::cube>(n_, d, n_samples);
+  // arma::cube draws_pred = arma::zeros<arma::cube>(n_, d, n_samples);
 
-    // Open files to read the the forests
+  // Open files to read the the forests
   std::vector<std::ifstream> files;
   for (int j=0; j < d; j++) {
-    std::string ff = path_out + "/forests_" + std::to_string(j) + ".bin";
+    std::string ff = forests_dir + "/forests_" + std::to_string(j) + ".bin";
     files.emplace_back(ff, std::ios::binary);
   }
 
+  // Open file to save the predictions
+  std::ofstream fout(output_dir + "/theta_ij.bin", std::ios::app | std::ios::binary);
+
   double progress = 0.0;
   // Iterate over the MCMC samples
-  for (int t = 0; t < n_samples; t++) {
-    progress = (double) 100 * t / n_samples;
-    Rprintf("%3.2f%% Completed", progress);
-    Rprintf("\r");
+  for (int k = 0; k < n_samples; k++) {
+    if (verbose) {
+      progress = (double) 100 * k / n_samples;
+      Rprintf("\r");
+      Rprintf("%3.2f%% Completed", progress);
+    }
     // Initialise vector to keep the predictions of \theta_ij
     f_pred = arma::zeros<arma::mat>(n_, d);
     // Iterate over categories
@@ -163,11 +164,14 @@ arma::cube MultinomialBART::Predict(arma::mat &X_, int d, int n_samples,
     }
     f_pred = exp(f_pred);
     f_pred = f_pred.each_col() / arma::sum(f_pred, 1);
-    draws_pred.slice(t) = f_pred;
+    // Save prediction of sample t and category j
+    fout.write(reinterpret_cast<const char*>(f_pred.memptr()), sizeof(double)*n_*d);
+    //draws_pred.slice(k) = f_pred;
   }
+  fout.close();
   for (int j=0; j<d; j++) files[j].close();
 
-  return draws_pred;
+  //return draws_pred;
 }
 
 double MultinomialBART::UpdateSigmaPrior() {
@@ -220,7 +224,9 @@ void MultinomialBART::SetMCMC(double v0, int ntrees_, int ndpost_, int nskip_,
                               std::vector<std::vector<double>> list_splitprobs_,
                               int sparse_, std::vector<double> sparse_parms_,
                               std::vector<double> alpha_sparse_, int alpha_random_,
-                              arma::mat xinfo, std::string path_out_) {
+                              arma::mat xinfo, std::string forests_dir_,
+                              int keep_draws_, int save_trees_) {
+  Rcpp::RNGScope scope;
 
   // Setting attributes
   ntrees = ntrees_;
@@ -237,10 +243,12 @@ void MultinomialBART::SetMCMC(double v0, int ntrees_, int ndpost_, int nskip_,
   sparse_parms = sparse_parms_;
   alpha_random = alpha_random_;
   alpha_sparse = alpha_sparse_;
-  path_out = path_out_;
+  forests_dir = forests_dir_;
   s2_0 = s2_0_;
   w_ss = w_ss_;
   update_sd_prior = update_sd_prior_;
+  keep_draws = keep_draws_;
+  save_trees = save_trees_;
 
   // Define the prior parameters
   sigma = v0 / sqrt(ntrees);
@@ -268,7 +276,12 @@ void MultinomialBART::SetMCMC(double v0, int ntrees_, int ndpost_, int nskip_,
 
   // First draw for the latent variable phi
   phi = arma::zeros<arma::vec>(n);
-  for (int i = 0; i < n; i++) phi(i) = R::rgamma(n_trials(i), 1.0);
+  for (int i = 0; i < n; i++) {
+    //std::cout << i  << " " << n_trials(i) << " " << R::rgamma((double)n_trials(i), 1.0) << "\n";
+    phi(i) = R::rgamma((double)n_trials(i), 1.0); //n_trials(i)
+    // phi(i) = rng.gamma((double)n_trials(i), 1.0);
+    //std::cout << phi(i) << "\n";
+  }
 
   // Initialize the trees
   std::vector<std::vector<Node*>>  my_trees(d);
@@ -320,87 +333,153 @@ void MultinomialBART::SetMCMC(double v0, int ntrees_, int ndpost_, int nskip_,
   avg_leaves = arma::zeros<arma::umat>(ntrees, d);
   avg_depth = arma::zeros<arma::umat>(ntrees, d);
 
-  std::cout << "Model set up!" << "\n\n";
+}
+
+// Update concentration parameter of Dirichlet prior
+void MultinomialBART::UpdateAlphaDART(int &j) {
+  slp = 0.0;
+  for (int k = 0; k < p; k++) slp += std::log(list_splitprobs[j][k]);
+  alpha_sparse[j] = UpdateAlphaDirchlet(alphas_grid,
+                                        log_posterior_alpha_sparse,
+                                        slp, (double)p, k_grid);
+}
+
+// Perform back-fitting for a given category (j) and tree (t)
+void MultinomialBART::BackFit(int &j, int &t) {
+  // Set split-probs of category j, this is used in the Grow, Prune, Change
+  splitprobs = list_splitprobs[j];
+  // Back-fit
+  fit_h = f_mu.col(j) - arma::vec(g_trees.tube(j, t));
+  fit_h_phi = exp(fit_h) % phi;
+  // Update tree
+  UpdateTree(trees[j][t]);
+  // Sample a move
+  move = 0;
+  if (trees[j][t]->NLeaves() > 1) move = sample_discrete(proposals_prob, 3);
+  switch(move) {
+  case 0:
+    Grow(trees[j][t], *this);
+    accept_rate(0, j) += flag_grow;
+    break;
+  case 1:
+    Prune(trees[j][t], *this);
+    accept_rate(1, j) += flag_prune;
+    break;
+  case 2:
+    Change(trees[j][t], *this);
+    accept_rate(2, j) += flag_change;
+    break;
+  }
+  // Draw from the node parameters
+  DrawPosterior(trees[j][t]);
+  // Re-fit
+  f_mu.col(j) = fit_h + arma::vec(g_trees.tube(j, t));
+
 }
 
 void MultinomialBART::RunMCMC() {
 
-  // Initialise container for keep the draws
-  draws = arma::zeros<arma::cube>(n, d, ndpost);
-  draws_phi = arma::zeros<arma::mat>(n, ndpost);
+
+  // Initialise container for keep the draws of the probabilities
+  if (keep_draws) {
+    draws_prob = arma::zeros<arma::cube>(n, d, ndpost);
+    //draws_phi = arma::zeros<arma::mat>(n, ndpost);
+  }
+
+  // Aux int variables
+  int np = 1;
+  move = 0;
+
+  // Aux variable to compute the sum(log(splitprobs))
+  slp = 0.0;
+
+  // Initialise the aux variable to keep the varcount
+  vc = arma::zeros<arma::uvec>(p);
+
   // Storage object for varcount
   varcount_mcmc = arma::zeros<arma::ucube>(p, d, ndpost);
 
-  int np = 1;
-  // Define auxiliary variables
-  arma::vec rt = arma::zeros<arma::vec>(n);
-  arma::vec fit_h = arma::zeros<arma::vec>(n);
-  arma::mat f_mu = arma::zeros<arma::mat>(n, d);
-  arma::mat f_lambda = arma::zeros<arma::mat>(n, d);
-  int move = 0, niter = ndpost + nskip;
+  // Create vectors/matrix for the backfitting
+  rt = arma::zeros<arma::vec>(n);
+  fit_h = arma::zeros<arma::vec>(n);
+  f_mu = arma::zeros<arma::mat>(n, d);
+  f_lambda = arma::zeros<arma::mat>(n, d);
 
-  // Aux variable to compute the sum(log(splitprobs))
-  double slp = 0.0;
-
-  // Open file to write the forests FOR each category
-  //std::vector<std::ofstream> files;
-  //for (int j=0; j < d; j++) {
-  //  std::string ff = path_out + "/forests_" + std::to_string(j) + ".bin";
-  //  files.emplace_back(ff, std::ios::binary | std::ios::app);
-  //}
-
-  std::cout << "Starting MCMC...\n";
-  double progress = 0.0;
-  for (int i=0; i < niter; i++) {
-    progress = (double) 100 * i / niter;
+  std::cout << "Doing the warm-up (burn-in) of " << nskip << "\n\n";
+  double progress = 0;
+  for (int i = 0; i < nskip; i++) {
+    progress = (double) 100 * i / nskip;
+    Rprintf("%3.2f%% Warm-up completed", progress);
     Rprintf("\r");
-    Rprintf("%3.2f%% completed", progress);
-
     // Save \lambda_j = exp(\mu_j)
     f_lambda = exp(f_mu);
     // Update latent variable \phi_i ~ Gamma[N_i, \sum f_lambda]
     rt = arma::sum(f_lambda, 1);
     for (int k=0; k < n; k++) phi(k) = R::rgamma(n_trials(k), 1.0) / rt(k);
+    // Iterate over categories
+    for (int j = 0; j < d; j++) {
+      // "Gambiarra" to pass the category index inside an attribute of the class
+      j_cat = j;
+      // Iterate over trees
+      for (int t=0; t < ntrees; t++) BackFit(j, t);
+      // Update the DART parameters if required
+      if (sparse) {
+        vc = GetVarCount(j);
+        list_splitprobs[j] = UpdateSplitProbs(vc, alpha_sparse[j], p);
+        if (alpha_random) UpdateAlphaDART(j);
+      }
+    }
+    // Update the sigma and then the leaf prior parameters
+    if (update_sd_prior) {
+      sigma = UpdateSigmaPrior();
+      c_shape = trigamma_inverse(sigma*sigma);
+      d_rate = exp(R::digamma(c_shape));
+      c_logd_lgamc = c_shape * log(d_rate) - R::lgammafn(c_shape);
+      //sigma_mcmc[i] = sigma;
+    }
+  }
 
-    // Iterate over trees categories
-    for (j_cat = 0; j_cat < d; j_cat++) {
-      // Set split-probs of category j, this is used in the Grow, Prune, Change
-      splitprobs = list_splitprobs[j_cat];
-      // Iterate over categories
+  // Open file to write the forests FOR each category
+  std::vector<std::ofstream> files;
+  for (int j=0; j < d; j++) {
+   std::string ff = forests_dir + "/forests_" + std::to_string(j) + ".bin";
+   files.emplace_back(ff, std::ios::binary | std::ios::app);
+  }
+
+
+  std::cout << "Starting post-burn-in iterations of " << ndpost << "\n\n";
+  progress = 0.0;
+  for (int i=0; i < ndpost; i++) {
+    progress = (double) 100 * i / ndpost;
+    Rprintf("%3.2f%% Posterior samples completed", progress);
+    Rprintf("\r");
+
+    // \lambda_j = exp(\mu_j)
+    f_lambda = exp(f_mu);
+    // Update latent variable \phi_i ~ Gamma[N_i, \sum f_lambda]
+    rt = arma::sum(f_lambda, 1);
+    for (int k=0; k < n; k++) phi(k) = R::rgamma(n_trials(k), 1.0) / rt(k);
+
+    // Iterate over categories
+    for (int j = 0; j < d; j++) {
+      // "Gambiarra" to pass the category index inside an attribute of the class
+      j_cat = j;
+      // Iterate over trees
       for (int t=0; t < ntrees; t++) {
-        // Back-fit
-        fit_h = f_mu.col(j_cat) - arma::vec(g_trees.tube(j_cat, t));
-        fit_h_phi = exp(fit_h) % phi;
-        // Update tree
-        UpdateTree(trees[j_cat][t]);
-        // Sample a move
-        move = 0;
-        if (trees[j_cat][t]->NLeaves() > 1) move = sample_discrete(proposals_prob, 3);
-        switch(move) {
-        case 0:
-          Grow(trees[j_cat][t], *this);
-          accept_rate(0, j_cat) += flag_grow;
-          break;
-        case 1:
-          Prune(trees[j_cat][t], *this);
-          accept_rate(1, j_cat) += flag_prune;
-          break;
-        case 2:
-          Change(trees[j_cat][t], *this);
-          accept_rate(2, j_cat) += flag_change;
-          break;
-        }
-        // Draw from the node parameters
-        DrawPosterior(trees[j_cat][t]);
-        // Re-fit
-        f_mu.col(j_cat) = fit_h + arma::vec(g_trees.tube(j_cat, t));
-
+        BackFit(j, t);
         // Compute avg leaves and depth
-        avg_leaves(t, j_cat) += trees[j_cat][t]->NLeaves();
-        avg_depth(t, j_cat) += trees[j_cat][t]->GetDepth(trees[j_cat][t]);
+        avg_leaves(t, j) += trees[j][t]->NLeaves();
+        avg_depth(t, j) += trees[j][t]->GetDepth(trees[j][t]);
 
         // Serialise the tree parameters
-        //if (i >= nskip) serialise_tree(trees[j_cat][t], files[j_cat], np);
+        if (save_trees) serialise_tree(trees[j][t], files[j], np);
+      }
+      // Update the DART parameters if required
+      vc = GetVarCount(j);
+      varcount_mcmc.slice(i).col(j) = vc;
+      if (sparse) {
+        list_splitprobs[j] = UpdateSplitProbs(vc, alpha_sparse[j], p);
+        if (alpha_random) UpdateAlphaDART(j);
       }
     }
 
@@ -412,47 +491,18 @@ void MultinomialBART::RunMCMC() {
       c_logd_lgamc = c_shape * log(d_rate) - R::lgammafn(c_shape);
       sigma_mcmc[i] = sigma;
     }
-
-    // Compute var-count, save, and update Dirichlet prior if needed
-    if (sparse) {
-      for (int j = 0; j < d; j ++) {
-        arma::uvec vc = GetVarCount(j);
-        list_splitprobs[j] = UpdateSplitProbs(vc, alpha_sparse[j], p);
-        if (alpha_random) {
-          slp = 0.0;
-          for (int k = 0; k < p; k++) slp += std::log(list_splitprobs[j][k]);
-          alpha_sparse[j] = UpdateAlphaDirchlet(alphas_grid,
-                                                log_posterior_alpha_sparse,
-                                                slp, (double)p, k_grid);
-
-        }
-      }
-    }
-
-    if (i >= nskip) {
-      // Save draws
-      draws.slice(i - nskip) = f_lambda.each_col() / rt;
-      draws_phi.col(i - nskip) = phi;
-      // Compute var-count, save, and update Dirichlet prior if needed
-      for (int j = 0; j < d; j ++) {
-        arma::uvec vc = GetVarCount(j);
-        varcount_mcmc.slice(i - nskip).col(j) = vc;
-        if (sparse) list_splitprobs[j] = UpdateSplitProbs(vc, alpha_sparse[j], p);
-        if (alpha_random) {
-          slp = 0.0;
-          for (int k = 0; k < p; k++) slp += std::log(list_splitprobs[j][k]);
-          alpha_sparse[j] = UpdateAlphaDirchlet(alphas_grid,
-                                                log_posterior_alpha_sparse,
-                                                slp, (double)p, k_grid);
-
-        }
-      }
+    // Save draws
+    if (keep_draws) {
+      f_lambda = exp(f_mu);
+      draws_prob.slice(i) = f_lambda.each_col() / arma::sum(f_lambda, 1);
+      //draws_phi.col(i) = phi;
     }
   }
   // Close the files
-  //for (int j=0; j < d; j++) files[j].close();
+  for (int j=0; j < d; j++) files[j].close();
 
 }
+
 
 // Exposing a C++ class in R
 //using namespace Rcpp;
@@ -463,6 +513,7 @@ RCPP_MODULE(multinomial_bart) {
 
   // Exposing constructor
   .constructor<arma::umat, arma::mat>()
+  .constructor<int, int>()
 
   // Exposing member functions
   .method("SetMCMC", &MultinomialBART::SetMCMC)
@@ -471,7 +522,7 @@ RCPP_MODULE(multinomial_bart) {
   .method("GetVarCount", &MultinomialBART::GetVarCount2)
 
   // Exposing some attributes
-  .field("draws", &MultinomialBART::draws)
+  .field("draws", &MultinomialBART::draws_prob)
   .field("draws_phi", &MultinomialBART::draws_phi)
   .field("varcount_mcmc", &MultinomialBART::varcount_mcmc)
   .field("splitprobs", &MultinomialBART::list_splitprobs)
@@ -482,7 +533,7 @@ RCPP_MODULE(multinomial_bart) {
   .field("alpha_sparse", &MultinomialBART::alpha_sparse)
   .field("sigma_mcmc", &MultinomialBART::sigma_mcmc)
 
-  .field("path_out", &MultinomialBART::path_out)
+  .field("forests_dir", &MultinomialBART::forests_dir)
   .field("ntrees", &MultinomialBART::ntrees)
   .field("ndpost", &MultinomialBART::ndpost)
   ;
