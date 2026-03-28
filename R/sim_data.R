@@ -93,14 +93,16 @@ sim_data_zanim_ln_bspline_curve <- function(n, d = 3L, n_trials, dof_bs_theta = 
   # Generate data
   Y <- Z <- true_abundance <- true_thetas <- true_zetas <- matrix(0L, nrow = n, ncol = d)
   for (i in seq_len(n)) {
-    ee_u <- exp(etas_theta[i, ] + U[i, ])
-    true_thetas[i, ] <- ee_u / sum(ee_u)
+    ee_u1 <- exp(etas_theta[i, ])
+    true_thetas[i, ] <- ee_u1 / sum(ee_u1)
+    ee_u2 <- exp(etas_theta[i, ] + U[i, ])
+    prob <- ee_u2/sum(ee_u2)
     true_zetas[i, ] <- link_foo(etas_zeta[i, ])
-    tmp <- .rzanim(size = n_trials[i], prob = true_thetas[i, ],
+    tmp <- .rzanim(size = n_trials[i], prob = prob,
                    zeta = true_zetas[i, ], d = d)
     Y[i, ] <- tmp[[1L]]
     Z[i, ] <- tmp[[2L]]
-    true_abundance[i, ] <- ee_u * Z[i, ] / sum(ee_u * Z[i, ])
+    true_abundance[i, ] <- ee_u2 * Z[i, ] / sum(ee_u2 * Z[i, ])
   }
   data_sim <- data.frame(
     id = rep(seq_len(n), each = d),
@@ -108,9 +110,11 @@ sim_data_zanim_ln_bspline_curve <- function(n, d = 3L, n_trials, dof_bs_theta = 
     x = rep(X[, 1L], each = d),
     theta = c(t(true_thetas)),
     zeta = c(t(true_zetas)),
+    abundance = c(t(true_abundance)),
     total = c(t(Y)),
     z = c(t(Z)))
-  list(df = data_sim, Y = Y, X = X, Z = Z, theta = true_thetas, zeta = true_zetas,
+  list(df = data_sim, Y = Y, X = X, Z = Z,
+       theta = true_thetas, zeta = true_zetas,
        abundance = true_abundance, Sigma_U = true_Sigma_U, U = U)
 }
 
