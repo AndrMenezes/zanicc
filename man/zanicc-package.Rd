@@ -2,7 +2,6 @@
 % Please edit documentation in R/zanicc-package.R
 \docType{package}
 \name{zanicc-package}
-\alias{zanicc}
 \alias{zanicc-package}
 \title{Overview of the \pkg{zanicc} package}
 \description{

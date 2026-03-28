@@ -2,11 +2,11 @@
 % Please edit documentation in R/models_r6.R
 \name{ZANIMBART}
 \alias{ZANIMBART}
-\title{ZANIM-BART}
+\title{ZANIM logistic BART}
 \description{
-ZANIM-BART
+ZANIM logistic BART
 
-ZANIM-BART
+ZANIM logistic BART
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -14,11 +14,11 @@ ZANIM-BART
 \item \href{#method-ZANIMBART-new}{\code{ZANIMBART$new()}}
 \item \href{#method-ZANIMBART-SetupMCMC}{\code{ZANIMBART$SetupMCMC()}}
 \item \href{#method-ZANIMBART-RunMCMC}{\code{ZANIMBART$RunMCMC()}}
+\item \href{#method-ZANIMBART-GetPosteriorPredictive}{\code{ZANIMBART$GetPosteriorPredictive()}}
 \item \href{#method-ZANIMBART-GetVarCount}{\code{ZANIMBART$GetVarCount()}}
 \item \href{#method-ZANIMBART-ComputePredictions}{\code{ZANIMBART$ComputePredictions()}}
 \item \href{#method-ZANIMBART-LoadPredictions}{\code{ZANIMBART$LoadPredictions()}}
 \item \href{#method-ZANIMBART-DeleteForests}{\code{ZANIMBART$DeleteForests()}}
-\item \href{#method-ZANIMBART-GetPosteriorPredictive}{\code{ZANIMBART$GetPosteriorPredictive()}}
 \item \href{#method-ZANIMBART-LogPredictiveLikelihood}{\code{ZANIMBART$LogPredictiveLikelihood()}}
 \item \href{#method-ZANIMBART-clone}{\code{ZANIMBART$clone()}}
 }
@@ -28,7 +28,13 @@ ZANIM-BART
 \if{latex}{\out{\hypertarget{method-ZANIMBART-new}{}}}
 \subsection{Method \code{new()}}{
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ZANIMBART$new(Y, X_theta, X_zeta)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{ZANIMBART$new(
+  Y,
+  X_theta,
+  X_zeta,
+  link_zeta = c("probit", "logit"),
+  shared_trees = FALSE
+)}\if{html}{\out{</div>}}
 }
 
 }
@@ -39,8 +45,8 @@ ZANIM-BART
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{ZANIMBART$SetupMCMC(
   v0_theta = 3.5/sqrt(2),
-  v0_zeta = 3,
-  ntrees_theta = 50L,
+  v0_zeta = if (self$link_zeta == "logit") 3.5/sqrt(2) else 3,
+  ntrees_theta = 20L,
   ntrees_zeta = 20L,
   ndpost = 1000L,
   nskip = 1000L,
@@ -48,7 +54,7 @@ ZANIM-BART
   power = 2,
   base = 0.95,
   proposals_prob = c(0.25, 0.25, 0.5),
-  update_sigma_theta = FALSE,
+  update_sigma_theta = TRUE,
   s0_2_theta = 1/ntrees_theta,
   w_ss = 1,
   splitprobs_zi = rep(1/self$p_zeta, self$p_zeta),
@@ -58,8 +64,9 @@ ZANIM-BART
   alpha_sparse = c(1, 1),
   alpha_random = c(FALSE, FALSE),
   xinfo = matrix(),
-  path = tempdir(),
-  keep_draws = FALSE
+  forests_dir = tempdir(),
+  keep_draws = TRUE,
+  save_trees = FALSE
 )}\if{html}{\out{</div>}}
 }
 
@@ -74,11 +81,28 @@ ZANIM-BART
 
 }
 \if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-ZANIMBART-GetPosteriorPredictive"></a>}}
+\if{latex}{\out{\hypertarget{method-ZANIMBART-GetPosteriorPredictive}{}}}
+\subsection{Method \code{GetPosteriorPredictive()}}{
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{ZANIMBART$GetPosteriorPredictive(
+  in_sample = TRUE,
+  batch_size = 100L,
+  ndpost = self$ndpost,
+  forests_dir = self$forests_dir,
+  output_dir = self$forests_dir,
+  n_pred = self$n_pred,
+  ...
+)}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-ZANIMBART-GetVarCount"></a>}}
 \if{latex}{\out{\hypertarget{method-ZANIMBART-GetVarCount}{}}}
 \subsection{Method \code{GetVarCount()}}{
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ZANIMBART$GetVarCount(parameter = c("theta", "zeta"), n_samples = self$npost)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{ZANIMBART$GetVarCount(parameter = c("theta", "zeta"), ndpost = self$npost)}\if{html}{\out{</div>}}
 }
 
 }
@@ -89,9 +113,9 @@ ZANIM-BART
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{ZANIMBART$ComputePredictions(
   X,
-  n_samples = self$ndpost,
-  path = self$path,
-  path_out = self$path,
+  ndpost = self$ndpost,
+  forests_dir = self$forests_dir,
+  output_dir = self$forests_dir,
   parameter = c("theta", "zeta"),
   verbose = TRUE
 )}\if{html}{\out{</div>}}
@@ -104,9 +128,9 @@ ZANIM-BART
 \subsection{Method \code{LoadPredictions()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{ZANIMBART$LoadPredictions(
-  n_samples = self$n_samples_pred,
+  ndpost = self$ndpost_pred,
   parameter = c("theta", "zeta"),
-  path = self$path,
+  output_dir = self$forests_dir,
   n_pred = self$n_pred
 )}\if{html}{\out{</div>}}
 }
@@ -122,22 +146,6 @@ ZANIM-BART
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-ZANIMBART-GetPosteriorPredictive"></a>}}
-\if{latex}{\out{\hypertarget{method-ZANIMBART-GetPosteriorPredictive}{}}}
-\subsection{Method \code{GetPosteriorPredictive()}}{
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ZANIMBART$GetPosteriorPredictive(
-  in_sample = TRUE,
-  n_trials = self$n_trials,
-  batch_size = 100L,
-  n_samples = self$n_samples_pred,
-  path = self$path,
-  n_pred = self$n_pred
-)}\if{html}{\out{</div>}}
-}
-
-}
-\if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-ZANIMBART-LogPredictiveLikelihood"></a>}}
 \if{latex}{\out{\hypertarget{method-ZANIMBART-LogPredictiveLikelihood}{}}}
 \subsection{Method \code{LogPredictiveLikelihood()}}{
@@ -145,8 +153,8 @@ ZANIM-BART
 \if{html}{\out{<div class="r">}}\preformatted{ZANIMBART$LogPredictiveLikelihood(
   in_sample = TRUE,
   Y = NULL,
-  n_samples = self$ndpost,
-  path = self$path,
+  ndpost = self$ndpost,
+  output_dir = self$forests_dir,
   n_pred = self$n_pred,
   nthin = 1L,
   parallel = TRUE,

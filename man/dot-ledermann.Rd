@@ -2,10 +2,12 @@
 % Please edit documentation in R/utils.R
 \name{.ledermann}
 \alias{.ledermann}
-\title{Ledermann bound, thanks to Keefe.}
+\title{Ledermann bound
+Thanks to Keefe.}
 \usage{
 .ledermann(q)
 }
 \description{
-Ledermann bound, thanks to Keefe.
+Ledermann bound
+Thanks to Keefe.
 }

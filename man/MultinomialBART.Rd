@@ -2,11 +2,11 @@
 % Please edit documentation in R/models_r6.R
 \name{MultinomialBART}
 \alias{MultinomialBART}
-\title{Multinomial-BART}
+\title{Multinomial logistic BART}
 \description{
-Multinomial-BART
+Multinomial logistic BART
 
-Multinomial-BART
+Multinomial logistic BART
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -26,7 +26,7 @@ Multinomial-BART
 \if{latex}{\out{\hypertarget{method-MultinomialBART-new}{}}}
 \subsection{Method \code{new()}}{
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{MultinomialBART$new(Y, X)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{MultinomialBART$new(Y, X, shared_trees = FALSE)}\if{html}{\out{</div>}}
 }
 
 }
@@ -44,16 +44,18 @@ Multinomial-BART
   power = 2,
   base = 0.95,
   proposals_prob = c(0.25, 0.25, 0.5),
-  update_sigma = FALSE,
+  update_sigma = TRUE,
   s2_0 = 1/ntrees,
   w_ss = 1,
-  splitprobs = rep(1/ncol(X), ncol(X)),
+  splitprobs = rep(1/self$p, self$p),
   sparse = FALSE,
-  sparse_parms = c(ncol(X), 0.5, 1),
+  sparse_parms = c(self$p, 0.5, 1),
   alpha_sparse = 1,
   alpha_random = FALSE,
   xinfo = matrix(),
-  path = tempdir()
+  forests_dir = tempdir(),
+  keep_draws = TRUE,
+  save_trees = FALSE
 )}\if{html}{\out{</div>}}
 }
 
@@ -72,7 +74,13 @@ Multinomial-BART
 \if{latex}{\out{\hypertarget{method-MultinomialBART-GetPredictions}{}}}
 \subsection{Method \code{GetPredictions()}}{
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{MultinomialBART$GetPredictions(X, n_samples = self$ndpost, path = self$path)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{MultinomialBART$GetPredictions(
+  X,
+  ndpost = self$ndpost,
+  forests_dir = self$forests_dir,
+  output_dir = self$forests_dir,
+  verbose = TRUE
+)}\if{html}{\out{</div>}}
 }
 
 }
@@ -93,9 +101,9 @@ Multinomial-BART
 \if{html}{\out{<div class="r">}}\preformatted{MultinomialBART$GetPosteriorPredictive(
   in_sample = TRUE,
   X = NULL,
-  n_trials = self$n_trials,
-  n_samples = self$ndpost,
-  path = self$path
+  forests_dir = self$forests_dir,
+  ndpost = self$ndpost,
+  ...
 )}\if{html}{\out{</div>}}
 }
 
@@ -109,8 +117,8 @@ Multinomial-BART
   in_sample = TRUE,
   Y = NULL,
   X = NULL,
-  n_samples = self$ndpost,
-  path = self$path,
+  ndpost = self$ndpost,
+  forests_dir = self$forests_dir,
   printevery = 100L,
   nthin = 1L
 )}\if{html}{\out{</div>}}

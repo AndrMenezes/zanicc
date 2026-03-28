@@ -4,7 +4,7 @@
 \alias{.load_bin}
 \title{Read binary data related to the draws of \eqn{\theta} and \eqn{\zeta}.}
 \usage{
-.load_bin(fname, n, d, m)
+.load_bin(fname, len)
 }
 \arguments{
 \item{fname}{file name along with the path.}
