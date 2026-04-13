@@ -89,7 +89,9 @@ void ZANIMBARTProbit::SetMCMC(double v0_theta, double k_zeta,
   // Auxiliary vectors/matrices for the back-fitting in Multinomial
   fit_h = arma::zeros<arma::vec>(n);
   f_mu = arma::zeros<arma::mat>(n, d);
+  f_mu.col(d-1).zeros();
   f_lambda = arma::zeros<arma::mat>(n, d);
+  f_lambda.col(d-1).ones();
   // prob_0 = arma::zeros<arma::mat>(n, d);
   varthetas = arma::zeros<arma::mat>(n, d);
   // Zs = arma::ones<arma::umat>(n, d);
@@ -154,7 +156,10 @@ void ZANIMBARTProbit::SetMCMC(double v0_theta, double k_zeta,
   alpha_zi_post_mean = arma::zeros<arma::mat>(d);
   alpha_mult_post_mean = arma::zeros<arma::mat>(d);
 
-  if (update_sd_prior) sigma_mult_mcmc.resize(ndpost);
+  if (update_sd_prior) {
+    // sigmas_mcmc = arma::zeros<arma::mat>(ndpost+nskip, d);
+    sigma_mult_mcmc.resize(ndpost);
+  }
 
   // Cube to keep the var-count for each iteration-category/forest
   varcount_mcmc_theta = arma::zeros<arma::ucube>(p_theta, d, ndpost);
@@ -348,6 +353,7 @@ void ZANIMBARTProbit::RunMCMC() {
     draws_vartheta = arma::zeros<arma::cube>(n, d, ndpost);
     // draws_Z = arma::ones<arma::ucube>(n, d, ndpost);
     draws_theta = arma::zeros<arma::cube>(n, d, ndpost);
+    // draws_fx = arma::zeros<arma::cube>(n, d, ndpost);
     draws_zeta = arma::zeros<arma::cube>(n, d, ndpost);
     // draws_prob_0 = arma::zeros<arma::cube>(n, d, ndpost);
     // draws_phi = arma::zeros<arma::mat>(n, ndpost);
@@ -366,9 +372,21 @@ void ZANIMBARTProbit::RunMCMC() {
     UpdateLatentVariables();
     // Update trees parameters
     for (int j = 0; j < d; j++) {
+
+      // if (update_sd_prior) {
+      //   bart_mult->sigma = bart_mult->UpdateSigmaPrior(j);
+      //   bart_mult->c_shape = trigamma_inverse(bart_mult->sigma*bart_mult->sigma);
+      //   bart_mult->d_rate = exp(R::digamma(bart_mult->c_shape));
+      //   bart_mult->c_logd_lgamc = bart_mult->c_shape * log(bart_mult->d_rate) - R::lgammafn(bart_mult->c_shape);
+      //   sigmas_mcmc(i, j) = bart_mult->sigma;
+      // }
+
       // "Gambiarra" to pass the category index inside an attribute of the class
-      bart_mult->j_cat = j;
-      for (int t = 0; t < ntrees_theta; t++) BackFitMultinomial(j, t);
+      // if (j != d-1) {
+        bart_mult->j_cat = j;
+        for (int t = 0; t < ntrees_theta; t++) BackFitMultinomial(j, t);
+      // }
+
       for (int t = 0; t < ntrees_zeta; t++) BackFitZI(j, t);
       // Update the DART parameters if required
       if (sparse_mult) {
@@ -412,13 +430,25 @@ void ZANIMBARTProbit::RunMCMC() {
     UpdateLatentVariables();
     // Update trees and their leaf node parameters
     for (int j = 0; j < d; j++) {
+      // Update the sigma prior and then the leaf prior parameters
+      // if (update_sd_prior) {
+      //   bart_mult->sigma = bart_mult->UpdateSigmaPrior(j);
+      //   bart_mult->c_shape = trigamma_inverse(bart_mult->sigma*bart_mult->sigma);
+      //   bart_mult->d_rate = exp(R::digamma(bart_mult->c_shape));
+      //   bart_mult->c_logd_lgamc = bart_mult->c_shape * log(bart_mult->d_rate) - R::lgammafn(bart_mult->c_shape);
+      //   sigmas_mcmc(i+nskip, j) = bart_mult->sigma;
+      // }
+
       // "Gambiarra" to pass the category index inside an attribute of the class
-      bart_mult->j_cat = j;
-      for (int t = 0; t < ntrees_theta; t++) {
-        BackFitMultinomial(j, t);
-        if (save_trees) serialise_tree(bart_mult->trees[j][t], files_theta[j], np_t);
-        avg_leaves_theta(t, j) += bart_mult->trees[j][t]->NLeaves();
-      }
+      // if (j != d-1) {
+        bart_mult->j_cat = j;
+        for (int t = 0; t < ntrees_theta; t++) {
+          BackFitMultinomial(j, t);
+          if (save_trees) serialise_tree(bart_mult->trees[j][t], files_theta[j], np_t);
+          avg_leaves_theta(t, j) += bart_mult->trees[j][t]->NLeaves();
+        }
+      // }
+
       for (int t = 0; t < ntrees_zeta; t++) {
         BackFitZI(j, t);
         if (save_trees) serialise_tree(list_bart_zi[j]->trees[t], files_zeta[j], np_z);
@@ -454,10 +484,12 @@ void ZANIMBARTProbit::RunMCMC() {
       bart_mult->c_logd_lgamc = bart_mult->c_shape * log(bart_mult->d_rate) - R::lgammafn(bart_mult->c_shape);
       sigma_mult_mcmc[i] = bart_mult->sigma;
     }
+
     if (keep_draws) {
       // Save draws
       f_lambda = exp(f_mu);
       draws_theta.slice(i) = f_lambda.each_col() / arma::sum(f_lambda, 1);
+      // draws_fx.slice(i) = f_mu;
       draws_zeta.slice(i) = f0_mu;
       // draws_prob_0.slice(i) = prob_0;
       draws_vartheta.slice(i) = varthetas;
@@ -901,6 +933,7 @@ arma::vec ZANIMBARTProbit::SampleInversePosteriorSeq(std::vector<int> &y,
     files_zeta.emplace_back(ff2, std::ios::binary);
   }
 
+  // Likelihood specification
   int total_zeros = 0, n_trials = 0;
   for (int j=0; j<d; j++) {
     n_trials += y[j];
@@ -936,7 +969,6 @@ arma::vec ZANIMBARTProbit::SampleInversePosteriorSeq(std::vector<int> &y,
     // Load all forests in memory (safer)
     std::vector<std::vector<Node*>> forest_theta(d);
     std::vector<std::vector<Node*>> forest_zeta(d);
-
     for (int j = 0; j < d; j++) {
       for (int h = 0; h < ntrees_theta; h++) {
         forest_theta[j].push_back(deserialise_tree(files_theta[j], np_theta));
@@ -1026,10 +1058,9 @@ RCPP_MODULE(zanim_bart_probit) {
   .method("ComputePredictProbZero", &ZANIMBARTProbit::ComputePredictProbZero)
   .method("GetVarCount", &ZANIMBARTProbit::GetVarCount)
 
+  // Related to inverse posterior
   .method("LogPredictiveDensity", &ZANIMBARTProbit::LogPredictiveDensity)
   .method("LogAvgPredictiveDensity", &ZANIMBARTProbit::LogAvgPredictiveDensity)
-
-
   .method("GetNormaliseProbsIS", &ZANIMBARTProbit::GetNormaliseProbsIS)
   .method("LogPredictiveDensitySeq", &ZANIMBARTProbit::LogPredictiveDensitySeq)
   .method("SampleInversePosteriorSeq", &ZANIMBARTProbit::SampleInversePosteriorSeq)
@@ -1037,10 +1068,11 @@ RCPP_MODULE(zanim_bart_probit) {
   // Exposing some attributes
   .field("draws_theta", &ZANIMBARTProbit::draws_theta)
   .field("draws_zeta", &ZANIMBARTProbit::draws_zeta)
+  // .field("draws_fx", &ZANIMBARTProbit::draws_fx)
   // .field("draws_prob_0", &ZANIMBARTProbit::draws_prob_0)
-  .field("draws_phi", &ZANIMBARTProbit::draws_phi)
+  // .field("draws_phi", &ZANIMBARTProbit::draws_phi)
   .field("draws_vartheta", &ZANIMBARTProbit::draws_vartheta)
-  .field("draws_Z", &ZANIMBARTProbit::draws_Z)
+  // .field("draws_Z", &ZANIMBARTProbit::draws_Z)
 
   .field("varcount_mcmc_theta", &ZANIMBARTProbit::varcount_mcmc_theta)
   .field("varcount_mcmc_zeta", &ZANIMBARTProbit::varcount_mcmc_zeta)
@@ -1049,6 +1081,7 @@ RCPP_MODULE(zanim_bart_probit) {
   .field("splitprobs_mult", &ZANIMBARTProbit::list_splitprobs_mult)
 
   .field("sigma_mult_mcmc", &ZANIMBARTProbit::sigma_mult_mcmc)
+  // .field("sigmas_mcmc", &ZANIMBARTProbit::sigmas_mcmc)
   .field("avg_leaves_theta", &ZANIMBARTProbit::avg_leaves_theta)
   .field("avg_leaves_zeta", &ZANIMBARTProbit::avg_leaves_zeta)
 

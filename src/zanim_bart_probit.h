@@ -59,8 +59,8 @@ public:
   arma::mat f_mu, f_lambda, varthetas;
   // Vector and matrices for ZI probit BART
   arma::vec fit_0_h;
-  arma::mat f0_mu, draws_phi, prob_0;
-  arma::cube draws_theta, draws_zeta, draws_vartheta, draws_prob_0;
+  arma::mat f0_mu, draws_phi, prob_0, sigmas_mcmc;
+  arma::cube draws_theta, draws_zeta, draws_vartheta, draws_prob_0, draws_fx;
   arma::uvec vc_mult, vc_zi;
   arma::umat Zs;
   arma::ucube draws_Z;

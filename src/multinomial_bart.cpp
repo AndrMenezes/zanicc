@@ -174,6 +174,9 @@ void MultinomialBART::Predict(arma::mat &X_, int n_samples,
   //return draws_pred;
 }
 
+
+
+
 double MultinomialBART::UpdateSigmaPrior() {
 
   double s_log_lambda = 0.0;
@@ -189,6 +192,47 @@ double MultinomialBART::UpdateSigmaPrior() {
         s_lambda += exp(leaves[u]->mu(0));
         m_bh++;
       }
+    }
+  }
+  //
+  double y = log(R::unif_rand());
+  y += target_sigma_prior(sigma, m_bh, s_log_lambda, s_lambda, s2_0);
+  // Creating the lower and upper bounds
+  double L = sigma - R::unif_rand() * w_ss;
+  double R = L + w_ss;
+  while (true) {
+    if (L <= 0.0) break;
+    if (target_sigma_prior(L, m_bh, s_log_lambda, s_lambda, s2_0) > y) break;
+    L -= w_ss;
+  }
+  if (L < 0.0) L = 0.0;
+  while (target_sigma_prior(R, m_bh, s_log_lambda, s_lambda, s2_0) > y) R += w_ss;
+  double x_star = L + R::unif_rand() * (R - L);
+  // std::cout << "Start SS \n";
+  // Repeat until create an acceptable proposal
+  do {
+    x_star = L + R::unif_rand() * (R - L);
+    // if (target_sigma_prior(x_star, m_bh, s_log_lambda, s_lambda, s2_0) >= y) break;
+    if (x_star < sigma) L = x_star;
+    else R = x_star;
+  } while (target_sigma_prior(x_star, m_bh, s_log_lambda, s_lambda, s2_0) < y);
+
+  return x_star;
+}
+
+double MultinomialBART::UpdateSigmaPrior(int j) {
+
+  double s_log_lambda = 0.0;
+  double s_lambda = 0.0;
+  int m_bh = 0;
+  // Get the statistics
+  for (int t=0; t < ntrees; t++) {
+    std::vector<Node*> leaves;
+    trees[j][t]->GetLeaves(leaves);
+    for (size_t u = 0; u < leaves.size(); u++) {
+      s_log_lambda += leaves[u]->mu(0);
+      s_lambda += exp(leaves[u]->mu(0));
+      m_bh++;
     }
   }
   //
@@ -256,8 +300,6 @@ void MultinomialBART::SetMCMC(double v0, int ntrees_, int ndpost_, int nskip_,
   d_rate = exp(R::digamma(c_shape));
   c_logd_lgamc = c_shape * log(d_rate) - R::lgammafn(c_shape);
 
-  // prior = new PriorMultinomial(s);
-
   // Setting the cut-points
   if (xinfo.n_rows == 1) {
     x_breaks = arma::zeros<arma::mat>(numcut, p);
@@ -322,6 +364,7 @@ void MultinomialBART::SetMCMC(double v0, int ntrees_, int ndpost_, int nskip_,
   }
   if (update_sd_prior) {
     sigma_mcmc.resize(ndpost + nskip);
+    //sigmas_mcmc = arma::zeros<arma::mat>(ndpost + nskip, d);
   }
 
   // Initialise flags for acceptance rate
@@ -383,6 +426,7 @@ void MultinomialBART::RunMCMC() {
   // Initialise container for keep the draws of the probabilities
   if (keep_draws) {
     draws_prob = arma::zeros<arma::cube>(n, d, ndpost);
+    // draws_fx = arma::zeros<arma::cube>(n, d, ndpost);
     //draws_phi = arma::zeros<arma::mat>(n, ndpost);
   }
 
@@ -406,7 +450,7 @@ void MultinomialBART::RunMCMC() {
   f_lambda = arma::zeros<arma::mat>(n, d);
 
   std::cout << "Doing the warm-up (burn-in) of " << nskip << "\n\n";
-  double progress = 0;
+  double progress = 0.0;
   for (int i = 0; i < nskip; i++) {
     progress = (double) 100 * i / nskip;
     Rprintf("%3.2f%% Warm-up completed", progress);
@@ -418,6 +462,14 @@ void MultinomialBART::RunMCMC() {
     for (int k=0; k < n; k++) phi(k) = R::rgamma(n_trials(k), 1.0) / rt(k);
     // Iterate over categories
     for (int j = 0; j < d; j++) {
+      // Update the sigma and then the leaf prior parameters
+      // if (update_sd_prior) {
+      //   sigma = UpdateSigmaPrior(j);
+      //   c_shape = trigamma_inverse(sigma*sigma);
+      //   d_rate = exp(R::digamma(c_shape));
+      //   c_logd_lgamc = c_shape * log(d_rate) - R::lgammafn(c_shape);
+      //   sigmas_mcmc(i, j) = sigma;
+      // }
       // "Gambiarra" to pass the category index inside an attribute of the class
       j_cat = j;
       // Iterate over trees
@@ -435,7 +487,7 @@ void MultinomialBART::RunMCMC() {
       c_shape = trigamma_inverse(sigma*sigma);
       d_rate = exp(R::digamma(c_shape));
       c_logd_lgamc = c_shape * log(d_rate) - R::lgammafn(c_shape);
-      //sigma_mcmc[i] = sigma;
+      sigma_mcmc[i] = sigma;
     }
   }
 
@@ -462,6 +514,16 @@ void MultinomialBART::RunMCMC() {
 
     // Iterate over categories
     for (int j = 0; j < d; j++) {
+      // Update the sigma and then the leaf prior parameters
+      // if (update_sd_prior) {
+      //   sigma = UpdateSigmaPrior(j);
+      //   c_shape = trigamma_inverse(sigma*sigma);
+      //   d_rate = exp(R::digamma(c_shape));
+      //   c_logd_lgamc = c_shape * log(d_rate) - R::lgammafn(c_shape);
+      //   // sigmas[j] = sigma;
+      //   sigmas_mcmc(i+nskip, j) = sigma;
+      // }
+
       // "Gambiarra" to pass the category index inside an attribute of the class
       j_cat = j;
       // Iterate over trees
@@ -483,18 +545,19 @@ void MultinomialBART::RunMCMC() {
       }
     }
 
-    // Update the sigma and then the leaf prior parameters
+    // // Update the sigma and then the leaf prior parameters
     if (update_sd_prior) {
       sigma = UpdateSigmaPrior();
       c_shape = trigamma_inverse(sigma*sigma);
       d_rate = exp(R::digamma(c_shape));
       c_logd_lgamc = c_shape * log(d_rate) - R::lgammafn(c_shape);
-      sigma_mcmc[i] = sigma;
+      sigma_mcmc[i+nskip] = sigma;
     }
     // Save draws
     if (keep_draws) {
       f_lambda = exp(f_mu);
       draws_prob.slice(i) = f_lambda.each_col() / arma::sum(f_lambda, 1);
+      // draws_fx.slice(i) = f_lambda;
       //draws_phi.col(i) = phi;
     }
   }
@@ -523,6 +586,7 @@ RCPP_MODULE(multinomial_bart) {
 
   // Exposing some attributes
   .field("draws", &MultinomialBART::draws_prob)
+  // .field("draws_fx", &MultinomialBART::draws_fx)
   .field("draws_phi", &MultinomialBART::draws_phi)
   .field("varcount_mcmc", &MultinomialBART::varcount_mcmc)
   .field("splitprobs", &MultinomialBART::list_splitprobs)

@@ -96,6 +96,7 @@ END_RCPP
 }
 
 RcppExport SEXP _rcpp_module_boot_dm_linear_reg();
+RcppExport SEXP _rcpp_module_boot_inverse_posterior();
 RcppExport SEXP _rcpp_module_boot_multinomial_bart();
 RcppExport SEXP _rcpp_module_boot_multinomial_lognormal_bart();
 RcppExport SEXP _rcpp_module_boot_multinomial_shared_bart();
@@ -117,6 +118,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_zanicc_rtnorm", (DL_FUNC) &_zanicc_rtnorm, 3},
     {"_zanicc_compute_crps", (DL_FUNC) &_zanicc_compute_crps, 3},
     {"_rcpp_module_boot_dm_linear_reg", (DL_FUNC) &_rcpp_module_boot_dm_linear_reg, 0},
+    {"_rcpp_module_boot_inverse_posterior", (DL_FUNC) &_rcpp_module_boot_inverse_posterior, 0},
     {"_rcpp_module_boot_multinomial_bart", (DL_FUNC) &_rcpp_module_boot_multinomial_bart, 0},
     {"_rcpp_module_boot_multinomial_lognormal_bart", (DL_FUNC) &_rcpp_module_boot_multinomial_lognormal_bart, 0},
     {"_rcpp_module_boot_multinomial_shared_bart", (DL_FUNC) &_rcpp_module_boot_multinomial_shared_bart, 0},

@@ -6,7 +6,6 @@
 #include "rng.h"
 #include "rng2.h"
 
-
 class MultinomialBART {
 private:
   RNG2 rng;
@@ -78,7 +77,7 @@ public:
 
   // Run MCMC
   void RunMCMC();
-  arma::cube draws_prob;
+  arma::cube draws_prob, draws_fx;
   arma::mat draws_phi;
   // Storage object for number of leaves, depth and acceptance ratio
   arma::umat avg_leaves, avg_depth, accept_rate;
@@ -102,6 +101,9 @@ public:
   //arma::vec PredictMu(int j);
 
   double UpdateSigmaPrior();
+  double UpdateSigmaPrior(int j);
+
+  arma::mat sigmas_mcmc;
 
   void UpdateAlphaDART(int &j);
   double slp;

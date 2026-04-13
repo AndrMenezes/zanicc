@@ -8,4 +8,6 @@ double log_pmf_zanim_approx(std::vector<int> x, std::vector<double> prob,
                             int nskip);
 double log_pmf_zanidm(std::vector<int> x, std::vector<double> alpha,
                       std::vector<double> zeta);
+inline double log_pmf_mult(std::vector<int> &x, int &size,
+                           std::vector<double> &prob);
 #endif
