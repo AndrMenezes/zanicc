@@ -43,7 +43,7 @@ ZANIMBART <- R6::R6Class(classname = "ZANIMBART", public = list(
     self$n_trials <- rowSums(Y)
 
   },
-  SetupMCMC = function(v0_theta = 3.5 / sqrt(2),
+  SetupMCMC = function(v0_theta = 1.5 / sqrt(2),
                        v0_zeta = if (self$link_zeta == "logit") 3.5 / sqrt(2) else 3.0,
                        ntrees_theta = 20L, ntrees_zeta = 20L,
                        ndpost = 1000L, nskip = 1000L,
@@ -297,7 +297,7 @@ ZANIMLNBART <- R6::R6Class(classname = "ZANIMLNBART", public = list(
     self$p_zeta <- ncol(X_zeta)
     self$n_trials <- rowSums(Y)
   },
-  SetupMCMC = function(v0_theta = 3.5 / sqrt(2), k_zeta = 3.0,
+  SetupMCMC = function(v0_theta = 1.5 / sqrt(2), k_zeta = 3.0,
                        ntrees_theta = 50L, ntrees_zeta = 100L,
                        ndpost = 1000L, nskip = 1000L,
                        covariance_type = c("diag", "wishart", "fa", "fa_mgp"),

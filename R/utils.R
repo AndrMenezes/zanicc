@@ -156,3 +156,56 @@ summarise_draws_3d <- function(x, prob = 0.05) {
   }
   all_sets
 }
+
+#' Create a rectangle uniform grid inside region of the observed data
+#' @param X matrix with the observed data. It should have at least two columns.
+#' @param step_size double with the step size to create an exhaustive grid
+#' @param scale_factors vector with double to re-scale the values `X[j]` from 0 to `scale_factor[j]`.
+#' @description
+#' First, create an exhaustive grid using `seq(0.0, scale_factors[j], by = step_size)`,
+#' then filter each point in this grid checking if at least one observed value of `X`
+#' is inside the grid.
+#'
+create_rectangle_grid <- function(X, step_size = 1.0,
+                                  scale_factors = rep(20, ncol(X))) {
+
+  p <- ncol(X)
+  if (p < 2L) stop("Create uniform grid for p>1 covariates")
+
+  n <- nrow(X)
+  # Get the range of the X's
+  min_ <- apply(X, 2, min)
+  max_ <- apply(X, 2, max)
+  range_ <- max_ - min_
+
+  # Re-scale each column to vary between (0, scale_factor_j)
+  X_scale <- matrix(nrow = n, ncol = p)
+  for (j in seq_len(p)) {
+    X_scale[, j] <- scale_factors[j] * (X[, j] - min_[j]) / range_[j]
+  }
+  # Create an exhaustive grid (TODO: this is inefficient, need to think a better way)
+  X_grid <- expand.grid(lapply(seq_len(p), function(j) seq(0.0, scale_factors[j],
+                                                           by = step_size)))
+  X_grid <- as.matrix(X_grid)
+  n_grid <- nrow(X_grid)
+  # Loop through the exhaustive grid and keep only the points that belongs to observed data +- step_size
+  keep <- logical(length = n_grid)
+  for (i in seq_len(n_grid)) {
+    cond <- abs(sweep(X_scale, 2, X_grid[i, ], "-")) < step_size
+    keep[i] <- any(rowSums(cond) == p)
+  }
+  if (sum(keep) == 0) stop("Did not find any points inside the observed data.")
+  cat("Keep" , 100*mean(keep), "% of the ", n_grid, "points in the uniform exhaustive grid.")
+  # Filter the data and scale the grid into the original scale of X
+  X_grid <- X_grid[keep, ]
+  for (j in seq_len(p)) {
+    X_grid[, j] <- X_grid[, j] * range_[j] / scale_factors[j] + min_[j]
+  }
+  # Return the grid
+  X_grid
+}
+
+
+
+
+

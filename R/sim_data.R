@@ -164,6 +164,8 @@ sim_data_zanim_friedman <- function(n, n_trials, p_theta = 10L, p_zeta = 10L,
 
 #' @export
 sim_data_multinomial_bspline_curve <- function(n, d, n_trials, dof_bs = 6L) {
+
+  if (length(n_trials)) n_trials <- rep(n_trials, n)
   # Linear predictor
   X <- as.matrix(seq(-1.0, 1.0, length.out = n))
   X1_bs <- splines::bs(X, dof_bs)
@@ -174,7 +176,7 @@ sim_data_multinomial_bspline_curve <- function(n, d, n_trials, dof_bs = 6L) {
   Y <- theta_truth <- matrix(0L, nrow = n, ncol = d)
   for (i in seq_len(n)) {
     theta_truth[i, ] <- exp(eta_theta[i, ]) / sum(exp(eta_theta[i, ]))
-    Y[i, ] <- stats::rmultinom(n = 1L, size = n_trials, prob = theta_truth[i, ])
+    Y[i, ] <- stats::rmultinom(n = 1L, size = n_trials[i], prob = theta_truth[i, ])
   }
   data_sim <- data.frame(
     id = rep(seq_len(n), each = d),
@@ -232,3 +234,43 @@ sim_data_binary_friedman <- function(n, p = 10L, link = stats::plogis) {
   y <- stats::rbinom(n = n, size = 1L, prob = theta)
   list(y = y, X = X, theta = theta)
 }
+
+#' @export
+sim_data_multinomial_2d <- function(n_grid = 20, d, n_trials) {
+
+  # Covariates
+  xmax <- 2.0
+  x1 <- seq(-xmax, xmax, length.out = n_grid)
+  x2 <- seq(-xmax, xmax, length.out = n_grid)
+  X <- expand.grid(x1 = x1, x2 = x2)
+  X <- as.matrix(X)
+  n <- nrow(X)
+
+  if (length(n_trials)) n_trials <- rep(n_trials, n)
+
+  # Linear predictor
+  eta_theta <- matrix(nrow = n, ncol = d)
+  # Intercept
+  a0 <- stats::runif(n = d, -2.3, -1.0)
+  for (j in seq_len(d)) {
+    parms <- stats::runif(4, 1, 4)
+    eta_theta[, j] <- a0[j] + 1/(1 + exp(-parms[1] * X[, 1L] - parms[2] * X[, 2L]))  + 1/(1 + exp(-parms[3]*X[, 1L] - parms[4] * X[, 2L]))
+  }
+  # Generate data
+  Y <- theta_truth <- matrix(0L, nrow = n, ncol = d)
+  for (i in seq_len(n)) {
+    theta_truth[i, ] <- exp(eta_theta[i, ]) / sum(exp(eta_theta[i, ]))
+    Y[i, ] <- stats::rmultinom(n = 1L, size = n_trials[i], prob = theta_truth[i, ])
+  }
+  data_sim <- data.frame(
+    id = rep(seq_len(n), each = d),
+    category = rep(seq_len(d), times = n),
+    x1 = rep(X[, 1L], each = d),
+    x2 = rep(X[, 2L], each = d),
+    theta = c(t(theta_truth)),
+    total = c(t(Y)),
+    prop = c(apply(Y, 1L, function(z) z / sum(z))))
+  list(df = data_sim, Y = Y, X = X, theta = theta_truth)
+}
+
+
