@@ -37,7 +37,7 @@ ZANIM logistic normal BART
 \subsection{Method \code{SetupMCMC()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{ZANIMLNBART$SetupMCMC(
-  v0_theta = 3.5/sqrt(2),
+  v0_theta = 1.5/sqrt(2),
   k_zeta = 3,
   ntrees_theta = 50L,
   ntrees_zeta = 100L,

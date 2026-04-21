@@ -44,7 +44,7 @@ ZANIM logistic BART
 \subsection{Method \code{SetupMCMC()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{ZANIMBART$SetupMCMC(
-  v0_theta = 3.5/sqrt(2),
+  v0_theta = 1.5/sqrt(2),
   v0_zeta = if (self$link_zeta == "logit") 3.5/sqrt(2) else 3,
   ntrees_theta = 20L,
   ntrees_zeta = 20L,
