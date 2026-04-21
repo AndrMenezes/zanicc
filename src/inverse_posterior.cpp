@@ -80,7 +80,7 @@ arma::mat InversePosterior::SamplerMLBARTeSS(std::vector<int> &y,
   for (int t = 0; t < ndpost; t++) {
 
     progress = (double) 100 * t / ndpost;
-    Rprintf("%3.2f%% Warm-up completed", progress);
+    Rprintf("%3.2f%% Sampling completed", progress);
     Rprintf("\r");
 
     // Load all forests in memory (safer)
