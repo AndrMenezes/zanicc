@@ -21,12 +21,14 @@ compute_proposal_fx_ml_bart(
 \item{proposal_parms, n_proposal}{proposal parameters and number of points to draw
 from the proposal distribution.}
 
-\item{load}{Logitical indicating if the posterior-predictive distribution of f(x)
+\item{load}{logical. Whether the posterior-predictive distribution of \eqn{f(x^\ast)}.
 should be loaded in memory.}
 
-\item{output_dir}{where to save the predictions, \eqn{f(x^\ast)} and the proposal \eqn{x^\ast}}
+\item{save}{logical, whether to save the simulated proposal values for \eqn{x^\ast} in the \code{output_dir} folder.}
 
-\item{x_proposal}{matrix with proposal values for x*. Default is NULL, which then
+\item{output_dir}{where to save the predictions, \eqn{f(x^\ast)} and the proposal \eqn{x^\ast}.}
+
+\item{x_proposal}{matrix with proposal values for \eqn{x^\ast}. Default is \code{NULL}, which then
 generate uniform random values as the proposal distribution of x*.}
 }
 \description{

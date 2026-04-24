@@ -2,7 +2,7 @@
 % Please edit documentation in R/inverse_posterior.R
 \name{.gibbs_ml_bart}
 \alias{.gibbs_ml_bart}
-\title{Two-stage Gibbs sampler for the inverse posterior}
+\title{Two-stage Gibbs sampler for the inverse posterior using the elliptical slice sampling.}
 \usage{
 .gibbs_ml_bart(
   Y,
@@ -15,25 +15,6 @@
   n_rep = 2L
 )
 }
-\arguments{
-\item{mean_prior, S_prior}{mean and covariance matrix prior use in the elliptical
-slice sampling.}
-
-\item{forests_dir}{folder where the posterior distribution of forests are located.}
-
-\item{ntrees}{number of trees used in the forward model}
-
-\item{ndpost}{number of posterior draws used in the forward model}
-
-\item{n_rep}{number times to repeat one iteration of elliptical slice sampling.}
-
-\item{y}{observed count vector.}
-
-\item{x_ini}{initial value for the x*.}
-}
 \description{
-Two-stage Gibbs sampler for the inverse posterior
-}
-\details{
-Two-stage Gibbs sampler using the elliptical slice sampling.
+Two-stage Gibbs sampler for the inverse posterior using the elliptical slice sampling.
 }

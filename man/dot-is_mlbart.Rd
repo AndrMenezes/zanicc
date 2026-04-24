@@ -2,7 +2,8 @@
 % Please edit documentation in R/inverse_posterior.R
 \name{.is_mlbart}
 \alias{.is_mlbart}
-\title{Sample form the inverse posterior using the ML-BART model.}
+\title{Importance sampling for approximate the inverse posterior distribution using the
+ML-BART model.}
 \usage{
 .is_mlbart(
   object,
@@ -11,19 +12,13 @@
   n_proposal = 5000L,
   sir = FALSE,
   n_resampling = floor(n_proposal/2),
-  dir_posterior_fx = NULL,
-  save = FALSE,
   output_dir = tempdir(),
+  save = FALSE,
+  dir_posterior_fx = NULL,
   x_proposal = NULL
 )
 }
-\arguments{
-\item{object}{an object of class}
-
-\item{Y}{matrix or vector with the compositional counts.}
-
-\item{method}{which sampler method to use. Options are is, sir and ess.}
-}
 \description{
-Sample form the inverse posterior using the ML-BART model.
+Importance sampling for approximate the inverse posterior distribution using the
+ML-BART model.
 }
