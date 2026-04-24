@@ -236,14 +236,20 @@ sim_data_binary_friedman <- function(n, p = 10L, link = stats::plogis) {
 }
 
 #' @export
-sim_data_multinomial_2d <- function(n_grid = 20, d, n_trials) {
+sim_data_multinomial_2d <- function(n_grid = 20, n_sample = n_grid^2, d, n_trials,
+                                    region = c("square", "convexhull"),
+                                    xmax = 2.0, X_aux) {
 
   # Covariates
-  xmax <- 2.0
-  x1 <- seq(-xmax, xmax, length.out = n_grid)
-  x2 <- seq(-xmax, xmax, length.out = n_grid)
-  X <- expand.grid(x1 = x1, x2 = x2)
-  X <- as.matrix(X)
+  region <- match.arg(region)
+  if (region == "convexhull") {
+    X <- suppressWarnings(rconvexhull(n = n_sample, X = X_aux))
+  } else {
+    x1 <- seq(-xmax, xmax, length.out = n_grid)
+    x2 <- seq(-xmax, xmax, length.out = n_grid)
+    X <- expand.grid(x1 = x1, x2 = x2)
+    X <- as.matrix(X)
+  }
   n <- nrow(X)
 
   if (length(n_trials)) n_trials <- rep(n_trials, n)
@@ -254,23 +260,93 @@ sim_data_multinomial_2d <- function(n_grid = 20, d, n_trials) {
   a0 <- stats::runif(n = d, -2.3, -1.0)
   for (j in seq_len(d)) {
     parms <- stats::runif(4, 1, 4)
-    eta_theta[, j] <- a0[j] + 1/(1 + exp(-parms[1] * X[, 1L] - parms[2] * X[, 2L]))  + 1/(1 + exp(-parms[3]*X[, 1L] - parms[4] * X[, 2L]))
+    eta_theta[, j] <- a0[j] + 1/(1 + exp(-parms[1] * X[, 1L] - parms[2] * X[, 2L]))
+    eta_theta[, j] <- eta_theta[, j] + 1/(1 + exp(-parms[3]*X[, 1L] - parms[4] * X[, 2L]))
   }
   # Generate data
-  Y <- theta_truth <- matrix(0L, nrow = n, ncol = d)
+  Y <- true_theta <- matrix(0L, nrow = n, ncol = d)
   for (i in seq_len(n)) {
-    theta_truth[i, ] <- exp(eta_theta[i, ]) / sum(exp(eta_theta[i, ]))
-    Y[i, ] <- stats::rmultinom(n = 1L, size = n_trials[i], prob = theta_truth[i, ])
+    true_theta[i, ] <- exp(eta_theta[i, ]) / sum(exp(eta_theta[i, ]))
+    Y[i, ] <- stats::rmultinom(n = 1L, size = n_trials[i], prob = true_theta[i, ])
   }
   data_sim <- data.frame(
     id = rep(seq_len(n), each = d),
     category = rep(seq_len(d), times = n),
     x1 = rep(X[, 1L], each = d),
     x2 = rep(X[, 2L], each = d),
-    theta = c(t(theta_truth)),
+    theta = c(t(true_theta)),
     total = c(t(Y)),
     prop = c(apply(Y, 1L, function(z) z / sum(z))))
-  list(df = data_sim, Y = Y, X = X, theta = theta_truth)
+  list(df = data_sim, Y = Y, X = X, theta = true_theta)
+}
+
+#' @export
+sim_data_zanim_2d <- function(n_grid = 20, n_sample = n_grid^2, d, n_trials,
+                              region = c("square", "convexhull"),
+                              xmax = 2.0, X_aux) {
+
+  # Covariates
+  region <- match.arg(region)
+  if (region == "convexhull") {
+    X <- suppressWarnings(rconvexhull(n = n_sample, X = X_aux))
+  } else {
+    x1 <- seq(-xmax, xmax, length.out = n_grid)
+    x2 <- seq(-xmax, xmax, length.out = n_grid)
+    X <- expand.grid(x1 = x1, x2 = x2)
+    X <- as.matrix(X)
+  }
+  n <- nrow(X)
+
+  if (length(n_trials)) n_trials <- rep(n_trials, n)
+
+  # Linear predictor
+  eta_theta <- matrix(nrow = n, ncol = d)
+  eta_zeta <- matrix(nrow = n, ncol = d)
+  # Intercept
+  a0 <- stats::runif(n = d, -2.3, -1.0)
+  b0 <- stats::runif(n = d, -1.0, -0.5)
+  for (j in seq_len(d)) {
+    parms_c <- stats::runif(4, 1.0, 4.0)
+    eta_theta[, j] <- a0[j] + 1.0/(1.0 + exp(-parms_c[1] * X[, 1L] - parms_c[2] * X[, 2L]))
+    eta_theta[, j] <- eta_theta[, j] + 1.0/(1.0 + exp(-parms_c[3]*X[, 1L] + parms_c[4] * X[, 2L]))
+    scale_z <- stats::runif(1, 1.0, 4.0)
+    eta_zeta[, j] <- b0[j] + 1.0/(1.0 + exp(-scale_z * X[, 1L] * X[, 2L]))
+  }
+  true_zetas <- stats::pnorm(eta_zeta)
+  eta_theta <- exp(eta_theta)
+  # Generate data
+  Y <- Z <- true_thetas <- true_varthetas <- matrix(nrow = n_sample, ncol = d)
+  for (i in seq_len(n_sample)) {
+    z <- stats::rbinom(n = d, size = 1L, prob = 1.0 - true_zetas[i, ])
+    is_zero <- z == 0L
+    # Hack to avoid all zeros (it happen very rarely)
+    while (all(is_zero)) {
+      z <- stats::rbinom(n = d, size = 1L, prob = 1.0 - true_zetas[i, ])
+      is_zero <- z == 0L
+    }
+    true_thetas[i, ] <- eta_theta / sum(eta_theta)
+    true_varthetas[i, ] <- z * eta_theta / sum(z * eta_theta)
+    if (sum(is_zero) == d - 1L) {
+      Y[i, ] <- rep(0L, d)
+      Y[i, !is_zero] <- n_trials[i]
+    } else {
+      Y[i, ] <- stats::rmultinom(n = 1L, size = n_trials[i],
+                                 prob = true_varthetas[i, ])
+    }
+    Z[i, ] <- z
+  }
+  data_sim <- data.frame(
+    id = rep(seq_len(n), each = d),
+    category = rep(seq_len(d), times = n),
+    x1 = rep(X[, 1L], each = d),
+    x2 = rep(X[, 2L], each = d),
+    theta = c(t(true_thetas)),
+    zeta = c(t(true_zetas)),
+    vartheta = c(t(true_varthetas)),
+    total = c(t(Y)),
+    prop = c(apply(Y, 1L, function(z) z / sum(z))))
+  list(df = data_sim, Y = Y, X = X, theta = true_thetas, zeta = true_zetas,
+       vartheta = true_varthetas)
 }
 
 
