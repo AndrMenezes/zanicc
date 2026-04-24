@@ -104,7 +104,7 @@ ZANIMBART <- R6::R6Class(classname = "ZANIMBART", public = list(
       self$draws_abundance <- self$cpp_obj$draws_vartheta
       self$draws_zeta <- self$cpp_obj$draws_zeta
       if (self$link_zeta == "probit") self$draws_zeta <- stats::pnorm(self$draws_zeta)
-      self$draws_phi <- self$cpp_obj$draws_phi
+      # self$draws_phi <- self$cpp_obj$draws_phi
       self$varcount_theta <- self$cpp_obj$varcount_mcmc_theta
       self$varcount_zeta <- self$cpp_obj$varcount_mcmc_zeta
     }
@@ -590,7 +590,7 @@ MultinomialBART <- R6::R6Class(classname = "MultinomialBART", public = list(
     # Copy draws to R
     if (self$keep_draws) {
       self$draws_theta <- self$cpp_obj$draws
-      self$draws_phi <- self$cpp_obj$draws_phi
+      # self$draws_phi <- self$cpp_obj$draws_phi
       self$varcount <- self$cpp_obj$varcount_mcmc
     }
   },
