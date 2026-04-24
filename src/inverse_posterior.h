@@ -21,6 +21,9 @@ public:
   std::vector<double> SamplerMLBARTeSS(arma::umat Y, arma::mat X_ini, int ndpost,
                                        std::vector<double> mean_prior, arma::mat S_prior,
                                        int n_rep);
+  std::vector<double> SamplerZANIMBARTeSS(arma::umat Y, arma::mat X_ini, int ndpost,
+                                          std::vector<double> mean_prior,
+                                          arma::mat S_prior, int n_rep);
 
   // void SamplerISMLBART();
   //  void SamplerMHMLBART();

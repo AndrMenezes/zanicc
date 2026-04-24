@@ -306,3 +306,23 @@ double log_pmf_zanidm(std::vector<int> x, std::vector<double> alpha,
   }
   return(log_sum_exp(tmp));
 }
+
+
+double log_pmf_zanim_conditional(std::vector<int> x, std::vector<double> prob,
+                                 std::vector<double> zeta) {
+  int d = x.size();
+  std::vector<double> z(d, 1.0), vartheta(d, 0.0);
+  double s = 0.0;
+  for (int j = 0; j < d; j++) {
+    if (x[j] == 0) z[j] = R::rbinom(1, 1.0-zeta[j]);
+    vartheta[j] = prob[j] * z[j];
+    s += vartheta[j];
+  }
+  if (s == 0.0) return 0.0;
+
+  int n_trials = std::accumulate(x.begin(), x.end(), 0.0);
+  for(auto &p : vartheta) p /= s;
+  return log_pmf_mult(x, n_trials, vartheta);
+}
+
+
