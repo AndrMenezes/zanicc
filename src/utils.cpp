@@ -49,3 +49,44 @@ arma::vec compute_crps(const arma::mat &samples,
   }
   return(crps);
 }
+
+
+std::vector<int> umat_to_int_rowmajor(const arma::umat &Y) {
+  int n = Y.n_rows, d = Y.n_cols;
+  std::vector<int> out(n * d);
+  for (int i = 0; i < n; ++i)
+    for (int j = 0; j < d; ++j)
+      out[i * d + j] = static_cast<int>(Y(i, j));
+  return out;
+}
+
+std::vector<double> mat_to_double_rowmajor(const arma::mat &X) {
+  int n = X.n_rows, d = X.n_cols;
+  std::vector<double> out(n * d);
+  for (int i = 0; i < n; ++i)
+    for (int j = 0; j < d; ++j)
+      out[i * d + j] = static_cast<double>(X(i, j));
+  return out;
+}
+
+void rmvnorm_chol(std::vector<double>& out,
+                  const std::vector<double>& mean,
+                  const std::vector<double>& L, int p) {
+  std::vector<double> z(p);
+
+  for (int j = 0; j < p; j++) z[j] = R::rnorm(0.0, 1.0);
+
+  // Matrix multiplication using the fact that L is upper triangle
+  double sum;
+  for (int j = 0; j < p; j++) {
+    sum = 0.0;
+    for (int k = 0; k <= j; k++) sum += z[k] * L[k * p + j];
+    out[j] = mean[j] + sum;
+  }
+}
+
+// a*x + b*y
+void axpby(double* out, double* x, double* y,
+           double a, double b, int p) {
+  for (int j = 0; j < p;j++) out[j] = a * x[j] + b * y[j];
+}

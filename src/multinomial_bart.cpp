@@ -587,7 +587,7 @@ RCPP_MODULE(multinomial_bart) {
   // Exposing some attributes
   .field("draws", &MultinomialBART::draws_prob)
   // .field("draws_fx", &MultinomialBART::draws_fx)
-  .field("draws_phi", &MultinomialBART::draws_phi)
+  // .field("draws_phi", &MultinomialBART::draws_phi)
   .field("varcount_mcmc", &MultinomialBART::varcount_mcmc)
   .field("splitprobs", &MultinomialBART::list_splitprobs)
   .field("avg_leaves", &MultinomialBART::avg_leaves)
