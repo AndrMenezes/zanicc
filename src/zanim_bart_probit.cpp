@@ -963,8 +963,7 @@ arma::vec ZANIMBARTProbit::SampleInversePosteriorSeq(std::vector<int> &y,
 
   // Iterate over the MCMC samples
   for (int t = 0; t < n_samples; t++) {
-
-    // if (t % 10 == 0) std::cout << "Iteration: " << t << "\n";
+    // if (t % 10 == 0) std::cout << "Iteration: " << t << "\n";6
 
     // Load all forests in memory (safer)
     std::vector<std::vector<Node*>> forest_theta(d);

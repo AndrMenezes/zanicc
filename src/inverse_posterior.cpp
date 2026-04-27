@@ -233,15 +233,32 @@ std::vector<double> InversePosterior::SamplerMLBARTeSS(arma::umat Y,
 
 // Elliptical slice sampling for ZANIM-BART
 std::vector<double> InversePosterior::SamplerZANIMBARTeSS(arma::umat Y,
-                                                       arma::mat X_ini,
-                                                       int ndpost,
-                                                       std::vector<double> mean_prior,
-                                                       arma::mat S_prior,
-                                                       int n_rep) {
+                                                          arma::mat X_ini,
+                                                          int ndpost,
+                                                          std::vector<double> mean_prior,
+                                                          arma::mat S_prior,
+                                                          int n_rep, int conditional) {
 
-  int p = X_ini.n_cols;
-  int n_samples = Y.n_rows;
-  int np = 1;
+  // Dimension
+  int p = X_ini.n_cols, n_samples = Y.n_rows, np = 1;
+
+  // Function pointer for which likelihood function to use, depending on the
+  // conditional argument
+  std::function<double(const std::vector<int>&, const std::vector<double>&,
+                       const std::vector<double>&)> log_pmf;
+  if (conditional) {
+    log_pmf = [](const std::vector<int>& y,
+                 const std::vector<double>& theta,
+                 const std::vector<double>& zeta) {
+      return log_pmf_zanim_conditional(y, theta, zeta);
+    };
+  } else {
+    log_pmf = [](const std::vector<int>& y,
+                 const std::vector<double>& theta,
+                 const std::vector<double>& zeta) {
+      return log_pmf_zanim(y, theta, zeta);
+    };
+  }
 
   // Transform data into row-major vectors
   std::vector<int> Yf = umat_to_int_rowmajor(Y);
@@ -277,7 +294,7 @@ std::vector<double> InversePosterior::SamplerZANIMBARTeSS(arma::umat Y,
 
     int base_i = i * ndpost * p;
 
-    // Copy Y_i and compute the total
+    // Get current values of Y_i and compute the N_i=\sum_j(y_{ij})
     ntrial = 0;
     for (int j = 0; j < d; j++) {
       y[j] = Yf[i * d + j];
@@ -310,14 +327,14 @@ std::vector<double> InversePosterior::SamplerZANIMBARTeSS(arma::umat Y,
       for (int k=0; k < n_rep; k++) {
         // Draw from the prior
         rmvnorm_chol(nu, mean_prior, chol_Sf, p);
-
         // Get the predictions for theta and zeta given the x_cur
         std::fill(theta.begin(), theta.end(), 0.0);
         std::fill(zeta.begin(), zeta.end(), 0.0);
         GetPredictionZANIMBART(x_cur, theta, zeta, forest_theta, forest_zeta);
         // Set a log-likelihood threshold
         u_s = log(R::unif_rand());
-        u_s += log_pmf_zanim(y, theta, zeta);
+        // double ll_cur = log_pmf(y, theta, zeta);
+        u_s += log_pmf(y, theta, zeta);
         // Draw an angle and the proposal
         nu_angle = R::unif_rand() * PI_2;
         nu_max = nu_angle;
@@ -329,7 +346,9 @@ std::vector<double> InversePosterior::SamplerZANIMBARTeSS(arma::umat Y,
           std::fill(zeta.begin(), zeta.end(), 0.0);
           // Get the predictions for theta  given the x_star
           GetPredictionZANIMBART(x_star, theta, zeta, forest_theta, forest_zeta);
-          if (log_pmf_zanim(y, theta, zeta) > u_s) break;
+          // double ll = log_pmf(y, theta, zeta);
+          //std::cout << "PROPOSAL and CURRENT log-likelihood " << ll << " " << ll_cur << " " << u_s << "\n";
+          if (log_pmf(y, theta, zeta) > u_s) break;
           if (nu_angle < 0) nu_min = nu_angle;
           else nu_max = nu_angle;
           // Update the angle and the proposal
@@ -382,6 +401,7 @@ RCPP_MODULE(inverse_posterior) {
 
   // Methods
   .method("SamplerMLBARTeSS", &InversePosterior::SamplerMLBARTeSS)
+  .method("SamplerZANIMBARTeSS", &InversePosterior::SamplerZANIMBARTeSS)
 
   ;
 

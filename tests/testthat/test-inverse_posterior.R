@@ -93,10 +93,10 @@ test_that("inverse posterior ML-BART one-dimension", {
                     dir_posterior_fx = path_res, n_proposal = N_PROPOSAL, sir = TRUE)
 
   # eSS
-  ess <- .gibbs_mlbart(Y = Y_test, mean_prior = ess_parms$mean_prior,
+  ess <- .gibbs_sampler(Y = Y_test, mean_prior = ess_parms$mean_prior,
                         S_prior = ess_parms$S_prior,
                         forests_dir = forests_dir, ntrees = NTREES,
-                        ndpost = NDPOST, n_rep = 2L)
+                        ndpost = NDPOST, n_rep = 2L, forward_model = "ml_bart")
 
   # Some checks in the internal functions
 
@@ -297,9 +297,9 @@ test_that("inverse posterior ML-BART two-dimension", {
   # eSS
   mean_prior <- rep(0.0, 2)
   S_prior <- diag(1.0, nrow = 2)
-  ess <- .gibbs_mlbart(Y = Y_test, mean_prior = mean_prior, S_prior = S_prior,
+  ess <- .gibbs_sampler(Y = Y_test, mean_prior = mean_prior, S_prior = S_prior,
                         forests_dir = forests_dir, ntrees = NTREES,
-                        ndpost = NDPOST, n_rep = 2L)
+                        ndpost = NDPOST, n_rep = 2L, forward_model = "ml_bart")
 })
 
 
@@ -372,18 +372,27 @@ test_that("inverse posterior ZANIM-BART one-dimension", {
   sir_cond <- .is_zanimbart(object = zanim_bart, Y = Y_test, proposal_parms = proposal_parms,
                             dir_posterior_fx = path_res, n_proposal = N_PROPOSAL, sir = TRUE,
                             conditional = TRUE)
+  # eSS
+  mean_prior = rep(0.0, 1); S_prior = diag(1.0, nrow = 1); n_rep = 1
+  ess <- .gibbs_sampler(Y = Y_test, mean_prior = mean_prior, S_prior = S_prior,
+                        forests_dir = forests_dir, ntrees = NTREES,
+                        ndpost = NDPOST, n_rep = 4L, forward_model = "zanim_bart")
+  ess_cond <- .gibbs_sampler(Y = Y_test, mean_prior = mean_prior, S_prior = S_prior,
+                             forests_dir = forests_dir, ntrees = NTREES,
+                             ndpost = NDPOST, n_rep = 4L,
+                             forward_model = "zanim_bart", conditional = TRUE)
 
   x_proposal <- is[, -seq_len(n_test)]
-  par(mfrow = c(1, 2))
-  plot(x_proposal, is[, 1], type = "h", xlim = c(-0.6, -0.4))
-  plot(x_proposal, is_cond[, 1], type = "h", xlim = c(-0.6, -0.4))
-
+  # par(mfrow = c(1, 2))
+  # plot(x_proposal, is[, 1], type = "h", xlim = c(-0.6, -0.4))
+  # plot(x_proposal, is_cond[, 1], type = "h", xlim = c(-0.6, -0.4))
+  #
   # Visual comparison between the three methods
-  pdf(file.path(path_res, "inverse_posterior.pdf"), width = 6, height = 3)
+  pdf(file.path(path_res, "inverse_posterior_new.pdf"), width = 6, height = 3)
   for (i in seq_len(n_test)) {
     x_true <- X_test[i, ]
     cat(i, "\n")
-    par(mfrow = c(2, 2), mar = c(3, 3, 1, 1))
+    par(mfrow = c(3, 2), mar = c(3, 3, 1, 1))
     plot(x_proposal, is[, i], type = "h",
          main = paste0("IS, y_i = (", paste0(Y_test[i, ], collapse = ","), ")"))
     points(x_true, 0.00001, col = "blue", pch = 4, cex = 2)
@@ -392,13 +401,53 @@ test_that("inverse posterior ZANIM-BART one-dimension", {
     points(x_true, 0.00001, col = "blue", pch = 4, cex = 2)
 
     xrange <- c(-1,1)#range(c(x_true, range(sir[[i]])))
-    plot(density(sir[[i]]), type = "S", main = "SIR", xlim = xrange)
+    plot(density(sir[[i]]), main = "SIR", xlim = xrange)
     points(x_true, 0.00001, col = "blue", pch = 4, cex = 2)
     # xrange <- range(c(x_true, range(sir_cond[[i]])))
-    plot(density(sir_cond[[i]]), type = "S", main = "SIR (conditional)", xlim = xrange)
+    plot(density(sir_cond[[i]]), main = "SIR (conditional)", xlim = xrange)
+    points(x_true, 0.00001, col = "blue", pch = 4, cex = 2)
+
+    xrange <- range(c(1, -1, range(ess_cond[,1,i]), range(ess[,1,i])))
+    plot(density(ess[,1,i]), main = "eSS", xlim = xrange)
+    points(x_true, 0.00001, col = "blue", pch = 4, cex = 2)
+    plot(density(ess_cond[,1,i]),  main = "eSS (conditional)", xlim = xrange)
     points(x_true, 0.00001, col = "blue", pch = 4, cex = 2)
   }
   graphics.off()
+
+  # Some checks in the internal functions
+
+  mean_prior = rep(0.0, 1); S_prior = diag(1.0, nrow = 1); n_rep = 1
+  Y_test <- Y_train[3,,drop=FALSE]
+  n <- nrow(Y_test)
+  p <- length(mean_prior)
+  X_ini <- matrix(nrow = n, ncol = p)
+  cS <- chol(S_prior)
+  for (i in seq_len(n)) X_ini[i, ] <- stats::rnorm(p) %*% cS + mean_prior
+  #
+  # devtools::load_all()
+  ml <- Rcpp::Module(module = "inverse_posterior", PACKAGE = "zanicc")
+  cpp_obj <- new(ml$InversePosterior, ncol(Y_test), NTREES, NTREES, "zanim_bart",
+                 forests_dir)
+
+  out1=cpp_obj$SamplerZANIMBARTeSS(Y_test, as.matrix(X_ini),
+                                  as.integer(NDPOST), mean_prior, S_prior, n_rep, 0L)
+  out2=cpp_obj$SamplerZANIMBARTeSS(Y_test, as.matrix(X_ini),
+                                  as.integer(NDPOST), mean_prior, S_prior, n_rep, 1L)
+
+  par(mfrow = c(2, 2))
+  plot(density(out1[1:NDPOST]), main = "marginal", xlim = c(-1, 1))
+  points(x=X_train[1],y=0.001, col = "blue", pch = 19)
+  plot(density(out2[1:NDPOST]), main = "conditional", xlim = c(-1, 1))
+  points(x=X_train[1],y=0.001, col = "blue", pch = 19)
+  plot(density(out1[(NDPOST+1):(NDPOST*2)]), main = "marginal", xlim = c(-1, 1))
+  points(x=X_train[2],y=0.001, col = "blue", pch = 19)
+  plot(density(out2[(NDPOST+1):(NDPOST*2)]), main = "conditional", xlim = c(-1, 1))
+  points(x=X_train[2],y=0.001, col = "blue", pch = 19)
+
+  length(out)
+  table(out == 0)
+
 
 })
 
@@ -442,6 +491,70 @@ test_that("inverse posterior ZANIM-BART two-dimension", {
                          save_trees = TRUE, forests_dir = forests_dir)
     save_model(object = zanim_bart, model_dir = path_res)
   }
+
+})
+
+test_that("inverse posterior MLN-BART one-dimension", {
+
+  rm(list = ls())
+  devtools::load_all()
+
+  # Path
+  time_id <- "2026-Apr-27-16:21:50"#format(Sys.time(), "%Y-%b-%d-%X")
+  path_local <- "./tests/testthat/inverse_posterior/mln_bart/one_dimension"
+  path_res <- file.path(path_local, time_id, "results")
+  forests_dir <- file.path(path_res, "forests")
+  if (!dir.exists(forests_dir)) dir.create(forests_dir, recursive = TRUE)
+
+  set.seed(1212)
+  d <- 4L
+  n_sample <- 400L
+  tmp <- sim_zanim_ln_s1(n_sample = n_sample, random_effects = TRUE,
+                         structural_zero = FALSE)
+  colMeans(tmp$Y == 0)
+
+  # Split the data
+  n_test <- 100L
+  id_test <- sample.int(n_sample, n_test)
+  Y_test <- tmp$Y[id_test, ]
+  X_test <- tmp$X[id_test, , drop = FALSE]
+  Y_train <- tmp$Y[-id_test, ]
+  X_train <- tmp$X[-id_test, , drop = FALSE]
+
+  # Fit forward model
+  NDPOST <- 5000L
+  NSKIP <- 5000L
+  NTREES <- 100L
+
+  if (file.exists(file.path(path_res, "mod.rds"))) {
+    mln_bart <- load_model(model_dir = path_res)
+  } else {
+    mln_bart <- zanicc(Y = Y_train, X_count = X_train,
+                       model = "mult_ln_bart", ntrees_theta = NTREES, ndpost = NDPOST,
+                       nskip = NSKIP, save_trees = TRUE, forests_dir = forests_dir)
+    save_model(object = mln_bart, model_dir = path_res)
+  }
+
+  # Compute the f(x*) and generate proposal (do this once)
+  N_PROPOSAL <- 2000L
+  proposal_parms <- list(min_x = min(X_train), max_x = max(X_train))
+  if (!file.exists(file.path(path_res, "theta_ij.bin"))) {
+    compute_proposal_fx_mlbart(object = mln_bart, proposal_parms = proposal_parms,
+                               n_proposal = N_PROPOSAL, load = FALSE,
+                               save = TRUE, output_dir = path_res)
+  }
+
+  # IS
+  is <- inverse_posterior_mlbart(object = ml_bart, Y = Y_test, method = "is",
+                                 proposal_parms = proposal_parms,
+                                 n_proposal = N_PROPOSAL,
+                                 dir_posterior_fx = path_res)
+  # SIR
+  sir <- inverse_posterior_mlbart(object = ml_bart, Y = Y_test, method = "is",
+                                  proposal_parms = proposal_parms, sir = TRUE,
+                                  n_proposal = N_PROPOSAL,
+                                  dir_posterior_fx = path_res)
+
 
 })
 

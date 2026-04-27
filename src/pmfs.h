@@ -10,4 +10,6 @@ double log_pmf_zanidm(std::vector<int> x, std::vector<double> alpha,
                       std::vector<double> zeta);
 inline double log_pmf_mult(std::vector<int> &x, int &size,
                            std::vector<double> &prob);
+double log_pmf_zanim_conditional(std::vector<int> x, std::vector<double> prob,
+                                 std::vector<double> zeta);
 #endif

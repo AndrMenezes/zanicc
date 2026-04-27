@@ -6,11 +6,11 @@
 // Log PMF of multinomial
 inline double log_pmf_mult(std::vector<int> &x, int &size,
                            std::vector<double> &prob) {
-  double r = std::lgamma(size + 1);
+  double out = std::lgamma(size + 1);
   for(int j = 0; j < x.size(); j++) {
-    r += x[j] * log(prob[j]) - std::lgamma(x[j] + 1);
+    out += x[j] * log(prob[j]) - std::lgamma(x[j] + 1);
   }
-  return(r);
+  return out;
 }
 
 
@@ -307,22 +307,35 @@ double log_pmf_zanidm(std::vector<int> x, std::vector<double> alpha,
   return(log_sum_exp(tmp));
 }
 
-
+// Evaluate the ZANIM-PMF using the hierarchical representation conditional on z
 double log_pmf_zanim_conditional(std::vector<int> x, std::vector<double> prob,
                                  std::vector<double> zeta) {
   int d = x.size();
-  std::vector<double> z(d, 1.0), vartheta(d, 0.0);
+  std::vector<int> z(d, 1.0);
+  std::vector<double> vartheta(d, 0.0);
   double s = 0.0;
   for (int j = 0; j < d; j++) {
-    if (x[j] == 0) z[j] = R::rbinom(1, 1.0-zeta[j]);
+    if (x[j] == 0) z[j] = R::rbinom(1, 1.0 - zeta[j]);
     vartheta[j] = prob[j] * z[j];
     s += vartheta[j];
   }
+
+  // std::cout << s << "\n";
+
+  // std::cout << "All zeros: " << s << "\n";
   if (s == 0.0) return 0.0;
 
-  int n_trials = std::accumulate(x.begin(), x.end(), 0.0);
-  for(auto &p : vartheta) p /= s;
-  return log_pmf_mult(x, n_trials, vartheta);
+  // for(auto &p : vartheta) p /= s;
+
+  //std::cout << "vartheta: " << vartheta[0]/s << " " << vartheta[1]/s << " " << vartheta[2]/s << "\n";
+
+  double out = std::lgamma(std::accumulate(x.begin(), x.end(), 0.0) + 1.0);
+  for (int j = 0; j < d; j++) {
+    if (x[j] > 0) out += x[j] * log(vartheta[j] / s) - std::lgamma(x[j] + 1);
+  }
+  return out;
+
+  // return log_pmf_mult(x, n_trials, vartheta);
 }
 
 

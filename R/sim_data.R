@@ -349,4 +349,79 @@ sim_data_zanim_2d <- function(n_grid = 20, n_sample = n_grid^2, d, n_trials,
        vartheta = true_varthetas)
 }
 
+#' @export
+#' @description
+#' Simulate data following the scenario 1 of the main paper, which
+#' corresponds to d=4 with cosine, sine, and polynomial predictors as defined in
+#' main paper.
+sim_zanim_ln_s1 <- function(n_sample, random_effects = TRUE, structural_zero = TRUE,
+                            seed = 1212) {
 
+  set.seed(seed)
+
+  n_trials <- sample(seq.int(100L, 500L), n_sample, replace = TRUE)
+  X <- as.matrix(seq(-1, 1, length.out = n_sample))
+
+  # Linear predictors
+  eta_theta <- cbind(5*cos(pi*X), 1.5*sin(2*pi*X), 2*(X^3), -2*(X^2))
+  alphas <- exp(eta_theta)
+
+  if (structural_zero) {
+    intercept <- rep(1.5, 4)
+    eta_zeta <- cbind(exp(-5.0 * X^2), X - 2*(X - 0.5)^2, -2*X + 3 * X^3,
+                      3*X - 2 * X^3)
+    eta_zeta <- t(t(eta_zeta) - intercept)
+    true_zetas <- stats::pnorm(eta_zeta)
+  }
+
+
+  # Random effects
+  U <- matrix(0, n_sample, d)
+  if (random_effects) {
+    q_factors <- 2L
+    Gamma <- matrix(stats::runif(d * q_factors, 0, 1), d, q_factors)
+    Psi <- diag(seq(0.32, 0.35, length.out = d))
+    Sigma_U <- tcrossprod(Gamma) + Psi
+    chol_Sigma_U <- chol(Sigma_U)
+    for (i in seq_len(n_sample)) U[i, ] <- drop(stats::rnorm(d) %*% chol_Sigma_U)
+  }
+
+  # Indicator for structural zero
+  z <- rep(1L, d)
+
+  # Keep data
+  Y <- Z <- true_thetas <- true_varthetas <- matrix(0, n_sample, d)
+  # Sampling
+  for (i in seq_len(n_sample)) {
+
+    # Structural zeros
+    if (structural_zero) {
+      z <- stats::rbinom(d, 1L, prob = 1.0 - true_zetas[i, ])
+      # avoid all zeros
+      while (all(z == 0L)) {
+        z <- stats::rbinom(d, 1L, prob = 1.0 - true_zetas[i, ])
+      }
+    }
+    Z[i, ] <- z
+    is_zero <- z == 0L
+
+    # Population-level count probabilities
+    true_thetas[i, ] <- alphas[i, ] / sum(alphas[i, ])
+
+    # Individual-level count probabilities
+    vartheta <- z * alphas[i, ] * exp(U[i, ])
+    true_varthetas[i, ] <- vartheta / sum(vartheta)
+
+    # Simulate the counts
+    if (sum(is_zero) == d - 1L) {
+      Y[i, ] <- 0
+      Y[i, !is_zero] <- n_trials[i]
+    } else {
+      Y[i, ] <- stats::rmultinom(n = 1L, size = n_trials[i],
+                                 prob = true_varthetas[i, ])
+    }
+  }
+  list(Y = Y, X = X, Z = if (structural_zero) Z else NULL,
+       true_thetas = true_thetas, true_zetas = if (structural_zero) true_zetas else NULL,
+       true_varthetas = true_varthetas, U = if (random_effects) U else NULL)
+}
