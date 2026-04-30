@@ -1,4 +1,5 @@
 .predictMLNBART <- function(object, newdata, ndpost, output_dir, load, verbose) {
+  if (!object$save_trees) stop("You didn't save the trees. You need to run again using {save_trees=TRUE}.")
   n <- nrow(newdata)
   if (!dir.exists(output_dir)) dir.create(output_dir, recursive = TRUE)
   cat("Saving posterior predictions in", output_dir, "\n")
@@ -15,6 +16,8 @@
 }
 .predictZANIBART <- function(object, newdata, type, ndpost, output_dir, load,
                              verbose) {
+
+  if (!object$save_trees) stop("You didn't save the forests/trees. You need to run again using {save_trees=TRUE}.")
 
   n <- nrow(newdata)
   if (!dir.exists(output_dir)) dir.create(output_dir, recursive = TRUE)

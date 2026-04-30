@@ -89,7 +89,8 @@ rconvexhull <- function(n, X) {
 #' @export
 compute_proposal_fx_mlbart <- function(object, proposal_parms, n_proposal,
                                        load = TRUE, save = FALSE,
-                                       output_dir = tempdir(), x_proposal = NULL) {
+                                       output_dir = tempdir(), x_proposal = NULL,
+                                       verbose = TRUE, printevery = 100L) {
 
   if (is.null(x_proposal)) {
     # Simulate x* ~ q(x*) from uniform proposal
@@ -102,12 +103,13 @@ compute_proposal_fx_mlbart <- function(object, proposal_parms, n_proposal,
       x_proposal <- rconvexhull(n = n_proposal, X = proposal_parms$X)
     }
   }
+  load_ <- load
   if (is(object, "MultinomialLNBART")) load <- TRUE
   # Compute the posterior distribution of f_j(x*) for x*~\pi(x*) for j=1,...,d
   posterior_fx <- predict(object, newdata = x_proposal, load = load,
                           output_dir = output_dir)
+  load <- load_
 
-  # isClass()
   if (is(object, "MultinomialLNBART")) {
     dm1 <- object$d - 1L
     ndpost <- dim(posterior_fx)[3L]
@@ -120,7 +122,10 @@ compute_proposal_fx_mlbart <- function(object, proposal_parms, n_proposal,
                                                   p = dm1, d = dm1, m = ndpost)
     }
     # Compute the individual-level probabilities
+    cat("Computing the individual-level probabilities, \vartheta_ij ...\n")
     for (k in seq_len(ndpost)) {
+      if (verbose && (k %% printevery == 0L))
+        cat("k =", k, "out of", ndpost, "for vartheta^{(k)}_ij...\n")
       for (i in seq_len(n_proposal)) {
         v <- stats::rnorm(dm1) %*% draws_chol_Sigma_V[,,k]
         u <- drop(v %*% Bt)
@@ -147,6 +152,9 @@ compute_proposal_fx_mlbart <- function(object, proposal_parms, n_proposal,
 #' @param zetas array with \eqn{(n \times d \times r)} dimension for the posterior distribution of \eqn{\zeta_{ij}^{(r)}}.
 #' @param verbose logical to keep track of the posterior draws.
 #' @param printevery integer to print the posterior draws.
+#' TODO: These two functions aren't precise because they are not condition on Y* to
+#' generate the latent structural zero z_{ij}, though we use the posterior draws.
+#'
 compute_vartheta_zanimbart <- function(thetas, zetas, verbose = FALSE,
                                        printevery = 100L)  {
   n_sample <- dim(thetas)[1L]
@@ -155,10 +163,10 @@ compute_vartheta_zanimbart <- function(thetas, zetas, verbose = FALSE,
   seqn <- seq_len(n_sample)
   draws <- array(data = NA_real_, dim = c(n_sample, d, ndpost))
   for (k in seq_len(ndpost)) {
-    if (verbose && (k %% printevery == 0L)) cat(k, "\n")
+    if (verbose && (k %% printevery == 0L)) cat(k, "of", ndpost, "\n")
     # Generate the z's
     tmp <- lapply(seqn, function(i) {
-      z <- stats::rbinom(n = d, size = 1, prob = 1 - zetas[i,,k])
+      z <- stats::rbinom(n = d, size = 1, prob = 1.0 - zetas[i,,k])
       is_zero <- z == 0L
       if (all(is_zero)) {
         vt <- rep(0.0, d)
@@ -171,6 +179,32 @@ compute_vartheta_zanimbart <- function(thetas, zetas, verbose = FALSE,
         vt <- vt / sum(vt)
       }
       vt
+    })
+    draws[,,k] <- do.call(rbind, tmp)
+  }
+  draws
+}
+compute_vartheta_zanimlnbart <- function(thetas, zetas, chol_Sigma_V, Bt,
+                                         verbose = FALSE, printevery = 100L)  {
+  n_sample <- dim(thetas)[1L]
+  d <- dim(thetas)[2L]
+  dm1 <- d - 1L
+  ndpost <- dim(thetas)[3L]
+  seqn <- seq_len(n_sample)
+  draws <- array(data = NA_real_, dim = c(n_sample, d, ndpost))
+  for (k in seq_len(ndpost)) {
+    if (verbose && (k %% printevery == 0L)) cat(k, "of", ndpost, "\n")
+    # Generate the z's
+    tmp <- lapply(seqn, function(i) {
+      v <- stats::rnorm(dm1) %*% chol_Sigma_V[,,k]
+      u <- drop(v %*% Bt)
+      z <- stats::rbinom(n = d, size = 1L, prob = 1.0 - zetas[i,,k])
+      if (all(z == 0L)) p <- rep(0.0, d)
+      else {
+        p <- z * thetas[i,,k] * exp(u)
+        p <- p / sum(p)
+      }
+      p
     })
     draws[,,k] <- do.call(rbind, tmp)
   }
@@ -196,12 +230,13 @@ compute_proposal_fx_zanimbart <- function(object, proposal_parms, n_proposal,
 
   # Compute the posterior distribution of f^{(c)}_j(x*) and f^{(0)}_j(x*)
   # for x*~\pi(x*) and j=1,...,d
+  load_ <- load
   if (conditional) load <- TRUE
   posterior_fx_theta <- predict(object, newdata = x_proposal, load = load,
                                 output_dir = output_dir, type = "theta")
   posterior_fx_zeta <- predict(object, newdata = x_proposal, load = load,
                                output_dir = output_dir, type = "zeta")
-
+  load <- load_
   if (conditional) {
     vartheta <- compute_vartheta_zanimbart(thetas = posterior_fx_theta,
                                            zetas = posterior_fx_zeta, verbose = FALSE)
@@ -215,6 +250,53 @@ compute_proposal_fx_zanimbart <- function(object, proposal_parms, n_proposal,
   if (load) return(list(x_proposal = x_proposal,
                         posterior_fx_theta = posterior_fx_theta,
                         posterior_fx_zeta = posterior_fx_zeta))
+  return(invisible())
+}
+
+compute_proposal_fx_zanimlnbart <- function(object, proposal_parms, n_proposal,
+                                            load = TRUE, save = FALSE,
+                                            output_dir = tempdir(),
+                                            x_proposal = NULL, verbose = TRUE) {
+
+  if (is.null(x_proposal)) {
+    # Simulate x* ~ q(x*) from uniform proposal
+    if (object$p_theta == 1L) {
+      x_proposal <- matrix(seq(from = proposal_parms$min_x,
+                               to = proposal_parms$max_x, length.out = n_proposal),
+                           ncol = 1L)
+    } else {
+      x_proposal <- rconvexhull(n = n_proposal, X = proposal_parms$X)
+    }
+  }
+
+  if (object$keep_draws) draws_chol_Sigma_V <- object$draws_chol_Sigma_V
+  else {
+    ff_chol_Sigma_V <- file.path(object$forests_dir, "chol_Sigma_V.bin")
+    draws_chol_Sigma_V <- load_bin_coefficients(fname = ff_chol_Sigma_V,
+                                                p = object$d - 1L, d = object$d - 1L,
+                                                m = object$ndpost)
+  }
+
+  # Compute the posterior distribution of f^{(c)}_j(x*) and f^{(0)}_j(x*)
+  # for x*~\pi(x*) and j=1,...,d
+  posterior_fx_theta <- predict(object, newdata = x_proposal, load = TRUE,
+                                output_dir = output_dir, type = "theta")
+  posterior_fx_zeta <- predict(object, newdata = x_proposal, load = TRUE,
+                               output_dir = output_dir, type = "zeta")
+
+  cat("Computing individual-level probabilities...\n")
+  vartheta <- compute_vartheta_zanimlnbart(thetas = posterior_fx_theta,
+                                           zetas = posterior_fx_zeta,
+                                           chol_Sigma_V = draws_chol_Sigma_V,
+                                           Bt = object$Bt,
+                                           verbose = verbose)
+
+  if (save) {
+    saveRDS(object = vartheta, file = file.path(output_dir, "vartheta.rds"))
+    saveRDS(object = x_proposal, file = file.path(output_dir, "x_proposal.rds"))
+  }
+  if (load) return(list(x_proposal = x_proposal, posterior_fx = vartheta))
+
   return(invisible())
 }
 
@@ -238,7 +320,7 @@ compute_proposal_fx_zanimbart <- function(object, proposal_parms, n_proposal,
     x_proposal <- readRDS(file = file.path(dir_posterior_fx, "x_proposal.rds"))
     n_proposal <- nrow(x_proposal)
 
-    if (class(object)[1L] == "MultinomialBART") {
+    if (is(object, "MultinomialBART")) {
       posterior_fx <- load_bin_predictions(fname = file.path(dir_posterior_fx, "theta_ij.bin"),
                                            n = n_proposal, d = object$d, m = object$ndpost)
 
@@ -253,9 +335,9 @@ compute_proposal_fx_zanimbart <- function(object, proposal_parms, n_proposal,
     cat("Generaing the proposal for x* and computing the posterior-predictive of f_j(x_i*) \n")
     # Generate proposal
     cache_proposal_fx <- compute_proposal_fx_mlbart(object, proposal_parms, n_proposal,
-                                                     load = TRUE, save = save,
-                                                     output_dir = output_dir,
-                                                     x_proposal = x_proposal)
+                                                    load = TRUE, save = save,
+                                                    output_dir = output_dir,
+                                                    x_proposal = x_proposal)
   }
   cat("Computing the probabilities using importance sampling...\n")
   # Estimated importance sampling probabilities
@@ -358,17 +440,76 @@ compute_proposal_fx_zanimbart <- function(object, proposal_parms, n_proposal,
   return(cbind(probs = probs, cache_proposal_fx$x_proposal))
 }
 
+#' Importance sampling for approximate the inverse posterior distribution using the
+#' ZANIM-BART model.
+.is_zanimlnbart <- function(object, Y, proposal_parms, n_proposal = 5000L,
+                            sir = FALSE, n_resampling = floor(n_proposal/2),
+                            output_dir = tempdir(), save = FALSE,
+                            dir_posterior_fx = NULL, x_proposal = NULL) {
+
+  n_samples <- nrow(Y)
+
+  # Load the proposal and the posterior fx
+  if (!is.null(dir_posterior_fx)) {
+    cat("Loading the proposal for x* and the posterior-predictive of f(x*) \n")
+    fproposal <- file.path(dir_posterior_fx, "x_proposal.rds")
+    if (!file.exists(fproposal))
+      stop("file {x_proposal.rds} with the proposal distribution x* doesn't exist in the folder {dir_posterior_fx}")
+    x_proposal <- readRDS(file = fproposal)
+    n_proposal <- nrow(x_proposal)
+    fvartheta <- file.path(dir_posterior_fx, "vartheta.rds")
+    if (!file.exists(fvartheta))
+      stop("file {vartheta.rds} with the posterior distribution of \vartheta_ij doesn't exist in the folder {dir_posterior_fx}")
+    vartheta <- readRDS(file = fvartheta)
+    cache_proposal_fx <- list(posterior_fx = vartheta, x_proposal = x_proposal)
+  } else {
+    cat("Generaing the proposal for x* and computing the posterior-predictive of f^{(c)}_j(x*) and f^{(0)}_j(x*) \n")
+    # Generate proposal
+    cache_proposal_fx <- compute_proposal_fx_zanimlnbart(object,
+                                                         proposal_parms = proposal_parms,
+                                                         n_proposal = n_proposal,
+                                                         load = TRUE, save = save,
+                                                         output_dir = output_dir,
+                                                         x_proposal = x_proposal)
+  }
+  cat("Computing the probabilities using importance sampling...\n")
+  # Estimated importance sampling probabilities
+  probs <- apply(Y, 1, function(y) {
+    .prob_x_mlbart(y = y, posterior_fx = cache_proposal_fx$posterior_fx)
+  })
+
+  # If SIR then return a list with the resampling x_proposal
+  if (sir) {
+    cat("Resampling...\n")
+    x_sir <- apply(probs, 2, function(p) {
+      ids <- sample.int(n = n_proposal, size = n_resampling, replace = TRUE,
+                        prob = p)
+      cache_proposal_fx$x_proposal[ids, , drop = FALSE]
+    }, simplify = FALSE)
+    attr(x_sir, "is_probs") <- probs
+    return(x_sir)
+  }
+  # Otherwise, return a matrix with first column with the probabilities and the
+  # remaining ones the proposal x
+  return(cbind(probs = probs, cache_proposal_fx$x_proposal))
+}
+
 
 #' Two-stage Gibbs sampler for the inverse posterior using the elliptical slice sampling.
 .gibbs_sampler <- function(Y, mean_prior, S_prior, X_ini = NULL, forests_dir,
                            ntrees, ndpost, n_rep = 2L,
-                           forward_model = c("ml_bart", "zanim_bart"),
+                           forward_model = c("ml_bart", "zanim_bart", "zanim_ln_bart"),
                            conditional = FALSE) {
+
+  if (!file.exists(file.path(forests_dir, "forests_theta_0.bin")))
+    stop("It seems you didn't save the forests in the folder ", forests_dir)
+
+
   forward_model <- match.arg(forward_model)
   # Define new module
   ml <- Rcpp::Module(module = "inverse_posterior", PACKAGE = "zanicc")
-  cpp_obj <- new(ml$InversePosterior, ncol(Y), ntrees, ntrees, forward_model,
-                 forests_dir)
+  cpp_obj <- new(ml$InversePosterior, ncol(Y), ntrees, ntrees, ndpost,
+                 forward_model, forests_dir)
   # If there is no initial value sample from the prior
   n <- nrow(Y)
   p <- length(mean_prior)
@@ -377,13 +518,15 @@ compute_proposal_fx_zanimbart <- function(object, proposal_parms, n_proposal,
     cS <- chol(S_prior)
     for (i in seq_len(n)) X_ini[i, ] <- stats::rnorm(p) %*% cS + mean_prior
   }
+  B <- as.matrix(qr.Q(qr(stats::contr.sum(ncol(Y)))))
   xx <- switch(forward_model,
     "ml_bart" = cpp_obj$SamplerMLBARTeSS(Y, as.matrix(X_ini), as.integer(ndpost),
                                          mean_prior, S_prior, n_rep),
-
     "zanim_bart" = cpp_obj$SamplerZANIMBARTeSS(Y, as.matrix(X_ini), as.integer(ndpost),
                                                mean_prior, S_prior, n_rep,
                                                as.integer(conditional)),
+    "zanim_ln_bart" = cpp_obj$SamplerZANIMLNBARTeSS(Y, as.matrix(X_ini), as.integer(ndpost),
+                                                    mean_prior, S_prior, n_rep, B)
   )
   array(xx, dim = c(ndpost, p, n))
 }

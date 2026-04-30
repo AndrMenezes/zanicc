@@ -338,4 +338,40 @@ double log_pmf_zanim_conditional(std::vector<int> x, std::vector<double> prob,
   // return log_pmf_mult(x, n_trials, vartheta);
 }
 
+// Evaluate the ZANIM-LN-PMF using the hierarchical representation conditional on z
+// and u
+double log_pmf_zanim_ln_conditional(std::vector<int> x, std::vector<double> prob,
+                                    std::vector<double> zeta,
+                                    std::vector<double> chol_Sigma_V,
+                                    std::vector<double> B) {
+  int d = x.size(), dm1 = d-1;
+  std::vector<int> z(d, 1.0);
+  std::vector<double> v(dm1, 0.0), u(d, 0.0), vartheta(d, 0.0);
+
+  // Simulate random effect v ~ N_{d-1}[0, Sigma_V]
+  std::vector<double> m0(dm1, 0.0);
+  rmvnorm_chol(v, m0, chol_Sigma_V, dm1);
+  // Transform to u = Bv
+  // double sum = 0.0;
+  // Iterate rows first then columns
+  for (int i=0; i < d; i++) {
+    for (int j=0; j < dm1; j++) u[i] += v[j] * B[i*dm1 + j];
+  }
+  // Compute \vartheta_{ij} \propto theta_j*z_ij * e^{u_ij}
+  double s = 0.0;
+  for (int j = 0; j < d; j++) {
+    if (x[j] == 0) z[j] = R::rbinom(1, 1.0 - zeta[j]);
+    vartheta[j] = prob[j] * z[j] * exp(u[j]);
+    s += vartheta[j];
+  }
+  if (s == 0.0) return 0.0;
+
+  // Compute the multinomial likelihood
+  double out = std::lgamma(std::accumulate(x.begin(), x.end(), 0.0) + 1.0);
+  for (int j = 0; j < d; j++) {
+    if (x[j] > 0) out += x[j] * log(vartheta[j] / s) - std::lgamma(x[j] + 1);
+  }
+  return out;
+}
+
 

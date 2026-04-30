@@ -561,7 +561,7 @@ void ZANIMBARTProbit::ComputePredictProb(arma::mat &X_, int n_samples,
     }
     f_pred = exp(f_pred);
     f_pred = f_pred.each_col() / arma::sum(f_pred, 1);
-    // Save prediction of sample t and category j
+    // Save prediction of sample t and category j (column-major!)
     fout.write(reinterpret_cast<const char*>(f_pred.memptr()), sizeof(double)*n_*d);
   }
   fout.close();

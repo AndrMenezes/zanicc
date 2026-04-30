@@ -20,9 +20,7 @@ double trigamma_inverse(double x) {
 double log_sum_exp(std::vector<double> &x) {
   double x_max = *std::max_element(x.begin(), x.end());
   double sum = 0.0;
-  for (double xi : x) {
-    sum += std::exp(xi - x_max);
-  }
+  for (double xi : x) sum += std::exp(xi - x_max);
   return x_max + std::log(sum);
 }
 
@@ -50,7 +48,7 @@ arma::vec compute_crps(const arma::mat &samples,
   return(crps);
 }
 
-
+// Convert an integer/double matrix to a row-major double vector
 std::vector<int> umat_to_int_rowmajor(const arma::umat &Y) {
   int n = Y.n_rows, d = Y.n_cols;
   std::vector<int> out(n * d);

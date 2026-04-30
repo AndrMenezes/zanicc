@@ -165,7 +165,7 @@ sim_data_zanim_friedman <- function(n, n_trials, p_theta = 10L, p_zeta = 10L,
 #' @export
 sim_data_multinomial_bspline_curve <- function(n, d, n_trials, dof_bs = 6L) {
 
-  if (length(n_trials)) n_trials <- rep(n_trials, n)
+  if (length(n_trials) == 1L) n_trials <- rep(n_trials, n)
   # Linear predictor
   X <- as.matrix(seq(-1.0, 1.0, length.out = n))
   X1_bs <- splines::bs(X, dof_bs)
@@ -252,7 +252,7 @@ sim_data_multinomial_2d <- function(n_grid = 20, n_sample = n_grid^2, d, n_trial
   }
   n <- nrow(X)
 
-  if (length(n_trials)) n_trials <- rep(n_trials, n)
+  if (length(n_trials) == 1L) n_trials <- rep(n_trials, n)
 
   # Linear predictor
   eta_theta <- matrix(nrow = n, ncol = d)
@@ -263,10 +263,11 @@ sim_data_multinomial_2d <- function(n_grid = 20, n_sample = n_grid^2, d, n_trial
     eta_theta[, j] <- a0[j] + 1/(1 + exp(-parms[1] * X[, 1L] - parms[2] * X[, 2L]))
     eta_theta[, j] <- eta_theta[, j] + 1/(1 + exp(-parms[3]*X[, 1L] - parms[4] * X[, 2L]))
   }
+  eta_theta <- exp(eta_theta)
   # Generate data
   Y <- true_theta <- matrix(0L, nrow = n, ncol = d)
   for (i in seq_len(n)) {
-    true_theta[i, ] <- exp(eta_theta[i, ]) / sum(exp(eta_theta[i, ]))
+    true_theta[i, ] <- eta_theta[i, ] / sum(eta_theta[i, ])
     Y[i, ] <- stats::rmultinom(n = 1L, size = n_trials[i], prob = true_theta[i, ])
   }
   data_sim <- data.frame(
@@ -281,13 +282,20 @@ sim_data_multinomial_2d <- function(n_grid = 20, n_sample = n_grid^2, d, n_trial
 }
 
 #' @export
-sim_data_zanim_2d <- function(n_grid = 20, n_sample = n_grid^2, d, n_trials,
-                              region = c("square", "convexhull"),
-                              xmax = 2.0, X_aux) {
+sim_data_zanicc_2d <- function(n_grid = 20, n_sample = n_grid^2, d, n_trials,
+                               region = c("square", "convexhull"),
+                               xmax = 2.0, X_aux = NULL, random_effects = TRUE,
+                               structural_zero = TRUE,
+                               q_factors = .ledermann(d)) {
 
   # Covariates
   region <- match.arg(region)
   if (region == "convexhull") {
+    if (is.null(X_aux)) {
+      data(pollen_data, package = "zanicc")
+      X_aux <- pollen_data$X[, c("gdd5", "mtco")]
+      X_aux <- scale(X_aux)
+    }
     X <- suppressWarnings(rconvexhull(n = n_sample, X = X_aux))
   } else {
     x1 <- seq(-xmax, xmax, length.out = n_grid)
@@ -297,35 +305,59 @@ sim_data_zanim_2d <- function(n_grid = 20, n_sample = n_grid^2, d, n_trials,
   }
   n <- nrow(X)
 
-  if (length(n_trials)) n_trials <- rep(n_trials, n)
+  if (length(n_trials) == 1L) n_trials <- rep(n_trials, n)
 
-  # Linear predictor
+  # Structural zero
+  if (structural_zero) {
+    eta_zeta <- matrix(nrow = n, ncol = d)
+    b0 <- stats::runif(n = d, -1.0, -0.5)
+    for (j in seq_len(d)) {
+      scale_z <- stats::runif(1, 1.0, 4.0)
+      eta_zeta[, j] <- b0[j] + 1.0/(1.0 + exp(-scale_z * X[, 1L] * X[, 2L]))
+    }
+    # Population-level structural zero probability
+    true_zetas <- stats::pnorm(eta_zeta)
+  }
+  # Random effects
+  U <- matrix(0, n_sample, d)
+  if (random_effects) {
+    Gamma <- matrix(stats::runif(d * q_factors, 0, 1), d, q_factors)
+    Psi <- diag(seq(0.32, 0.35, length.out = d))
+    Sigma_U <- tcrossprod(Gamma) + Psi
+    chol_Sigma_U <- chol(Sigma_U)
+    for (i in seq_len(n_sample)) U[i, ] <- drop(stats::rnorm(d) %*% chol_Sigma_U)
+  }
+  # Population-level count probability
   eta_theta <- matrix(nrow = n, ncol = d)
-  eta_zeta <- matrix(nrow = n, ncol = d)
-  # Intercept
   a0 <- stats::runif(n = d, -2.3, -1.0)
-  b0 <- stats::runif(n = d, -1.0, -0.5)
   for (j in seq_len(d)) {
     parms_c <- stats::runif(4, 1.0, 4.0)
     eta_theta[, j] <- a0[j] + 1.0/(1.0 + exp(-parms_c[1] * X[, 1L] - parms_c[2] * X[, 2L]))
     eta_theta[, j] <- eta_theta[, j] + 1.0/(1.0 + exp(-parms_c[3]*X[, 1L] + parms_c[4] * X[, 2L]))
-    scale_z <- stats::runif(1, 1.0, 4.0)
-    eta_zeta[, j] <- b0[j] + 1.0/(1.0 + exp(-scale_z * X[, 1L] * X[, 2L]))
   }
-  true_zetas <- stats::pnorm(eta_zeta)
   eta_theta <- exp(eta_theta)
+
+  # Indicator for structural zero
+  z <- rep(1L, d)
+
   # Generate data
-  Y <- Z <- true_thetas <- true_varthetas <- matrix(nrow = n_sample, ncol = d)
-  for (i in seq_len(n_sample)) {
-    z <- stats::rbinom(n = d, size = 1L, prob = 1.0 - true_zetas[i, ])
-    is_zero <- z == 0L
-    # Hack to avoid all zeros (it happen very rarely)
-    while (all(is_zero)) {
-      z <- stats::rbinom(n = d, size = 1L, prob = 1.0 - true_zetas[i, ])
-      is_zero <- z == 0L
+  Y <- Z <- true_thetas <- true_varthetas <- matrix(nrow = n, ncol = d)
+  for (i in seq_len(n)) {
+
+    # Structural zeros
+    if (structural_zero) {
+      z <- stats::rbinom(d, 1L, prob = 1.0 - true_zetas[i, ])
+      # Avoid all zeros
+      while (all(z == 0L)) {
+        z <- stats::rbinom(d, 1L, prob = 1.0 - true_zetas[i, ])
+      }
     }
-    true_thetas[i, ] <- eta_theta / sum(eta_theta)
-    true_varthetas[i, ] <- z * eta_theta / sum(z * eta_theta)
+    Z[i, ] <- z
+    is_zero <- z == 0L
+
+    eU <- exp(U[i, ])
+    true_thetas[i, ] <- eta_theta[i, ] / sum(eta_theta[i, ])
+    true_varthetas[i, ] <- z * eta_theta[i, ] * eU / sum(z * eta_theta[i, ] * eU)
     if (sum(is_zero) == d - 1L) {
       Y[i, ] <- rep(0L, d)
       Y[i, !is_zero] <- n_trials[i]
@@ -333,7 +365,7 @@ sim_data_zanim_2d <- function(n_grid = 20, n_sample = n_grid^2, d, n_trials,
       Y[i, ] <- stats::rmultinom(n = 1L, size = n_trials[i],
                                  prob = true_varthetas[i, ])
     }
-    Z[i, ] <- z
+
   }
   data_sim <- data.frame(
     id = rep(seq_len(n), each = d),
@@ -341,12 +373,17 @@ sim_data_zanim_2d <- function(n_grid = 20, n_sample = n_grid^2, d, n_trials,
     x1 = rep(X[, 1L], each = d),
     x2 = rep(X[, 2L], each = d),
     theta = c(t(true_thetas)),
-    zeta = c(t(true_zetas)),
+    zeta = if (structural_zero) c(t(true_zetas)) else NULL ,
     vartheta = c(t(true_varthetas)),
     total = c(t(Y)),
-    prop = c(apply(Y, 1L, function(z) z / sum(z))))
-  list(df = data_sim, Y = Y, X = X, theta = true_thetas, zeta = true_zetas,
-       vartheta = true_varthetas)
+    prop = c(apply(Y, 1L, function(y) y / sum(y))))
+
+  list(df = data_sim,
+       Y = Y, X = X, Z = if (structural_zero) Z else NULL,
+       true_thetas = true_thetas,
+       true_zetas = if (structural_zero) true_zetas else NULL,
+       true_varthetas = true_varthetas, U = if (random_effects) U else NULL)
+
 }
 
 #' @export
@@ -422,6 +459,7 @@ sim_zanim_ln_s1 <- function(n_sample, random_effects = TRUE, structural_zero = T
     }
   }
   list(Y = Y, X = X, Z = if (structural_zero) Z else NULL,
-       true_thetas = true_thetas, true_zetas = if (structural_zero) true_zetas else NULL,
+       true_thetas = true_thetas,
+       true_zetas = if (structural_zero) true_zetas else NULL,
        true_varthetas = true_varthetas, U = if (random_effects) U else NULL)
 }
