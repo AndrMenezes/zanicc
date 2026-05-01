@@ -40,38 +40,42 @@ rconvexhull <- function(n, X) {
 #' @param posterior_fx array with the posterior draws of f_j(x_i*).
 .prob_x_mlbart <- function(y, posterior_fx) {
   d <- length(y)
-  ndpost <- ncol(posterior_fx)
-  ngrid <- nrow(posterior_fx)
+  ndpost <- dim(posterior_fx)[3L]
+  nproposal <- dim(posterior_fx)[1L]
   # Expand the Y's to evaluate the density in vectorise way
-  Y_expanded <- matrix(rep(y, times = ngrid), nrow = ngrid, ncol = d,
+  Y_expanded <- matrix(rep(y, times = ndpost), nrow = ndpost, ncol = d,
                        byrow = TRUE)
-  # For each draw k compute the probability over the `ngrid` observations
-  prob_x <- matrix(nrow = ngrid, ncol = ndpost)
-  for (k in seq_len(ndpost)) {
-    log_w <- .dmultinomial(x = Y_expanded, prob = posterior_fx[,,k])
-    w <- exp(log_w - max(log_w))
-    prob_x[, k] <- w / sum(w)
+  # For each proposal value (generate from the prior) compute the unnormalised target
+  log_probs <- numeric(nproposal)
+  for (i in seq_len(nproposal)) {
+    log_w <- .dmultinomial(x = Y_expanded, prob = t(posterior_fx[i,,]))
+    log_probs[i] <- zanicc:::.log_sum_exp(log_w)
   }
-  rowMeans(prob_x)
+  # Self-normalise
+  probs <- exp(log_probs)
+  probs / sum(probs)
 }
 
 .prob_x_zanimbart <- function(y, posterior_fx_theta, posterior_fx_zeta) {
   d <- length(y)
-  ndpost <- ncol(posterior_fx_theta)
-  ngrid <- nrow(posterior_fx_theta)
-  seqn <- seq_len(ngrid)
-  # For each draw k compute the probability over the `ngrid` observations
-  prob_x <- matrix(nrow = ngrid, ncol = ndpost)
-  for (k in seq_len(ndpost)) {
-    log_w <- lapply(seqn, function(i) {
-      log_pmf_zanim(x = y, prob = posterior_fx_theta[i, ,k],
+  ndpost <- dim(posterior_fx_theta)[3L]
+  nproposal <- dim(posterior_fx_theta)[1L]
+  seqn <- seq_len(ndpost)
+  # For each proposal value (generate from the prior) compute the unnormalised target
+  log_probs <- numeric(nproposal)
+
+  for (i in seq_len(nproposal)) {
+    log_w <- lapply(seqn, function(k) {
+      log_pmf_zanim(x = y,
+                    prob = posterior_fx_theta[i, ,k],
                     zeta = posterior_fx_zeta[i, ,k])
     })
     log_w <- unlist(log_w)
-    w <- exp(log_w - max(log_w))
-    prob_x[, k] <- w / sum(w)
+    log_probs[i] <- zanicc:::.log_sum_exp(log_w)
   }
-  rowMeans(prob_x)
+  # Self-normalise
+  probs <- exp(log_probs)
+  probs / sum(probs)
 }
 
 
@@ -188,8 +192,8 @@ compute_vartheta_zanimlnbart <- function(thetas, zetas, chol_Sigma_V, Bt,
                                          verbose = FALSE, printevery = 100L)  {
   n_sample <- dim(thetas)[1L]
   d <- dim(thetas)[2L]
-  dm1 <- d - 1L
   ndpost <- dim(thetas)[3L]
+  dm1 <- d - 1L
   seqn <- seq_len(n_sample)
   draws <- array(data = NA_real_, dim = c(n_sample, d, ndpost))
   for (k in seq_len(ndpost)) {
@@ -508,7 +512,7 @@ compute_proposal_fx_zanimlnbart <- function(object, proposal_parms, n_proposal,
   forward_model <- match.arg(forward_model)
   # Define new module
   ml <- Rcpp::Module(module = "inverse_posterior", PACKAGE = "zanicc")
-  cpp_obj <- new(ml$InversePosterior, ncol(Y), ntrees, ntrees, ndpost,
+  cpp_obj <- new(ml$InversePosterior, ncol(Y), ntrees, ntrees, #ndpost,
                  forward_model, forests_dir)
   # If there is no initial value sample from the prior
   n <- nrow(Y)
