@@ -7,13 +7,13 @@ constexpr double PI_2 = 6.283185307179586231996;
 
 // Constructor
 InversePosterior::InversePosterior(int d, int ntrees_theta, int ntrees_zeta,
-                                   int n_particles,
+                                   // int n_particles,
                                    std::string forward_model,
                                    std::string forests_dir) :
                                    d(d),
                                    ntrees_theta(ntrees_theta),
                                    ntrees_zeta(ntrees_zeta),
-                                   n_particles(n_particles),
+                                   // n_particles(n_particles),
                                    forward_model(forward_model),
                                    forests_dir(forests_dir) {
 }
@@ -414,12 +414,17 @@ std::vector<double> InversePosterior::SamplerZANIMLNBARTeSS(arma::umat Y,
     files_zeta.emplace_back(ff2, std::ios::binary);
   }
   // Open file for the the posterior draws of chol(Sigma_V)
-  std::ifstream ff_Sigma_V(forests_dir + "chol_Sigma_V.bin", std::ios::binary);
+  std::ifstream ff_Sigma_V(forests_dir + "/chol_Sigma_V.bin", std::ios::binary);
   // Create placeholder vector for dynamic read the posterior draws
   std::vector<double> chol_Sigma_V(dm1*dm1, 0.0);
-  // std::vector<double> chol_Sigma_V(dm1*dm1*ndpost);
-  // ff_Sigma_V.read(reinterpret_cast<char*>(chol_Sigma_V.data()), sizeof(double) * dm1 * dm1 * ndpost);
+  std::vector<double> chol_Sigma_V_ALL(dm1*dm1*ndpost);
+  ff_Sigma_V.read(reinterpret_cast<char*>(chol_Sigma_V_ALL.data()), sizeof(double) * dm1 * dm1 * ndpost);
 
+  if (!ff_Sigma_V) {
+    std::cerr << "Read failed!\n";
+  }
+
+  std::cout << "chol_Sigma_V_ALL " << chol_Sigma_V_ALL[0] << " " << chol_Sigma_V_ALL[1] << "\n";
 
   // Transform the B (sum-to-zero) vector into row-major
   std::vector<double> Brm = mat_to_double_rowmajor(B);
@@ -476,6 +481,8 @@ std::vector<double> InversePosterior::SamplerZANIMLNBARTeSS(arma::umat Y,
       // Load current posterior draw of chol_Sigma_V
       ff_Sigma_V.read(reinterpret_cast<char*>(chol_Sigma_V.data()),
                       sizeof(double) * dm1 * dm1);
+
+      // std::cout << "chol(Sigma_V) " << chol_Sigma_V[0] << " " << chol_Sigma_V[1] << " " << chol_Sigma_V[2] << "\n";
 
       // Run for "n_rep" iterations per posterior sample to guarantee convergence
       for (int k=0; k < n_rep; k++) {
@@ -536,7 +543,8 @@ std::vector<double> InversePosterior::SamplerZANIMLNBARTeSS(arma::umat Y,
 }
 
 // Compute the Log-likelihood of ZANIM-BART given y and x,
-double InversePosterior::lmlZANIM(std::vector<int> &y, std::vector<double> &x) {
+double InversePosterior::lmlZANIM(std::vector<int> &y, std::vector<double> &x,
+                                  int n_particles) {
 
   int np = 1;
 
@@ -599,76 +607,87 @@ double InversePosterior::lmlZANIM(std::vector<int> &y, std::vector<double> &x) {
 
 
 // TODO: Finish....
-void InversePosterior::ComputeWeightsIS(arma::umat Y, int n_proposal, arma::mat B,
+std::vector<double> InversePosterior::GetZANIMLNBARTWeightsIS(std::vector<int> y,
+                                        int n_proposal,
+                                        int ndpost,
+                                        arma::mat B,
                                         std::string draws_dir) {
 
   // Dimension
-  int n_samples = Y.n_rows, d = Y.n_cols, dm1 = d - 1;
+  int d = y.size(), dm1 = d - 1;
 
   // Transform data into row-major vectors
-  std::vector<int> Yrm = umat_to_int_rowmajor(Y);
   std::vector<double> Brm = mat_to_double_rowmajor(B);
 
   // Open file for the the posterior draws of chol(Sigma_V)
-  std::ifstream ff_Sigma_V(forests_dir + "chol_Sigma_V.bin", std::ios::binary);
-  std::ifstream ff_theta(draws_dir + "theta_ij.bin", std::ios::binary);
-  std::ifstream ff_zeta(draws_dir + "zeta_ij.bin", std::ios::binary);
+  std::ifstream ff_Sigma_V(forests_dir + "/chol_Sigma_V.bin", std::ios::binary);
+  std::ifstream ff_theta(draws_dir + "/theta_ij.bin", std::ios::binary);
+  std::ifstream ff_zeta(draws_dir + "/zeta_ij.bin", std::ios::binary);
 
   // Create vector to read the posterior draws of chol_Sigma_V
-  std::vector<double> chol_Sigma_V(dm1*dm1*n_proposal);
-  // Load all posterior draws of chol_Sigma_V
-  ff_Sigma_V.read(reinterpret_cast<char*>(chol_Sigma_V.data()),
-                  sizeof(double) * dm1 * dm1 * n_proposal);
+  std::vector<double> chol_Sigma_V(dm1*dm1, 0.0);
 
-
-  // Load all posterior draws of theta_ij and zeta_ij as well
-  std::vector<double> theta(n_samples*d*n_proposal);
-  std::vector<double> zeta(n_samples*d*n_proposal);
-  ff_theta.read(reinterpret_cast<char*>(theta.data()),
-                  sizeof(double) * n_samples * d * n_proposal);
-  ff_zeta.read(reinterpret_cast<char*>(zeta.data()),
-               sizeof(double) * n_samples * d * n_proposal);
-
+  // Create vector to read one posterior draw of theta_ij and zeta_ij
+  std::vector<double> theta(n_proposal*d, 0.0);
+  std::vector<double> zeta(n_proposal*d, 0.0);
+  // Another vector to copy the values for a given observation i
   std::vector<double> theta_cur(d, 0.0);
   std::vector<double> zeta_cur(d, 0.0);
 
-
-
   // Create vector to allocate the counts for a given sample unit i
-  std::vector<int> y(d, 0);
-  int ntrial = 0;
+  int ntrial = std::accumulate(y.begin(), y.end(), 0.0);
   double progress = 0.0;
 
-  // Iterate over the observations samples
-  for (int i=0; i < n_samples; i++) {
+  // The predictions are stored by posterior draws, so
+  // [1 block][2 block]...[ndpost block], for k = ndpost
+  // Each k block is (n_proposal × d) in column-major.
 
-    //int base_i = i * ndpost * p;
 
-    // Get current values of Y_i and compute the N_i=\sum_j(y_{ij})
-    ntrial = 0;
-    for (int j = 0; j < d; j++) {
-      y[j] = Yrm[i * d + j];
-      ntrial += y[j];
-    }
-
-    // For each posterior draws compute the log-likelihood
-    for (int k=0; k < n_proposal; k++) {
-
-      // Read the current theta^{(k)}_ij for given posterior draw k
+  std::vector<double> log_w(n_proposal, -INFINITY);
+  double m, ll;
+  // Iterate over posterior draws
+  for (int k=0; k < ndpost; k++) {
+    std::cout << k << "\n";
+    // Read one block (n_proposal*d)
+    ff_theta.read(reinterpret_cast<char*>(theta.data()),
+                  sizeof(double) * n_proposal * d);
+    ff_zeta.read(reinterpret_cast<char*>(zeta.data()),
+                 sizeof(double) * n_proposal * d);
+    // Read current posterior draw of chol(Sigma_V)
+    ff_Sigma_V.read(reinterpret_cast<char*>(chol_Sigma_V.data()),
+                    sizeof(double) * dm1 * dm1);
+    // std::cout << "chol(Sigma_V) " << chol_Sigma_V[0] << " " << chol_Sigma_V[1] << " " << chol_Sigma_V[2] << "\n";
+    // Iterate over proposal values (samples) and compute the log-likelihood
+    for (int i=0; i < n_proposal; i++) {
+      // Copy the current theta_ij
       for (int j=0; j < d; j++) {
-
-
+        theta_cur[j] = theta[j*n_proposal + i];
+        // std::cout << "i= " << i << " j= " << j << " theta_cur= " << theta_cur[j] << "  " << theta[j*n_proposal + i] <<"\n";
+        zeta_cur[j] = zeta[j*n_proposal + i];
       }
-
-
+      // Compute the log-likelihood of observation i and posterior draw k
+      ll = log_pmf_zanim_ln_conditional(y, theta_cur, zeta_cur, chol_Sigma_V, Brm);
+      // std::cout << " ll " << ll << "\n";
+      // Update using log-sum-exp trick
+      m = std::max(log_w[i], ll);
+      log_w[i] = m + std::log(std::exp(log_w[i] - m) + std::exp(ll - m));
     }
-
   }
+  // Self-normalise the weights
+  std::vector<double> w(n_proposal, 0.0);
+  m = *std::max_element(log_w.begin(), log_w.end());
+  double s = 0.0;
+  for (int i=0; i < n_proposal; i++) {
+    w[i] = std::exp(log_w[i] - m);
+    s += w[i];
+  }
+  for (int i=0; i < n_proposal; i++) w[i] /= s;
+
+  ff_zeta.close();  ff_theta.close();
+  ff_Sigma_V.close();
 
 
-
-
-
+  return w;
 }
 
 // Exposing a C++ class in R
@@ -678,12 +697,13 @@ RCPP_MODULE(inverse_posterior) {
   Rcpp::class_<InversePosterior>("InversePosterior")
 
   // Constructor
-  .constructor<int, int, int, int, std::string, std::string>()
+  .constructor<int, int, int, std::string, std::string>()
 
   // Methods
   .method("SamplerMLBARTeSS", &InversePosterior::SamplerMLBARTeSS)
   .method("SamplerZANIMBARTeSS", &InversePosterior::SamplerZANIMBARTeSS)
   .method("SamplerZANIMLNBARTeSS", &InversePosterior::SamplerZANIMLNBARTeSS)
+  .method("GetZANIMLNBARTWeightsIS", &InversePosterior::GetZANIMLNBARTWeightsIS)
   .method("lmlZANIM", &InversePosterior::lmlZANIM)
 
   ;

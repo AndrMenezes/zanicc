@@ -7,7 +7,7 @@ class InversePosterior {
 
 public:
   // Constructor
-  InversePosterior(int d, int ntrees_theta, int ntrees_zeta, int n_particles,
+  InversePosterior(int d, int ntrees_theta, int ntrees_zeta, //int n_particles,
                    std::string forward_model, std::string forests_dir);
 
   int d, ntrees_theta, ntrees_zeta, n_particles;
@@ -17,7 +17,7 @@ public:
   // Which forward model to use
   std::string forward_model;
 
-  // Inverse posterior sampler using elipitical slice sampling
+  // Inverse posterior sampler using elliptical slice sampling
   std::vector<double> SamplerMLBARTeSS(arma::umat Y, arma::mat X_ini, int ndpost,
                                        std::vector<double> mean_prior, arma::mat S_prior,
                                        int n_rep);
@@ -41,9 +41,10 @@ public:
                               const std::vector<std::vector<Node*>> &forest_theta,
                               const std::vector<std::vector<Node*>> &forest_zeta);
 
-  void ComputeWeightsIS(arma::umat Y, int ndpost, arma::mat B, std::string draws_dir);
+  std::vector<double> GetZANIMLNBARTWeightsIS(std::vector<int> y, int n_proposal, int ndpost,
+                                              arma::mat B, std::string draws_dir);
 
-  double lmlZANIM(std::vector<int> &y, std::vector<double> &x);
+  double lmlZANIM(std::vector<int> &y, std::vector<double> &x, int n_particles);
 
 
 };
