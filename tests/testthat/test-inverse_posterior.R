@@ -907,21 +907,25 @@ test_that("ZANIM-LN-BART two-dimension", {
   }
 
 
-  # Compute the f(x*) and generate proposal (do this once)
+  # Generate uniform proposal in the convex-hull
   N_PROPOSAL <- 2000L
-  proposal_parms <- list(X = X_train)
-  if (!file.exists(file.path(path_res, "theta_ij.bin"))) {
-    compute_proposal_fx_zanimlnbart(object = zanim_ln_bart, proposal_parms = proposal_parms,
-                                    n_proposal = N_PROPOSAL, load = FALSE,
-                                    save = TRUE, output_dir = path_res)
+  if (file.exists(file.path(path_res, "x_proposal.rds"))) {
+    x_proposal <- readRDS(file.path(path_res, "x_proposal.rds"))
+  } else {
+    set.seed(1212)
+    x_proposal <- rconvexhull(n = N_PROPOSAL, X = X_train)
+    saveRDS(x_proposal, file.path(path_res, "x_proposal.rds"))
   }
-
   # IS
-  is <- .is_zanimlnbart(object = zanim_ln_bart, Y = Y_test, proposal_parms = proposal_parms,
-                        dir_posterior_fx = path_res, n_proposal = N_PROPOSAL)
+  is <- .is_zanimlnbart(object = zanim_ln_bart, Y = Y_test, x_proposal = x_proposal,
+                        dir_posterior_fx = path_res)
   # SIR
-  sir <- .is_zanimlnbart(object = zanim_ln_bart, Y = Y_test, proposal_parms = proposal_parms,
-                         dir_posterior_fx = path_res, n_proposal = N_PROPOSAL, sir = TRUE)
+  sir <- apply(probs, 2, function(p) {
+    ids <- sample.int(n = n_proposal, size = n_resampling, replace = TRUE,
+                      prob = p)
+    x_proposal[ids, , drop = FALSE]
+  }, simplify = FALSE)
+
   # eSS
   mean_prior = rep(0.0, 2); S_prior = diag(1.0, nrow = 2);
   ess <- .gibbs_sampler(Y = Y_test, mean_prior = mean_prior, S_prior = S_prior,
@@ -992,7 +996,54 @@ test_that("ZANIM-LN-BART two-dimension", {
   ml <- Rcpp::Module(module = "inverse_posterior", PACKAGE = "zanicc")
   cpp_obj <- new(ml$InversePosterior, d, NTREES, NTREES,
                  "forward_model", forests_dir)
-  probs_cpp <- cpp_obj$GetZANIMLNBARTWeightsIS(yast, N_PROPOSAL, NDPOST, t(zanim_ln_bart$Bt), path_res)
+  out <- apply(Y_test, 1, function(y) {
+    cpp_obj$GetZANIMLNBARTWeightsIS(y, N_PROPOSAL, 1000,
+                                    t(zanim_ln_bart$Bt), path_res)
+  })
+  # x_proposal <- is[, -seq_len(n_test)]
+  pdf(file.path(path_res, "is___.pdf"), width = 6, height = 3)
+  for (i in seq_len(n_test)) {
+    x_true <- X_test[i, ]
+    cat(i, "\n")
+    # Linear interpolation for IS
+    is_interp <- akima::interp(x_proposal[, 1], x_proposal[, 2], out[, i], linear = TRUE)
+    # Plotting
+    par(mar = c(3, 3, 1, 1))
+    # IS
+    contour(is_interp$x, is_interp$y, is_interp$z,
+            main = paste0("y_i = (", paste0(Y_test[i, ], collapse = ","), ")"))
+    points(x_true[1], x_true[2], col = "blue", pch = 4, cex = 2)
+    abline(v = x_true[1], h = x_true[2])
+  }
+  graphics.off()
+
+  # Resampling
+  dim(out)
+  x_sir <- apply(out, 2, function(p) {
+    ids <- sample.int(n = N_PROPOSAL, size = N_PROPOSAL/2, replace = TRUE,
+                      prob = p)
+    x_proposal[ids, , drop = FALSE]
+  }, simplify = FALSE)
+  dim(x_sir)
+  i=3
+
+  pdf(file.path(path_res, "sir_hdr2s___.pdf"), width = 6, height = 3)
+  for (i in seq_len(n_test)) {
+    cat(i, "\n")
+    par(mar = c(3, 3, 1, 1))
+    obj <- hdrcde::hdr.2d(x = x_sir[[i]][, 1], y = x_sir[[i]][, 2], prob = c(95, 50))
+    plot(obj, main = paste0("y_i = (", paste0(Y_test[i, ], collapse = ","), ")"))
+    points(X_test[i, 1], X_test[i, 2], col = "blue", pch = 4, cex = 2)
+  }
+  graphics.off()
+
+  hdrcde::hdr.boxplot.2d(x = x_sir[[i]][, 1], y = x_sir[[i]][, 2],
+                         pointcol = "red", show.points = TRUE, pch = 3)
+
+  hdrcde::hdr.boxplot.2d(x = x_sir[[i]][, 1], y = x_sir[[i]][, 2],
+                         pointcol = "red", show.points = FALSE, pch = 3)
+
+
 
   # Load the vartheta computed in R without conditional on y
   thetas <- load_bin_predictions(fname = file.path(path_res, "theta_ij.bin"),
@@ -1008,11 +1059,32 @@ test_that("ZANIM-LN-BART two-dimension", {
                                             Bt = zanim_ln_bart$Bt, verbose = TRUE)
   # Compute the log-likelihood for a given y
   probs <- .prob_x_mlbart(y = yast, posterior_fx = varthetas)
+
+  par(mfrow = c(1, 2))
   hist(probs)
+  hist(probs_cpp)
+
+  par(mfrow = c(2, 2))
   plot(x_proposal[, 1], probs, typ = "h")
   abline(v = xtrue[1], col = "blue")
   plot(x_proposal[, 2], probs, typ = "h")
   abline(v = xtrue[2], col = "blue")
+
+  plot(x_proposal[, 1], probs_cpp, typ = "h")
+  abline(v = xtrue[1], col = "blue")
+  plot(x_proposal[, 2], probs_cpp, typ = "h")
+  abline(v = xtrue[2], col = "blue")
+
+  is_interp <- akima::interp(x_proposal[, 1], x_proposal[, 2], probs, linear = TRUE)
+  is_interp_2 <- akima::interp(x_proposal[, 1], x_proposal[, 2], probs_cpp, linear = TRUE)
+  par(mfrow = c(1, 2))
+  contour(is_interp$x, is_interp$y, is_interp$z, main = "R")
+  points(xtrue[1], xtrue[2], col = "blue", pch = 4, cex = 2)
+  abline(v = xtrue[1], h = xtrue[2])
+
+  contour(is_interp_2$x, is_interp_2$y, is_interp_2$z, main = "C++")
+  points(xtrue[1], xtrue[2], col = "blue", pch = 4, cex = 2)
+  abline(v = xtrue[1], h = xtrue[2])
 
 
 })

@@ -310,9 +310,6 @@ compute_proposal_fx_zanimlnbart <- function(object, proposal_parms, n_proposal,
                        sir = FALSE, n_resampling = floor(n_proposal/2),
                        output_dir = tempdir(), save = FALSE,
                        dir_posterior_fx = NULL, x_proposal = NULL) {
-
-  n_samples <- nrow(Y)
-
   # Load the proposal and the posterior fx
   if (!is.null(dir_posterior_fx)) {
     if (!file.exists(file.path(dir_posterior_fx, "theta_ij.bin")))
@@ -336,7 +333,7 @@ compute_proposal_fx_zanimlnbart <- function(object, proposal_parms, n_proposal,
 
     cache_proposal_fx <- list(posterior_fx = posterior_fx, x_proposal = x_proposal)
   } else {
-    cat("Generaing the proposal for x* and computing the posterior-predictive of f_j(x_i*) \n")
+    cat("Generating the proposal for x* and computing the posterior-predictive of f_j(x_i*) \n")
     # Generate proposal
     cache_proposal_fx <- compute_proposal_fx_mlbart(object, proposal_parms, n_proposal,
                                                     load = TRUE, save = save,
@@ -370,9 +367,6 @@ compute_proposal_fx_zanimlnbart <- function(object, proposal_parms, n_proposal,
                           conditional = FALSE,
                           output_dir = tempdir(), save = FALSE,
                           dir_posterior_fx = NULL, x_proposal = NULL) {
-
-  n_samples <- nrow(Y)
-
   # Load the proposal and the posterior fx
   if (!is.null(dir_posterior_fx)) {
     cat("Loading the proposal for x* and the posterior-predictive of f(x*) \n")
@@ -381,6 +375,7 @@ compute_proposal_fx_zanimlnbart <- function(object, proposal_parms, n_proposal,
       stop("file {x_proposal.rds} with the proposal distribution x* doesn't exist in the folder {dir_posterior_fx}")
     x_proposal <- readRDS(file = fproposal)
     n_proposal <- nrow(x_proposal)
+    n_resampling <- floor(n_proposal/2)
 
     if (conditional) {
       fvartheta <- file.path(dir_posterior_fx, "vartheta.rds")
@@ -404,7 +399,7 @@ compute_proposal_fx_zanimlnbart <- function(object, proposal_parms, n_proposal,
                                 x_proposal = x_proposal)
     }
   } else {
-    cat("Generaing the proposal for x* and computing the posterior-predictive of f^{(c)}_j(x*) and f^{(0)}_j(x*) \n")
+    cat("Generating the proposal for x* and computing the posterior-predictive of f^{(c)}_j(x*) and f^{(0)}_j(x*) \n")
     # Generate proposal
     cache_proposal_fx <- compute_proposal_fx_zanimbart(object,
                                                        proposal_parms = proposal_parms,
@@ -446,56 +441,48 @@ compute_proposal_fx_zanimlnbart <- function(object, proposal_parms, n_proposal,
 
 #' Importance sampling for approximate the inverse posterior distribution using the
 #' ZANIM-BART model.
-.is_zanimlnbart <- function(object, Y, proposal_parms, n_proposal = 5000L,
-                            sir = FALSE, n_resampling = floor(n_proposal/2),
-                            output_dir = tempdir(), save = FALSE,
-                            dir_posterior_fx = NULL, x_proposal = NULL) {
+.is_zanimlnbart <- function(object, Y, x_proposal, dir_posterior_fx,
+                            ndpost = object$ndpost,
+                            sir = FALSE,
+                            n_resampling = floor(nrow(x_proposal)/2),
+                            probs = NULL,
+                            ) {
 
-  n_samples <- nrow(Y)
-
-  # Load the proposal and the posterior fx
-  if (!is.null(dir_posterior_fx)) {
-    cat("Loading the proposal for x* and the posterior-predictive of f(x*) \n")
-    fproposal <- file.path(dir_posterior_fx, "x_proposal.rds")
-    if (!file.exists(fproposal))
-      stop("file {x_proposal.rds} with the proposal distribution x* doesn't exist in the folder {dir_posterior_fx}")
-    x_proposal <- readRDS(file = fproposal)
-    n_proposal <- nrow(x_proposal)
-    fvartheta <- file.path(dir_posterior_fx, "vartheta.rds")
-    if (!file.exists(fvartheta))
-      stop("file {vartheta.rds} with the posterior distribution of \vartheta_ij doesn't exist in the folder {dir_posterior_fx}")
-    vartheta <- readRDS(file = fvartheta)
-    cache_proposal_fx <- list(posterior_fx = vartheta, x_proposal = x_proposal)
-  } else {
-    cat("Generaing the proposal for x* and computing the posterior-predictive of f^{(c)}_j(x*) and f^{(0)}_j(x*) \n")
-    # Generate proposal
-    cache_proposal_fx <- compute_proposal_fx_zanimlnbart(object,
-                                                         proposal_parms = proposal_parms,
-                                                         n_proposal = n_proposal,
-                                                         load = TRUE, save = save,
-                                                         output_dir = output_dir,
-                                                         x_proposal = x_proposal)
+  n_proposal <- nrow(x_proposal)
+  # Check if the files with parameter predictions exist
+  ftheta <- file.path(dir_posterior_fx, "theta_ij.bin")
+  fzeta <- file.path(dir_posterior_fx, "zeta_ij.bin")
+  if (!file.exists(ftheta) || !file.exists(fzeta)) {
+    cat("files {theta_ij.bin} and {zeta_ij.bin} with the posterior distribution of f^{(c)}(x*) and f^{(0)}(x*) do exist in the folder {dir_posterior_fx}. Computing such predictions...\n")
+    # Compute the posterior distribution of f^{(c)}_j(x*) and f^{(0)}_j(x*) for x*~\pi(x*) and j=1,...,d
+    predict(object, newdata = x_proposal, load = FALSE, output_dir = dir_posterior_fx,
+            type = "theta")
+    predict(object, newdata = x_proposal, load = FALSE, output_dir = dir_posterior_fx,
+            type = "zeta")
   }
-  cat("Computing the probabilities using importance sampling...\n")
-  # Estimated importance sampling probabilities
-  probs <- apply(Y, 1, function(y) {
-    .prob_x_mlbart(y = y, posterior_fx = cache_proposal_fx$posterior_fx)
-  })
 
+  # Estimated importance sampling probabilities, call C++
+  ml <- Rcpp::Module(module = "inverse_posterior", PACKAGE = "zanicc")
+  cpp_obj <- new(ml$InversePosterior, ncol(Y), ntrees, ntrees,
+                 "zanim_ln_bart", object$forests_dir)
+  probs <- apply(Y, 1, function(y) {
+    cpp_obj$GetZANIMLNBARTWeightsIS(y, n_proposal, ndpost, t(object$Bt),
+                                    dir_posterior_fx)
+  })
   # If SIR then return a list with the resampling x_proposal
   if (sir) {
     cat("Resampling...\n")
     x_sir <- apply(probs, 2, function(p) {
       ids <- sample.int(n = n_proposal, size = n_resampling, replace = TRUE,
                         prob = p)
-      cache_proposal_fx$x_proposal[ids, , drop = FALSE]
+      x_proposal[ids, , drop = FALSE]
     }, simplify = FALSE)
     attr(x_sir, "is_probs") <- probs
     return(x_sir)
   }
   # Otherwise, return a matrix with first column with the probabilities and the
   # remaining ones the proposal x
-  return(cbind(probs = probs, cache_proposal_fx$x_proposal))
+  return(cbind(probs = probs, x_proposal))
 }
 
 
