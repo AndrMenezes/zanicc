@@ -319,13 +319,13 @@ sim_data_zanicc_2d <- function(n_grid = 20, n_sample = n_grid^2, d, n_trials,
     true_zetas <- stats::pnorm(eta_zeta)
   }
   # Random effects
-  U <- matrix(0, n_sample, d)
+  U <- matrix(0, n, d)
   if (random_effects) {
     Gamma <- matrix(stats::runif(d * q_factors, 0, 1), d, q_factors)
     Psi <- diag(seq(0.32, 0.35, length.out = d))
     Sigma_U <- tcrossprod(Gamma) + Psi
     chol_Sigma_U <- chol(Sigma_U)
-    for (i in seq_len(n_sample)) U[i, ] <- drop(stats::rnorm(d) %*% chol_Sigma_U)
+    for (i in seq_len(n)) U[i, ] <- drop(stats::rnorm(d) %*% chol_Sigma_U)
   }
   # Population-level count probability
   eta_theta <- matrix(nrow = n, ncol = d)
