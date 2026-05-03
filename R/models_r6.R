@@ -567,6 +567,7 @@ MultinomialBART <- R6::R6Class(classname = "MultinomialBART", public = list(
     self$nskip <- nskip
     self$forests_dir <- forests_dir
     self$keep_draws <- keep_draws
+    self$save_trees <- save_trees
     if (!self$shared_trees) {
       if (!is.list(splitprobs)) splitprobs <- replicate(self$d, splitprobs, simplify = FALSE)
       alpha_sparse <- rep(alpha_sparse, self$d)
@@ -688,6 +689,7 @@ MultinomialLNBART <- R6::R6Class(classname = "MultinomialLNBART", public = list(
     self$nskip <- nskip
     self$forests_dir <- forests_dir
     self$keep_draws <- keep_draws
+    self$save_trees <- save_trees
     if (!is.list(splitprobs)) splitprobs <- replicate(self$d, splitprobs, simplify = FALSE)
       alpha_sparse <- rep(alpha_sparse, self$d)
 
