@@ -916,12 +916,29 @@ test_that("ZANIM-LN-BART two-dimension", {
     x_proposal <- rconvexhull(n = N_PROPOSAL, X = X_train)
     saveRDS(x_proposal, file.path(path_res, "x_proposal.rds"))
   }
+
+  Y_test <- Y_test[1:3,]
+  X_test <- X_test[1:3,]
+
+  is <- inverse_posterior_zanimlnbart(object = zanim_ln_bart, Y = Y_test,
+                                      x_proposal = x_proposal,
+                                      dir_posterior_fx = path_res, method = "is")
+
+  mean_prior = rep(0.0, 2); S_prior = diag(1.0, nrow = 2);
+  ess <- inverse_posterior_zanimlnbart(object = zanim_ln_bart, Y = Y_test,
+                                       mean_prior = mean_prior, S_prior = S_prior,
+                                       dir_posterior_fx = path_res,
+                                       method = "ess")
+
   # IS
-  is <- .is_zanimlnbart(object = zanim_ln_bart, Y = Y_test, x_proposal = x_proposal,
+  is <- .is_zanimlnbart(object = zanim_ln_bart, Y = Y_test[1:3, ],
+                        x_proposal = x_proposal,
                         dir_posterior_fx = path_res)
+  probs <- is[, 1:3]
   # SIR
+  n_resampling <- N_PROPOSAL/2L
   sir <- apply(probs, 2, function(p) {
-    ids <- sample.int(n = n_proposal, size = n_resampling, replace = TRUE,
+    ids <- sample.int(n = N_PROPOSAL, size = n_resampling, replace = TRUE,
                       prob = p)
     x_proposal[ids, , drop = FALSE]
   }, simplify = FALSE)
@@ -996,10 +1013,18 @@ test_that("ZANIM-LN-BART two-dimension", {
   ml <- Rcpp::Module(module = "inverse_posterior", PACKAGE = "zanicc")
   cpp_obj <- new(ml$InversePosterior, d, NTREES, NTREES,
                  "forward_model", forests_dir)
+  out <- lapply(seq_len(3), function(i) {
+    cat(i, "\n")
+    cpp_obj$GetZANIMLNBARTWeightsIS(Y_test[i, ], N_PROPOSAL, 1000,
+                                    t(zanim_ln_bart$Bt), path_res)
+  })
+  a = do.call(cbind, out)
+  head(a)
   out <- apply(Y_test, 1, function(y) {
     cpp_obj$GetZANIMLNBARTWeightsIS(y, N_PROPOSAL, 1000,
                                     t(zanim_ln_bart$Bt), path_res)
   })
+
   # x_proposal <- is[, -seq_len(n_test)]
   pdf(file.path(path_res, "is___.pdf"), width = 6, height = 3)
   for (i in seq_len(n_test)) {
@@ -1025,7 +1050,7 @@ test_that("ZANIM-LN-BART two-dimension", {
     x_proposal[ids, , drop = FALSE]
   }, simplify = FALSE)
   dim(x_sir)
-  i=3
+  i = 3
 
   pdf(file.path(path_res, "sir_hdr2s___.pdf"), width = 6, height = 3)
   for (i in seq_len(n_test)) {
@@ -1050,7 +1075,8 @@ test_that("ZANIM-LN-BART two-dimension", {
                                              n = N_PROPOSAL, d = d, m = NDPOST)
   zetas <- load_bin_predictions(fname = file.path(path_res, "zeta_ij.bin"),
                                 n = N_PROPOSAL, d = d, m = NDPOST)
-  chol_Sigma_V <- load_bin_coefficients(fname = file.path(forests_dir, "chol_Sigma_V.bin"), p = d-1, d = d-1, m = NDPOST)
+  chol_Sigma_V <- load_bin_coefficients(fname = file.path(forests_dir, "chol_Sigma_V.bin"),
+                                        p = d - 1, d = d - 1, m = NDPOST)
   chol_Sigma_V[,,1]
 
   #
@@ -1088,8 +1114,3 @@ test_that("ZANIM-LN-BART two-dimension", {
 
 
 })
-
-
-
-
-
