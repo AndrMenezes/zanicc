@@ -420,11 +420,8 @@ std::vector<double> InversePosterior::SamplerZANIMLNBARTeSS(arma::umat Y,
   std::vector<double> chol_Sigma_V_ALL(dm1*dm1*ndpost);
   ff_Sigma_V.read(reinterpret_cast<char*>(chol_Sigma_V_ALL.data()), sizeof(double) * dm1 * dm1 * ndpost);
 
-  if (!ff_Sigma_V) {
-    std::cerr << "Read failed!\n";
-  }
-
-  std::cout << "chol_Sigma_V_ALL " << chol_Sigma_V_ALL[0] << " " << chol_Sigma_V_ALL[1] << "\n";
+  if (!ff_Sigma_V) std::cerr << "Read chol(Sigma_V) failed\n";
+  // std::cout << "chol_Sigma_V_ALL " << chol_Sigma_V_ALL[0] << " " << chol_Sigma_V_ALL[1] << "\n";
 
   // Transform the B (sum-to-zero) vector into row-major
   std::vector<double> Brm = mat_to_double_rowmajor(B);
@@ -608,10 +605,10 @@ double InversePosterior::lmlZANIM(std::vector<int> &y, std::vector<double> &x,
 
 // TODO: Finish....
 std::vector<double> InversePosterior::GetZANIMLNBARTWeightsIS(std::vector<int> y,
-                                        int n_proposal,
-                                        int ndpost,
-                                        arma::mat B,
-                                        std::string draws_dir) {
+                                                              int n_proposal,
+                                                              int ndpost,
+                                                              arma::mat B,
+                                                              std::string draws_dir) {
 
   // Dimension
   int d = y.size(), dm1 = d - 1;
@@ -636,18 +633,16 @@ std::vector<double> InversePosterior::GetZANIMLNBARTWeightsIS(std::vector<int> y
 
   // Create vector to allocate the counts for a given sample unit i
   int ntrial = std::accumulate(y.begin(), y.end(), 0.0);
-  double progress = 0.0;
-
   // The predictions are stored by posterior draws, so
   // [1 block][2 block]...[ndpost block], for k = ndpost
   // Each k block is (n_proposal × d) in column-major.
-
-
   std::vector<double> log_w(n_proposal, -INFINITY);
-  double m, ll;
+  double m, ll, progress = 0.0;;
   // Iterate over posterior draws
   for (int k=0; k < ndpost; k++) {
-    std::cout << k << "\n";
+    progress = (double) 100 * k / ndpost;
+    Rprintf("%3.2f%% completed for computing the log-weights", progress);
+    Rprintf("\r");
     // Read one block (n_proposal*d)
     ff_theta.read(reinterpret_cast<char*>(theta.data()),
                   sizeof(double) * n_proposal * d);
@@ -656,7 +651,6 @@ std::vector<double> InversePosterior::GetZANIMLNBARTWeightsIS(std::vector<int> y
     // Read current posterior draw of chol(Sigma_V)
     ff_Sigma_V.read(reinterpret_cast<char*>(chol_Sigma_V.data()),
                     sizeof(double) * dm1 * dm1);
-    // std::cout << "chol(Sigma_V) " << chol_Sigma_V[0] << " " << chol_Sigma_V[1] << " " << chol_Sigma_V[2] << "\n";
     // Iterate over proposal values (samples) and compute the log-likelihood
     for (int i=0; i < n_proposal; i++) {
       // Copy the current theta_ij
@@ -683,8 +677,8 @@ std::vector<double> InversePosterior::GetZANIMLNBARTWeightsIS(std::vector<int> y
   }
   for (int i=0; i < n_proposal; i++) w[i] /= s;
 
-  ff_zeta.close();  ff_theta.close();
-  ff_Sigma_V.close();
+  // Close files
+  ff_zeta.close();  ff_theta.close(); ff_Sigma_V.close();
 
 
   return w;

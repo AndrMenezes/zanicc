@@ -4,7 +4,7 @@
 #include "utils.h"
 
 // Log PMF of multinomial
-inline double log_pmf_mult(std::vector<int> &x, int &size,
+double log_pmf_mult(std::vector<int> &x, int &size,
                            std::vector<double> &prob) {
   double out = std::lgamma(size + 1);
   for(int j = 0; j < x.size(); j++) {
@@ -373,5 +373,3 @@ double log_pmf_zanim_ln_conditional(std::vector<int> x, std::vector<double> prob
   }
   return out;
 }
-
-

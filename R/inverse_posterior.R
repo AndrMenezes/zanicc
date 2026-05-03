@@ -17,6 +17,7 @@
 #' This function was written by the user of Stack Exchange "whuber" for the following
 #' post:
 #' https://stats.stackexchange.com/questions/663559/transform-convex-hull-vertex-weights-for-uniform-distribution/663594#663594
+#' @export
 rconvexhull <- function(n, X) {
   # Triangulate the points. Indexes into simplices, by row.
   V <- geometry::delaunayn(X)
@@ -442,11 +443,8 @@ compute_proposal_fx_zanimlnbart <- function(object, proposal_parms, n_proposal,
 #' Importance sampling for approximate the inverse posterior distribution using the
 #' ZANIM-BART model.
 .is_zanimlnbart <- function(object, Y, x_proposal, dir_posterior_fx,
-                            ndpost = object$ndpost,
-                            sir = FALSE,
-                            n_resampling = floor(nrow(x_proposal)/2),
-                            probs = NULL,
-                            ) {
+                            ndpost = object$ndpost, sir = FALSE,
+                            n_resampling = floor(nrow(x_proposal)/2)) {
 
   n_proposal <- nrow(x_proposal)
   # Check if the files with parameter predictions exist
@@ -463,15 +461,20 @@ compute_proposal_fx_zanimlnbart <- function(object, proposal_parms, n_proposal,
 
   # Estimated importance sampling probabilities, call C++
   ml <- Rcpp::Module(module = "inverse_posterior", PACKAGE = "zanicc")
-  cpp_obj <- new(ml$InversePosterior, ncol(Y), ntrees, ntrees,
+  cpp_obj <- new(ml$InversePosterior, ncol(Y), object$ntrees_theta, object$ntrees_zeta,
                  "zanim_ln_bart", object$forests_dir)
-  probs <- apply(Y, 1, function(y) {
-    cpp_obj$GetZANIMLNBARTWeightsIS(y, n_proposal, ndpost, t(object$Bt),
-                                    dir_posterior_fx)
+  n <- nrow(Y)
+  B <- t(object$Bt)
+  probs <- lapply(seq_len(n), function(i) {
+    cat("Observation: ", i, "of", n, "\n")
+    cpp_obj$GetZANIMLNBARTWeightsIS(Y[i, ], n_proposal, ndpost, B, dir_posterior_fx)
   })
+  probs <- do.call(cbind, probs)
+
   # If SIR then return a list with the resampling x_proposal
   if (sir) {
     cat("Resampling...\n")
+
     x_sir <- apply(probs, 2, function(p) {
       ids <- sample.int(n = n_proposal, size = n_resampling, replace = TRUE,
                         prob = p)
@@ -577,6 +580,41 @@ inverse_posterior_mlbart <- function(object, Y, method = c("is", "gibbs"),
   res
 }
 
+#' Inverse posterior using the ZANIM-LN-BART model
+#' @export
+inverse_posterior_zanimlnbart <- function(object, Y, x_proposal, dir_posterior_fx,
+                                          mean_prior = NULL, S_prior = NULL,
+                                          method = c("is", "ess"),
+                                          ndpost = object$ndpost, sir = FALSE,
+                                          n_resampling = floor(nrow(x_proposal)/2),
+                                          n_rep = 1L) {
+  method <- match.arg(method)
+  if (method == "is") {
+    res <- .is_zanimlnbart(object = object, Y = Y, x_proposal = x_proposal,
+                           dir_posterior_fx = dir_posterior_fx,
+                           ndpost = object$ndpost, sir = sir,
+                           n_resampling = n_resampling)
+  } else {
+    if (is.null(mean_prior) || is.null(S_prior)) {
+      mean_prior <- rep(0.0, object$p_theta)
+      S_prior <- diag(1.0, object$p_theta, object$p_theta)
+    }
+    res <- .gibbs_sampler(Y = Y, mean_prior = mean_prior, S_prior,
+                          forests_dir = object$forests_dir,
+                          ntrees = object$ntrees_theta, ndpost = object$ndpost,
+                          n_rep = n_rep, forward_model = "zanim_ln_bart")
+  }
+  res
 
+}
 
-
+#' Perform resampling of vector/matrix given the probabilites
+#' @export
+resampling <- function(x_proposal, probs, size = floor(nrow(x_proposal)/2),
+                       replace = TRUE) {
+  n_proposal <- nrow(x_proposal)
+  apply(probs, 2, function(p) {
+    ids <- sample.int(n = n_proposal, size = size, replace = replace, prob = p)
+    x_proposal[ids, , drop = FALSE]
+  }, simplify = FALSE)
+}
