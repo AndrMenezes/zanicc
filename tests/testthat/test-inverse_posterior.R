@@ -731,7 +731,8 @@ test_that("ZANIM-LN-BART one-dimension", {
                                          covariance = "exponential", q_factors = 10L)
   # tmp <- sim_zanim_ln_s1(n_sample = n_sample, random_effects = TRUE,
   #                        structural_zero = TRUE)
-  colMeans(tmp$Y == 0)
+  cbind(sampling = colMeans(tmp$Y == 0) - colMeans(1 - tmp$Z),
+        structural = colMeans(1 - tmp$Z))
 
   # Split the data
   n_test <- 100L
@@ -740,10 +741,13 @@ test_that("ZANIM-LN-BART one-dimension", {
   X_test <- tmp$X[id_test, , drop = FALSE]
   Y_train <- tmp$Y[-id_test, ]
   X_train <- tmp$X[-id_test, , drop = FALSE]
+  true_thetas <- tmp$theta[-id_test, ]
+  true_varthetas <- tmp$abundance[-id_test, ]
+  true_zetas <- tmp$zeta[-id_test, ]
 
   # Fit forward model
   NDPOST <- 5000L
-  NSKIP <- 5000L
+  NSKIP <- 2000L
   NTREES <- 100L
 
   if (!file.exists(file.path(path_res, "mod.rds"))) {
@@ -754,6 +758,29 @@ test_that("ZANIM-LN-BART one-dimension", {
     save_model(object = zanim_ln_bart, model_dir = path_res)
   }
   zanim_ln_bart <- load_model(model_dir = path_res)
+
+  # Check if we recover the parameters
+  mfrow_op <- c(4, 5)#c(3, 2)#grDevices::n2mfrow(28)
+  pdf(file.path(path_res, "posterior_mean_vs_true.pdf"), width = 8, height = 6)
+  par(mfrow = mfrow_op, mar = c(3, 3, 1, 1))
+  for (j in seq_len(d)) {
+    plot(true_thetas[,j], rowMeans(zanim_ln_bart$draws_theta[,j,]),
+         xlab = "true", ylab = "estimate", main = sprintf("theta_{i%d}", j))
+    abline(0, 1)
+  }
+  par(mfrow = mfrow_op, mar = c(3, 3, 1, 1))
+  for (j in seq_len(d)) {
+    plot(true_varthetas[,j], rowMeans(zanim_ln_bart$draws_abundance[,j,]),
+         xlab = "true", ylab = "estimate", main = sprintf("vartheta_{i%d}", j))
+    abline(0, 1)
+  }
+  par(mfrow = mfrow_op, mar = c(3, 3, 1, 1))
+  for (j in seq_len(d)) {
+    plot(true_zetas[,j], rowMeans(zanim_ln_bart$draws_zeta[,j,]),
+         xlab = "true", ylab = "estimate", main = sprintf("zeta_{i%d}", j))
+    abline(0, 1)
+  }
+  graphics.off()
 
   # Generate uniform proposal in the convex-hull
   N_PROPOSAL <- 2000L
@@ -768,8 +795,8 @@ test_that("ZANIM-LN-BART one-dimension", {
   # Y_test <- Y_test[1:3,]
   # X_test <- X_test[1:3,]
 
-  is <- inverse_posterior_zanimlnbart(object = zanim_ln_bart, Y = Y_test,
-                                      x_proposal = x_proposal,
+  is <- inverse_posterior_zanimlnbart(object = zanim_ln_bart, Y = Y_test[1:10, ],
+                                      x_proposal = x_proposal,ndpost = 1000L,
                                       dir_posterior_fx = path_res, method = "is")
   apply(is[, seq_len(n_test)], 2, function(x) 1 / sum(x*x))
   sir <- resampling(x_proposal = x_proposal, probs = is[, seq_len(n_test)],
