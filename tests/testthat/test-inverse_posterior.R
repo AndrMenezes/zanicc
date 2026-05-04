@@ -715,18 +715,22 @@ test_that("ZANIM-LN-BART one-dimension", {
   rm(list = ls())
   devtools::load_all()
 
+  d <- 20L
+
   # Path
-  time_id <-  format(Sys.time(), "%Y-%b-%d-%X")
+  #time_id <-  #format(Sys.time(), "%Y-%b-%d-%X")
   path_local <- "./tests/testthat/inverse_posterior/zanim_ln_bart/one_dimension"
-  path_res <- file.path(path_local, time_id, "results")
+  path_res <- file.path(path_local, "results", sprintf("d=%i", d))
   forests_dir <- file.path(path_res, "forests")
   if (!dir.exists(forests_dir)) dir.create(forests_dir, recursive = TRUE)
 
   set.seed(1212)
-  d <- 4L
+
   n_sample <- 400L
-  tmp <- sim_zanim_ln_s1(n_sample = n_sample, random_effects = TRUE,
-                         structural_zero = TRUE)
+  tmp <- sim_data_zanim_ln_bspline_curve(n = n_sample, d = d, n_trials = 1000,
+                                         covariance = "exponential", q_factors = 10L)
+  # tmp <- sim_zanim_ln_s1(n_sample = n_sample, random_effects = TRUE,
+  #                        structural_zero = TRUE)
   colMeans(tmp$Y == 0)
 
   # Split the data
@@ -742,35 +746,36 @@ test_that("ZANIM-LN-BART one-dimension", {
   NSKIP <- 5000L
   NTREES <- 100L
 
-  if (file.exists(file.path(path_res, "mod.rds"))) {
-    zanim_ln_bart <- load_model(model_dir = path_res)
-  } else {
+  if (!file.exists(file.path(path_res, "mod.rds"))) {
     zanim_ln_bart <- zanicc(Y = Y_train, X_count = X_train, X_zi = X_train,
                             model = "zanim_ln_bart", ntrees_theta = NTREES,
                             ntrees_zeta = NTREES, ndpost = NDPOST,
                             nskip = NSKIP, save_trees = TRUE, forests_dir = forests_dir)
     save_model(object = zanim_ln_bart, model_dir = path_res)
   }
+  zanim_ln_bart <- load_model(model_dir = path_res)
 
-  # Compute the f(x*) and generate proposal (do this once)
+  # Generate uniform proposal in the convex-hull
   N_PROPOSAL <- 2000L
-  proposal_parms <- list(min_x = min(X_train), max_x = max(X_train))
-  if (!file.exists(file.path(path_res, "theta_ij.bin"))) {
-    compute_proposal_fx_zanimlnbart(object = zanim_ln_bart, proposal_parms = proposal_parms,
-                                    n_proposal = N_PROPOSAL, load = FALSE,
-                                    save = TRUE, output_dir = path_res)
+  if (file.exists(file.path(path_res, "x_proposal.rds"))) {
+    x_proposal <- readRDS(file.path(path_res, "x_proposal.rds"))
+  } else {
+    x_proposal <- matrix(seq(min(X_train), max(X_train), length.out = N_PROPOSAL),
+                         ncol = 1)
+    saveRDS(x_proposal, file.path(path_res, "x_proposal.rds"))
   }
 
-  # IS
-  is <- .is_zanimlnbart(object = zanim_ln_bart, Y = Y_test,
-                        proposal_parms = proposal_parms,
-                        n_proposal = N_PROPOSAL, dir_posterior_fx = path_res)
-  # SIR
-  sir <- .is_zanimlnbart(object = zanim_ln_bart, Y = Y_test,
-                         proposal_parms = proposal_parms, sir = TRUE,
-                         n_proposal = N_PROPOSAL, dir_posterior_fx = path_res)
+  # Y_test <- Y_test[1:3,]
+  # X_test <- X_test[1:3,]
 
-  # eSS
+  is <- inverse_posterior_zanimlnbart(object = zanim_ln_bart, Y = Y_test,
+                                      x_proposal = x_proposal,
+                                      dir_posterior_fx = path_res, method = "is")
+  apply(is[, seq_len(n_test)], 2, function(x) 1 / sum(x*x))
+  sir <- resampling(x_proposal = x_proposal, probs = is[, seq_len(n_test)],
+                    replace = TRUE)
+
+-  # eSS
   mean_prior = 0.0; S_prior = diag(1.0, nrow = 1); n_rep = 4L
   ess <- .gibbs_sampler(Y = Y_test, mean_prior = mean_prior, S_prior = S_prior,
                         forests_dir = forests_dir, ntrees = NTREES, ndpost = NDPOST,
@@ -779,11 +784,11 @@ test_that("ZANIM-LN-BART one-dimension", {
 
   x_proposal <- is[, -seq_len(n_test)]
   # Visual comparison between the three methods
-  pdf(file.path(path_res, "inverse_posterior_new.pdf"), width = 6, height = 3)
+  pdf(file.path(path_res, "density_posteriors.pdf"), width = 6, height = 3)
   for (i in seq_len(n_test)) {
     x_true <- X_test[i, ]
     cat(i, "\n")
-    par(mfrow = c(1, 3), mar = c(3, 3, 1, 1))
+    par(mfrow = c(1, 2), mar = c(3, 3, 1, 1))
     plot(x_proposal, is[, i], type = "h",
          main = paste0("IS, y_i = (", paste0(Y_test[i, ], collapse = ","), ")"))
     points(x_true, 0.00001, col = "blue", pch = 4, cex = 2)
@@ -792,9 +797,9 @@ test_that("ZANIM-LN-BART one-dimension", {
     plot(density(sir[[i]]), main = "SIR", xlim = xrange)
     points(x_true, 0.00001, col = "blue", pch = 4, cex = 2)
 
-    xrange <- range(c(1, -1, range(ess[,1,i]) ))
-    plot(density(ess[,1,i]), main = "eSS", xlim = xrange)
-    points(x_true, 0.00001, col = "blue", pch = 4, cex = 2)
+    # xrange <- range(c(1, -1, range(ess[,1,i]) ))
+    # plot(density(ess[,1,i]), main = "eSS", xlim = xrange)
+    # points(x_true, 0.00001, col = "blue", pch = 4, cex = 2)
   }
   graphics.off()
 
@@ -848,8 +853,8 @@ test_that("ZANIM-LN-BART two-dimension", {
   if (!dir.exists(forests_dir)) dir.create(forests_dir, recursive = TRUE)
 
   set.seed(1212)
-  n_sample <- 300L
-  d <- 3L
+  n_sample <- 400L
+  d <- 4L
   n_trials <- 500L
   # X_aux <- pollen_data$X[, c("gdd5", "mtco")]
   # X_aux <- scale(X_aux)
