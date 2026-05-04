@@ -470,6 +470,8 @@ compute_proposal_fx_zanimlnbart <- function(object, proposal_parms, n_proposal,
     cpp_obj$GetZANIMLNBARTWeightsIS(Y[i, ], n_proposal, ndpost, B, dir_posterior_fx)
   })
   probs <- do.call(cbind, probs)
+  # Effective sample size
+  ess <- apply(probs, 2, function(x) 1 / sum(x*x))
 
   # If SIR then return a list with the resampling x_proposal
   if (sir) {
@@ -480,12 +482,15 @@ compute_proposal_fx_zanimlnbart <- function(object, proposal_parms, n_proposal,
                         prob = p)
       x_proposal[ids, , drop = FALSE]
     }, simplify = FALSE)
-    attr(x_sir, "is_probs") <- probs
+    attr(x_sir, "probs") <- probs
+    attr(x_sir, "ess") <- ess
     return(x_sir)
   }
   # Otherwise, return a matrix with first column with the probabilities and the
   # remaining ones the proposal x
-  return(cbind(probs = probs, x_proposal))
+  out <- cbind(probs = probs, x_proposal)
+  attr(x_sir, "ess") <- ess
+  return(out)
 }
 
 
@@ -495,7 +500,9 @@ compute_proposal_fx_zanimlnbart <- function(object, proposal_parms, n_proposal,
                            forward_model = c("ml_bart", "zanim_bart", "zanim_ln_bart"),
                            conditional = FALSE) {
 
-  if (!file.exists(file.path(forests_dir, "forests_theta_0.bin")))
+  fname <- if (forward_model == "ml_bart") "forests_0.bin" else "forests_theta_0.bin"
+
+  if (!file.exists(file.path(forests_dir, fname)))
     stop("It seems you didn't save the forests in the folder ", forests_dir)
 
 
