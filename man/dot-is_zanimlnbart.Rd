@@ -8,14 +8,11 @@ ZANIM-BART model.}
 .is_zanimlnbart(
   object,
   Y,
-  proposal_parms,
-  n_proposal = 5000L,
+  x_proposal,
+  dir_posterior_fx,
+  ndpost = object$ndpost,
   sir = FALSE,
-  n_resampling = floor(n_proposal/2),
-  output_dir = tempdir(),
-  save = FALSE,
-  dir_posterior_fx = NULL,
-  x_proposal = NULL
+  n_resampling = floor(nrow(x_proposal)/2)
 )
 }
 \description{

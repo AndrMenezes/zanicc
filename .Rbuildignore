@@ -2,4 +2,7 @@
 ^\.Rproj\.user$
 ^README\.Rmd$
 ^LICENSE\.md$
-^dev
+^dev$
+^inst$
+^tests$
+^data-raw$
