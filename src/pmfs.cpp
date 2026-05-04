@@ -373,3 +373,16 @@ double log_pmf_zanim_ln_conditional(std::vector<int> x, std::vector<double> prob
   }
   return out;
 }
+
+double log_pmf_zanim_ln(int mc, std::vector<int> x, std::vector<double> prob,
+                        std::vector<double> zeta,
+                        std::vector<double> chol_Sigma_V,
+                        std::vector<double> B) {
+  std::vector<double> ll(mc, 0.0);
+  for (int k=0; k < mc; k++) {
+    ll[k] = log_pmf_zanim_ln_conditional(x, prob, zeta, chol_Sigma_V,  B);
+  }
+
+  return log_sum_exp(ll) - std::log(mc);
+
+}
