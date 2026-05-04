@@ -56,29 +56,22 @@ sim_data_zanim_ln_bspline_curve <- function(n, d = 3L, n_trials, dof_bs_theta = 
   if (length(n_trials) == 1) n_trials <- rep(n_trials, n)
   link_foo <- switch(link_zeta, "logit" = stats::plogis, "probit" = stats::pnorm)
   # Generate covariance matrix
-  B <- contr.sum(d)
-  B <- qr.Q(qr(B))
   if (covariance == "exponential") {
-    x <- stats::runif(d - 1)
-    Sigma_V <- s2*exp(-as.matrix(dist(x))/lg)
+    x <- stats::runif(d)
+    true_Sigma_U <- s2*exp(-as.matrix(dist(x))/lg)
   } else if (covariance == "toeplitz") {
-    Sigma_V <- matrix(0, d - 1, d - 1)
-    Sigma_V <- rho^abs(row(Sigma_V) - col(Sigma_V))
+    true_Sigma_U <- matrix(0, d, d)
+    true_Sigma_U <- rho^abs(row(true_Sigma_U) - col(true_Sigma_U))
   } else if (covariance == "fam") {
-    Gamma <- matrix(data = stats::runif((d - 1) * q_factors, 0, 1), nrow = d - 1,
+    Gamma <- matrix(data = stats::runif((d) * q_factors, 0, 1), nrow = d,
                     ncol = q_factors)
-    Psi <- diag(x = stats::runif((d - 1) * (d - 1), 0.1, 1), nrow = d - 1,
-                ncol = d - 1)
-    Sigma_V <- tcrossprod(Gamma) + Psi
+    Psi <- diag(x = stats::runif(d*d, 0.1, 1), nrow = d, ncol = d)
+    true_Sigma_U <- tcrossprod(Gamma) + Psi
   }
   # Generate random effects u_{ij}
-  true_Sigma_U <- B %*% tcrossprod(Sigma_V, B)
   chol_Sigma_U <- chol(true_Sigma_U)
   U <- matrix(nrow = n, ncol = d)
-  for (i in seq_len(n)) {
-    z <- stats::rnorm(n = d)
-    U[i, ] <- drop(z %*% chol_Sigma_U)
-  }
+  for (i in seq_len(n)) U[i, ] <- drop(stats::rnorm(n = d) %*% chol_Sigma_U)
   # Linear predictor for \theta
   X <- as.matrix(seq(-1.0, 1.0, length.out = n))
   X_bs_theta <- splines::bs(X, dof_bs_theta)
@@ -98,8 +91,7 @@ sim_data_zanim_ln_bspline_curve <- function(n, d = 3L, n_trials, dof_bs_theta = 
     ee_u2 <- exp(etas_theta[i, ] + U[i, ])
     prob <- ee_u2/sum(ee_u2)
     true_zetas[i, ] <- link_foo(etas_zeta[i, ])
-    tmp <- .rzanim(size = n_trials[i], prob = prob,
-                   zeta = true_zetas[i, ], d = d)
+    tmp <- .rzanim(size = n_trials[i], prob = prob, zeta = true_zetas[i, ], d = d)
     Y[i, ] <- tmp[[1L]]
     Z[i, ] <- tmp[[2L]]
     true_abundance[i, ] <- ee_u2 * Z[i, ] / sum(ee_u2 * Z[i, ])
