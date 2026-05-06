@@ -725,8 +725,9 @@ test_that("ZANIM-LN-BART one-dimension", {
   forests_dir <- file.path(path_res, "forests")
   if (!dir.exists(forests_dir)) dir.create(forests_dir, recursive = TRUE)
 
-  set.seed(1212)
+  list.files(path_res)
 
+  set.seed(1212)
   n_sample <- 400L
   tmp <- sim_data_zanim_ln_bspline_curve(n = n_sample, d = d, n_trials = 1000,
                                          covariance = "exponential", q_factors = 10L)
@@ -841,12 +842,53 @@ test_that("ZANIM-LN-BART one-dimension", {
     saveRDS(x_proposal, file.path(path_res, "x_proposal.rds"))
   }
 
+  # devtools::load_all()
+  sir <- inverse_posterior_zanimlnbart(object = zanim_ln_bart, Y = Y_test[1:3, ],
+                                       x_proposal = x_proposal,
+                                       dir_posterior_fx = path_res,
+                                       method = "sir")
+  i=1
+  dim(sir)
+  plot(density(sir[,,1]), xlim = c(-1, 1))
+  points(X_test[i,], y = 0.001, col = "blue", pch = 4, cex = 2)
+
+
   # Y_test <- Y_test[1:3,]
   # X_test <- X_test[1:3,]
+  ml <- Rcpp::Module(module = "inverse_posterior", PACKAGE = "zanicc")
+  cpp_obj <- new(ml$InversePosterior, d, NTREES, NTREES, forests_dir)
+
+  NDPOST <- 1000L
+  i <- 3L
+
+  indices <- cpp_obj$MultipleImputationSIR(Y_test[i, ], N_PROPOSAL, NDPOST,
+                                           t(zanim_ln_bart$Bt),
+                                           path_res)
+  indices <- indices + 1L
+  x_sir <- x_proposal[indices, ]
+  plot(density(x_sir), xlim = c(-1, 1))
+  points(X_test[i,], y = 0.001, col = "blue", pch = 4, cex = 2)
+
+  pdf(file.path(path_res, "density_mi_sir.pdf"), width = 6, height = 3)
+  for (i in seq_len(10)) {
+    indices <- cpp_obj$MultipleImputationSIR(Y_test[i, ], N_PROPOSAL, NDPOST,
+                                        t(zanim_ln_bart$Bt),
+                                        path_res)
+    x_sir <- x_proposal[indices, ]
+    par(mar = c(3, 3, 1, 1))
+    plot(density(x_sir), xlim = c(-1, 1))
+    points(X_test[i,], y = 0.001, col = "blue", pch = 4, cex = 2)
+  }
+  graphics.off()
+
 
   is <- inverse_posterior_zanimlnbart(object = zanim_ln_bart, Y = Y_test,
                                       x_proposal = x_proposal,
                                       dir_posterior_fx = path_res, method = "is")
+
+
+
+
   # apply(is[, seq_len(n_test)], 2, function(x) 1 / sum(x*x))
   sir <- resampling(x_proposal = x_proposal, probs = is[, seq_len(n_test)],
                     replace = TRUE)
