@@ -489,7 +489,7 @@ compute_proposal_fx_zanimlnbart <- function(object, proposal_parms, n_proposal,
   # Otherwise, return a matrix with first column with the probabilities and the
   # remaining ones the proposal x
   out <- cbind(probs = probs, x_proposal)
-  attr(x_sir, "ess") <- ess
+  attr(out, "ess") <- ess
   return(out)
 }
 
