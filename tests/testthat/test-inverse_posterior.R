@@ -712,6 +712,7 @@ test_that("MLN-BART one-dimension", {
 
 test_that("ZANIM-LN-BART one-dimension", {
 
+  library(ggplot2)
   rm(list = ls())
   devtools::load_all()
 
@@ -734,6 +735,14 @@ test_that("ZANIM-LN-BART one-dimension", {
   cbind(sampling = colMeans(tmp$Y == 0) - colMeans(1 - tmp$Z),
         structural = colMeans(1 - tmp$Z))
 
+  head(tmp$df)
+  ggplot(tmp$df, aes(x = x, y = theta)) +
+    facet_wrap(~category) +
+    geom_line()
+  ggplot(tmp$df, aes(x = x, y = zeta)) +
+    facet_wrap(~category) +
+    geom_line()
+
   # Split the data
   n_test <- 100L
   id_test <- sample.int(n_sample, n_test)
@@ -744,10 +753,12 @@ test_that("ZANIM-LN-BART one-dimension", {
   true_thetas <- tmp$theta[-id_test, ]
   true_varthetas <- tmp$abundance[-id_test, ]
   true_zetas <- tmp$zeta[-id_test, ]
+  data_sim <- tmp$df[!(tmp$df$id %in% id_test), ]
+  data_sim$id <- rep(seq_len(nrow(Y_train)), each = d)
 
   # Fit forward model
   NDPOST <- 5000L
-  NSKIP <- 2000L
+  NSKIP <- 10000L
   NTREES <- 100L
 
   if (!file.exists(file.path(path_res, "mod.rds"))) {
@@ -782,6 +793,44 @@ test_that("ZANIM-LN-BART one-dimension", {
   }
   graphics.off()
 
+  data_theta <- zanicc::summarise_draws_3d(x = zanim_ln_bart$draws_theta)
+  data_zeta <- zanicc::summarise_draws_3d(x = zanim_ln_bart$draws_zeta)
+  data_theta$x <- data_zeta$x <- rep(c(X_train), times = d)
+
+  p_theta <- ggplot(data = data_sim) +
+    geom_line(mapping = aes(x = x, y = theta, col = "Truth", fill = "Truth"),
+              linewidth = 0.8) +
+    facet_wrap(~category, labeller = label_parsed) +
+    geom_rug(data = dplyr::filter(data_sim, total == 0L),
+             mapping = aes(y = NA_real_, x = x)) +
+    geom_line(data = data_theta, mapping = aes(x = x, y = median),
+              col = "dodgerblue") +
+    geom_ribbon(data = data_theta,
+                aes(x = x, ymin = ci_lower, ymax = ci_upper), fill = "dodgerblue",
+                alpha = 0.3)
+  cowplot::save_plot(filename = file.path(path_res, "posterior_theta.png"),
+                     plot = p_theta, bg = "white", base_height = 9)
+  p_zeta <- ggplot(data = data_sim) +
+    geom_line(mapping = aes(x = x, y = zeta, col = "Truth", fill = "Truth"),
+              linewidth = 0.8) +
+    facet_wrap(~category, labeller = label_parsed) +
+    # geom_rug(data = dplyr::filter(data_sim, total == 0L),
+    #          mapping = aes(y = NA_real_, x = x)) +
+    geom_line(data = data_zeta, mapping = aes(x = x, y = median),
+              col = "dodgerblue") +
+    geom_ribbon(data = data_zeta,
+                aes(x = x, ymin = ci_lower, ymax = ci_upper), fill = "dodgerblue",
+                alpha = 0.3)
+  cowplot::save_plot(filename = file.path(path_res, "posterior_zeta.png"),
+                     plot = p_zeta, bg = "white", base_height = 9)
+
+  # data_zeta_join <- dplyr::left_join(data_zeta, data_sim[, c("id", "category", "zeta")],
+  #                               by = c("category", "id"))
+  # p_zeta_ <- ggplot(data = data_zeta_join, aes(x = zeta, y = median)) +
+  #   facet_wrap(~category) +
+  #   geom_point() +
+  #   geom_abline(slope = 1, intercept = 0)
+
   # Generate uniform proposal in the convex-hull
   N_PROPOSAL <- 2000L
   if (file.exists(file.path(path_res, "x_proposal.rds"))) {
@@ -795,10 +844,10 @@ test_that("ZANIM-LN-BART one-dimension", {
   # Y_test <- Y_test[1:3,]
   # X_test <- X_test[1:3,]
 
-  is <- inverse_posterior_zanimlnbart(object = zanim_ln_bart, Y = Y_test[1:10, ],
-                                      x_proposal = x_proposal,ndpost = 1000L,
+  is <- inverse_posterior_zanimlnbart(object = zanim_ln_bart, Y = Y_test,
+                                      x_proposal = x_proposal,
                                       dir_posterior_fx = path_res, method = "is")
-  apply(is[, seq_len(n_test)], 2, function(x) 1 / sum(x*x))
+  # apply(is[, seq_len(n_test)], 2, function(x) 1 / sum(x*x))
   sir <- resampling(x_proposal = x_proposal, probs = is[, seq_len(n_test)],
                     replace = TRUE)
 
