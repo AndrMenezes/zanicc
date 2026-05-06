@@ -716,7 +716,7 @@ test_that("ZANIM-LN-BART one-dimension", {
   rm(list = ls())
   devtools::load_all()
 
-  d <- 20L
+  d <- 4L
 
   # Path
   #time_id <-  #format(Sys.time(), "%Y-%b-%d-%X")
@@ -772,7 +772,7 @@ test_that("ZANIM-LN-BART one-dimension", {
   zanim_ln_bart <- load_model(model_dir = path_res)
 
   # Check if we recover the parameters
-  mfrow_op <- c(4, 5)#c(3, 2)#grDevices::n2mfrow(28)
+  mfrow_op <- c(2,2)#c(4, 5)#c(3, 2)#grDevices::n2mfrow(28)
   pdf(file.path(path_res, "posterior_mean_vs_true.pdf"), width = 8, height = 6)
   par(mfrow = mfrow_op, mar = c(3, 3, 1, 1))
   for (j in seq_len(d)) {
