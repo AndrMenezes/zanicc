@@ -7,8 +7,7 @@ class InversePosterior {
 
 public:
   // Constructor
-  InversePosterior(int d, int ntrees_theta, int ntrees_zeta, //int n_particles,
-                   std::string forward_model, std::string forests_dir);
+  InversePosterior(int d, int ntrees_theta, int ntrees_zeta, std::string forests_dir);
 
   int d, ntrees_theta, ntrees_zeta, n_particles;
 
@@ -28,6 +27,9 @@ public:
                                             std::vector<double> mean_prior,
                                             arma::mat S_prior, int n_rep,
                                             arma::mat B);
+  std::vector<int> MultipleImputationSIR(std::vector<int> y, int n_proposal,
+                                         int ndpost, arma::mat B,
+                                         std::string draws_dir);
 
   // Get the tree-specific prediction by traversing the tree
   double GetMu(Node *tree, std::vector<double> &x);
@@ -41,6 +43,8 @@ public:
                               const std::vector<std::vector<Node*>> &forest_theta,
                               const std::vector<std::vector<Node*>> &forest_zeta);
 
+  // NOTE: this function isn't doing a IS targeting the cut posterior.
+  // I should remove this later on.
   std::vector<double> GetZANIMLNBARTWeightsIS(std::vector<int> y, int n_proposal, int ndpost,
                                               arma::mat B, std::string draws_dir);
 

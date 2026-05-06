@@ -16,4 +16,5 @@ void rmvnorm_chol(std::vector<double> &out,
                   const std::vector<double> &mean,
                   const std::vector<double> &L, int p);
 void axpby(double* out, double* x, double* y, double a, double b, int p);
+std::vector<double> normalise_weights(std::vector<double> &log_weights, int n);
 #endif

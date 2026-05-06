@@ -67,24 +67,25 @@ std::vector<double> mat_to_double_rowmajor(const arma::mat &X) {
   return out;
 }
 
-void rmvnorm_chol(std::vector<double>& out,
-                  const std::vector<double>& mean,
-                  const std::vector<double>& L, int p) {
-  std::vector<double> z(p);
-
-  for (int j = 0; j < p; j++) z[j] = R::rnorm(0.0, 1.0);
-
-  // Matrix multiplication using the fact that L is upper triangle
-  double sum;
-  for (int j = 0; j < p; j++) {
-    sum = 0.0;
-    for (int k = 0; k <= j; k++) sum += z[k] * L[k * p + j];
-    out[j] = mean[j] + sum;
-  }
-}
-
 // a*x + b*y
 void axpby(double* out, double* x, double* y,
            double a, double b, int p) {
   for (int j = 0; j < p;j++) out[j] = a * x[j] + b * y[j];
 }
+
+// Normalise log-weights (use in SIR)
+std::vector<double> normalise_weights(std::vector<double> &log_weights, int n) {
+  double lw_max = *std::max_element(log_weights.begin(), log_weights.end());
+  double s = 0.0;
+  std::vector<double> w(n, 0.0);
+  for (int j=0; j < n; j++) {
+    w[j] = std::exp(log_weights[j] - lw_max);
+    s += w[j];
+  }
+  // normalise
+  for (int j=0; j < n; j++) w[j] /= s;
+  return w;
+}
+
+
+

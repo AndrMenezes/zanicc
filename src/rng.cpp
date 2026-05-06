@@ -100,3 +100,21 @@ arma::vec rmvnorm(int p, arma::mat &sigma_chol) {
   return (ep * sigma_chol).t();
   // return sigma_chol * ep; // ?
 }
+
+// RNG for multivariate normal using only std and make use of lower triangle chol
+void rmvnorm_chol(std::vector<double>& out,
+                  const std::vector<double>& mean,
+                  const std::vector<double>& L, int p) {
+  std::vector<double> z(p);
+
+  for (int j = 0; j < p; j++) z[j] = R::rnorm(0.0, 1.0);
+
+  // Matrix multiplication using the fact that L is upper triangle
+  double sum;
+  for (int j = 0; j < p; j++) {
+    sum = 0.0;
+    for (int k = 0; k <= j; k++) sum += z[k] * L[k * p + j];
+    out[j] = mean[j] + sum;
+  }
+}
+

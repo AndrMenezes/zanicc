@@ -1,20 +1,17 @@
 #include "inverse_posterior.h"
 #include "pmfs.h"
 #include "utils.h"
+#include "rng.h"
 #include "write_read.h"
 
 constexpr double PI_2 = 6.283185307179586231996;
 
 // Constructor
 InversePosterior::InversePosterior(int d, int ntrees_theta, int ntrees_zeta,
-                                   // int n_particles,
-                                   std::string forward_model,
                                    std::string forests_dir) :
                                    d(d),
                                    ntrees_theta(ntrees_theta),
                                    ntrees_zeta(ntrees_zeta),
-                                   // n_particles(n_particles),
-                                   forward_model(forward_model),
                                    forests_dir(forests_dir) {
 }
 
@@ -585,10 +582,6 @@ double InversePosterior::lmlZANIM(std::vector<int> &y, std::vector<double> &x,
     // Compute the likelihood
     lml[k] = log_pmf_zanim_conditional(y, theta, zeta);
 
-    // progress = (double) 100 * k / n_particles;
-    // Rprintf("%3.2f%% Computation completed with %f", progress, lml[k]);
-    // Rprintf("\r");
-
     // Remove the trees (to free the memory usage)
     for (int j = 0; j < d; ++j){
       for (auto *tree : forest_theta[j]) delete tree;
@@ -680,9 +673,80 @@ std::vector<double> InversePosterior::GetZANIMLNBARTWeightsIS(std::vector<int> y
   // Close files
   ff_zeta.close();  ff_theta.close(); ff_Sigma_V.close();
 
-
   return w;
 }
+
+// TODO: Finish....
+std::vector<int> InversePosterior::MultipleImputationSIR(std::vector<int> y,
+                                                         int n_proposal,
+                                                         int ndpost,
+                                                         arma::mat B,
+                                                         std::string draws_dir) {
+
+  // Dimension
+  int d = y.size(), dm1 = d - 1;
+
+  // Transform data into row-major vectors
+  std::vector<double> Brm = mat_to_double_rowmajor(B);
+
+  // Open file for the the posterior draws of chol(Sigma_V)
+  std::ifstream ff_Sigma_V(forests_dir + "/chol_Sigma_V.bin", std::ios::binary);
+  std::ifstream ff_theta(draws_dir + "/theta_ij.bin", std::ios::binary);
+  std::ifstream ff_zeta(draws_dir + "/zeta_ij.bin", std::ios::binary);
+
+  // Create vector to read the posterior draws of chol_Sigma_V
+  std::vector<double> chol_Sigma_V(dm1*dm1, 0.0);
+
+  // Create vector to read one posterior draw of theta_ij and zeta_ij
+  std::vector<double> theta(n_proposal*d, 0.0);
+  std::vector<double> zeta(n_proposal*d, 0.0);
+  // Another vector to copy the values for a given observation i
+  std::vector<double> theta_cur(d, 0.0);
+  std::vector<double> zeta_cur(d, 0.0);
+
+  // Create vector to allocate the counts for a given sample unit i
+  int ntrial = std::accumulate(y.begin(), y.end(), 0.0);
+  // The predictions are stored by posterior draws, so
+  // [1 block][2 block]...[ndpost block], for k = ndpost
+  // Each k block is (n_proposal × d) in column-major.
+  std::vector<double> log_w(n_proposal, 0.0), probs(n_proposal);
+  std::vector<int> sir_indices(ndpost, 0);
+
+  double m, ll, progress = 0.0;
+  // Iterate over posterior draws
+  for (int k=0; k < ndpost; k++) {
+    progress = (double) 100 * k / ndpost;
+    Rprintf("%3.2f%% completed for computing the log-weights", progress);
+    Rprintf("\r");
+    // Read one block (n_proposal*d)
+    ff_theta.read(reinterpret_cast<char*>(theta.data()),
+                  sizeof(double) * n_proposal * d);
+    ff_zeta.read(reinterpret_cast<char*>(zeta.data()),
+                 sizeof(double) * n_proposal * d);
+    // Read current posterior draw of chol(Sigma_V)
+    ff_Sigma_V.read(reinterpret_cast<char*>(chol_Sigma_V.data()),
+                    sizeof(double) * dm1 * dm1);
+    // Iterate over proposal values (samples) and compute the log-likelihood
+    for (int i=0; i < n_proposal; i++) {
+      // Copy the current theta_ij
+      for (int j=0; j < d; j++) {
+        theta_cur[j] = theta[j*n_proposal + i];
+        zeta_cur[j] = zeta[j*n_proposal + i];
+      }
+      // Compute the log-likelihood of observation i and posterior draw k
+      log_w[i] = log_pmf_zanim_ln_conditional(y, theta_cur, zeta_cur, chol_Sigma_V, Brm);
+      // log_w[i*ndpost + k] = ll ;
+    }
+    // Normalise weights and resample (only one draw)
+    probs = normalise_weights(log_w, n_proposal);
+    sir_indices[k] = sample_discrete(probs, n_proposal);
+  }
+  // Close files
+  ff_zeta.close();  ff_theta.close(); ff_Sigma_V.close();
+  // return log_w;
+  return sir_indices;
+}
+
 
 // Exposing a C++ class in R
 RCPP_MODULE(inverse_posterior) {
@@ -691,13 +755,14 @@ RCPP_MODULE(inverse_posterior) {
   Rcpp::class_<InversePosterior>("InversePosterior")
 
   // Constructor
-  .constructor<int, int, int, std::string, std::string>()
+  .constructor<int, int, int, std::string>()
 
   // Methods
   .method("SamplerMLBARTeSS", &InversePosterior::SamplerMLBARTeSS)
   .method("SamplerZANIMBARTeSS", &InversePosterior::SamplerZANIMBARTeSS)
   .method("SamplerZANIMLNBARTeSS", &InversePosterior::SamplerZANIMLNBARTeSS)
   .method("GetZANIMLNBARTWeightsIS", &InversePosterior::GetZANIMLNBARTWeightsIS)
+  .method("MultipleImputationSIR", &InversePosterior::MultipleImputationSIR)
   .method("lmlZANIM", &InversePosterior::lmlZANIM)
 
   ;
