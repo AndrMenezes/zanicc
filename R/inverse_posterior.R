@@ -70,21 +70,28 @@ inverse_posterior_zanimlnbart <- function(object, Y, x_proposal, dir_posterior_f
     # Check if the files with parameter predictions exist
     ftheta <- file.path(dir_posterior_fx, "theta_ij.bin")
     fzeta <- file.path(dir_posterior_fx, "zeta_ij.bin")
+    do_predict <- FALSE
     if (!file.exists(ftheta) || !file.exists(fzeta)) {
+      do_predict <- TRUE
       cat("files {theta_ij.bin} and {zeta_ij.bin} with the posterior distribution of f^{(c)}(x*) and f^{(0)}(x*) do exist in the folder {dir_posterior_fx}. Computing such predictions...\n")
       # Compute the posterior distribution of f^{(c)}_j(x*) and f^{(0)}_j(x*) for x*~\pi(x*) and j=1,...,d
+      ini <- proc.time()
       predict(object, newdata = x_proposal, load = FALSE, output_dir = dir_posterior_fx,
               type = "theta")
       predict(object, newdata = x_proposal, load = FALSE, output_dir = dir_posterior_fx,
               type = "zeta")
+      end_predict <- proc.time() - ini
     }
     # For each posterior draw of f's run SIR
+    ini <- proc.time()
     res <- lapply(seq_len(n), function(i) {
       cat("Observation: ", i, "of", n, "\n")
       indices <- cpp_obj$MultipleImputationSIR(Y[i, ], n_proposal, ndpost, B,
                                                dir_posterior_fx)
       x_proposal[indices + 1L, ] # C++ indices starts at 0
     })
+    elapsed <- proc.time() - ini
+    if (do_predict) attr(res, "elapsed_time_predict") <- end_predict
   } else {
     if (is.null(mean_prior)) mean_prior <- rep(0.0, object$p_theta)
     if (is.null(S_prior)) S_prior <- diag(1.0, object$p_theta, object$p_theta)
@@ -95,10 +102,13 @@ inverse_posterior_zanimlnbart <- function(object, Y, x_proposal, dir_posterior_f
       cS <- chol(S_prior)
       for (i in seq_len(n)) X_ini[i, ] <- stats::rnorm(p) %*% cS + mean_prior
     }
+    ini <- proc.time()
     xx <- cpp_obj$SamplerZANIMLNBARTeSS(Y, X_ini, ndpost, mean_prior, S_prior,
                                         nburnin, B)
+    elapsed <- proc.time() - ini
     res <- array(xx, dim = c(ndpost, p, n))
   }
+  attr(res, "elapsed_time") <- elapsed
   res
 }
 

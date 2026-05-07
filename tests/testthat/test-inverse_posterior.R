@@ -843,57 +843,18 @@ test_that("ZANIM-LN-BART one-dimension", {
   }
 
   # devtools::load_all()
-  sir <- inverse_posterior_zanimlnbart(object = zanim_ln_bart, Y = Y_test[1:3, ],
+  sir <- inverse_posterior_zanimlnbart(object = zanim_ln_bart, Y = Y_test,
                                        x_proposal = x_proposal,
                                        dir_posterior_fx = path_res,
                                        method = "sir")
-  i=1
-  dim(sir)
-  plot(density(sir[,,1]), xlim = c(-1, 1))
-  points(X_test[i,], y = 0.001, col = "blue", pch = 4, cex = 2)
-
-
-  # Y_test <- Y_test[1:3,]
-  # X_test <- X_test[1:3,]
-  ml <- Rcpp::Module(module = "inverse_posterior", PACKAGE = "zanicc")
-  cpp_obj <- new(ml$InversePosterior, d, NTREES, NTREES, forests_dir)
-
-  NDPOST <- 1000L
-  i <- 3L
-
-  indices <- cpp_obj$MultipleImputationSIR(Y_test[i, ], N_PROPOSAL, NDPOST,
-                                           t(zanim_ln_bart$Bt),
-                                           path_res)
-  indices <- indices + 1L
-  x_sir <- x_proposal[indices, ]
-  plot(density(x_sir), xlim = c(-1, 1))
-  points(X_test[i,], y = 0.001, col = "blue", pch = 4, cex = 2)
-
   pdf(file.path(path_res, "density_mi_sir.pdf"), width = 6, height = 3)
   for (i in seq_len(10)) {
-    indices <- cpp_obj$MultipleImputationSIR(Y_test[i, ], N_PROPOSAL, NDPOST,
-                                        t(zanim_ln_bart$Bt),
-                                        path_res)
-    x_sir <- x_proposal[indices, ]
     par(mar = c(3, 3, 1, 1))
-    plot(density(x_sir), xlim = c(-1, 1))
+    plot(density(sir[[i]]), xlim = c(-1, 1))
     points(X_test[i,], y = 0.001, col = "blue", pch = 4, cex = 2)
   }
   graphics.off()
-
-
-  is <- inverse_posterior_zanimlnbart(object = zanim_ln_bart, Y = Y_test,
-                                      x_proposal = x_proposal,
-                                      dir_posterior_fx = path_res, method = "is")
-
-
-
-
-  # apply(is[, seq_len(n_test)], 2, function(x) 1 / sum(x*x))
-  sir <- resampling(x_proposal = x_proposal, probs = is[, seq_len(n_test)],
-                    replace = TRUE)
-
--  # eSS
+  # eSS
   mean_prior = 0.0; S_prior = diag(1.0, nrow = 1); n_rep = 4L
   ess <- .gibbs_sampler(Y = Y_test, mean_prior = mean_prior, S_prior = S_prior,
                         forests_dir = forests_dir, ntrees = NTREES, ndpost = NDPOST,
@@ -963,30 +924,31 @@ test_that("ZANIM-LN-BART two-dimension", {
   rm(list = ls())
   devtools::load_all()
 
+  d <- 4L
+  region <- "convexhull"
+
   # Path
-  region <- "convexhull" #format(Sys.time(), "%Y-%b-%d-%X")
   path_local <- "./tests/testthat/inverse_posterior/zanim_ln_bart/two_dimension"
-  path_res <- file.path(path_local, region, "results")
+  path_res <- file.path(path_local, region, sprintf("d=%i", d), "results")
   forests_dir <- file.path(path_res, "forests")
   if (!dir.exists(forests_dir)) dir.create(forests_dir, recursive = TRUE)
 
   set.seed(1212)
   n_sample <- 400L
-  d <- 4L
   n_trials <- 500L
-  # X_aux <- pollen_data$X[, c("gdd5", "mtco")]
-  # X_aux <- scale(X_aux)
   tmp <- sim_data_zanicc_2d(n_grid = 20L, d = d, n_trials = n_trials,
                             region = region)
+  # colMeans(tmp$Y==0)
+  # colMeans(tmp$Z==0)
 
   # Split the data
+  set.seed(1212)
   n_test <- 100L
   id_test <- sample.int(n_sample, n_test)
   Y_test <- tmp$Y[id_test, ]
   X_test <- tmp$X[id_test, , drop = FALSE]
   Y_train <- tmp$Y[-id_test, ]
   X_train <- tmp$X[-id_test, , drop = FALSE]
-
 
   data_sim <- tmp$df[!(tmp$df$id %in% id_test), ]
   data_sim$id <- rep(seq_len(nrow(Y_train)), each = d)
@@ -1010,10 +972,6 @@ test_that("ZANIM-LN-BART two-dimension", {
   cowplot::save_plot(filename = file.path(path_res, "data.png"), plot = p_grid,
                      bg = "white", base_height = 8)
 
-  colMeans(Y_train == 0)
-  colMeans(Y_test == 0)
-
-
   # Fit forward model
   NDPOST <- 5000L
   NSKIP <- 5000L
@@ -1027,8 +985,38 @@ test_that("ZANIM-LN-BART two-dimension", {
                             ntrees_zeta = NTREES, ndpost = NDPOST, nskip = NSKIP,
                             save_trees = TRUE, forests_dir = forests_dir, q_factors = 2)
     save_model(object = zanim_ln_bart, model_dir = path_res)
+    # Plotting
+    true_thetas <- tmp$true_thetas[-id_test, ]
+    true_varthetas <- tmp$true_varthetas[-id_test, ]
+    true_zetas <- tmp$true_zetas[-id_test, ]
+    mfrow_op <- c(2, 2)
+    pdf(file.path(path_res, "posterior_mean_vs_true.pdf"), width = 8, height = 6)
+    par(mfrow = mfrow_op, mar = c(3, 3, 1, 1))
+    for (j in seq_len(d)) {
+      plot(true_thetas[,j], rowMeans(zanim_ln_bart$draws_theta[,j,]),
+           xlab = "true", ylab = "estimate", main = sprintf("theta_{i%d}", j))
+      abline(0, 1)
+    }
+    par(mfrow = mfrow_op, mar = c(3, 3, 1, 1))
+    for (j in seq_len(d)) {
+      plot(true_varthetas[,j], rowMeans(zanim_ln_bart$draws_abundance[,j,]),
+           xlab = "true", ylab = "estimate", main = sprintf("vartheta_{i%d}", j))
+      abline(0, 1)
+    }
+    par(mfrow = mfrow_op, mar = c(3, 3, 1, 1))
+    for (j in seq_len(d)) {
+      plot(true_zetas[,j], rowMeans(zanim_ln_bart$draws_zeta[,j,]),
+           xlab = "true", ylab = "estimate", main = sprintf("zeta_{i%d}", j))
+      abline(0, 1)
+    }
+    graphics.off()
+    dim(zanim_ln_bart$draws_theta)
+    compute_kl_simplex(true_thetas, apply(zanim_ln_bart$draws_theta, c(1, 2), mean))
+    compute_frob(true_thetas, apply(zanim_ln_bart$draws_theta, c(1, 2), mean))
+    compute_coverage(true_values = true_thetas,
+                     apply(zanim_ln_bart$draws_theta, c(1, 2), quantile, probs = 0.025),
+                     apply(zanim_ln_bart$draws_theta, c(1, 2), quantile, probs = 0.975))
   }
-
 
   # Generate uniform proposal in the convex-hull
   N_PROPOSAL <- 2000L
@@ -1039,13 +1027,36 @@ test_that("ZANIM-LN-BART two-dimension", {
     x_proposal <- rconvexhull(n = N_PROPOSAL, X = X_train)
     saveRDS(x_proposal, file.path(path_res, "x_proposal.rds"))
   }
+  sir <- inverse_posterior_zanimlnbart(object = zanim_ln_bart, Y = Y_test[1:3, ],
+                                       x_proposal = x_proposal,ndpost = 100,
+                                       dir_posterior_fx = path_res,
+                                       method = "sir")
+  dens_prior <- MASS::kde2d(x_proposal[, 1], x_proposal[, 2])
+  x1range <- range(x_proposal[, 1])
+  x2range <- range(x_proposal[, 2])
 
-  Y_test <- Y_test[1:3,]
-  X_test <- X_test[1:3,]
-
-  is <- inverse_posterior_zanimlnbart(object = zanim_ln_bart, Y = Y_test,
-                                      x_proposal = x_proposal,
-                                      dir_posterior_fx = path_res, method = "is")
+  pdf(file.path(path_res, "inverse_posterior_100.pdf"), width = 6, height = 3)
+  for (i in seq_len(length(sir))) {
+    x_true <- X_test[i, ]
+    cat(i, "\n")
+    dens_sir <- MASS::kde2d(sir[[i]][, 1], sir[[i]][, 2], n = 100)
+    # Plotting
+    par(mfrow = c(1, 3), mar = c(3, 3, 1, 1))
+    # SIR
+    contour(dens_prior$x, dens_prior$y, dens_prior$z,
+            col = scales::alpha("brown", 0.4), main = "(x1,x2)")
+    # points(sir[[i]][, 1], sir[[i]][, 2])
+    contour(dens_sir$x, dens_sir$y, dens_sir$z, add = TRUE)
+    points(x_true[1], x_true[2], col = "blue", pch = 4, cex = 2)
+    abline(v = x_true[1], h = x_true[2])
+    # Marginal densities
+    plot(density(sir[[i]][, 1]), main = "x1")
+    points(x_true[1], 0.00001, col = "blue", pch = 4, cex = 2)
+    plot(density(sir[[i]][, 2]), main = "x2")
+    points(x_true[2], 0.00001, col = "blue", pch = 4, cex = 2)
+  }
+  graphics.off()
+  attr(sir, "elapsed_time")
 
   mean_prior = rep(0.0, 2); S_prior = diag(1.0, nrow = 2);
   ess <- inverse_posterior_zanimlnbart(object = zanim_ln_bart, Y = Y_test,
@@ -1053,69 +1064,6 @@ test_that("ZANIM-LN-BART two-dimension", {
                                        dir_posterior_fx = path_res,
                                        method = "ess")
 
-  # IS
-  is <- .is_zanimlnbart(object = zanim_ln_bart, Y = Y_test[1:3, ],
-                        x_proposal = x_proposal,
-                        dir_posterior_fx = path_res)
-  probs <- is[, 1:3]
-  # SIR
-  n_resampling <- N_PROPOSAL/2L
-  sir <- apply(probs, 2, function(p) {
-    ids <- sample.int(n = N_PROPOSAL, size = n_resampling, replace = TRUE,
-                      prob = p)
-    x_proposal[ids, , drop = FALSE]
-  }, simplify = FALSE)
-
-  # eSS
-  mean_prior = rep(0.0, 2); S_prior = diag(1.0, nrow = 2);
-  ess <- .gibbs_sampler(Y = Y_test, mean_prior = mean_prior, S_prior = S_prior,
-                        forests_dir = forests_dir, ntrees = NTREES,
-                        ndpost = NDPOST/2, n_rep = 1L, forward_model = "zanim_ln_bart")
-
-  # Visual comparison between the three methods
-  x_proposal <- is[, -seq_len(n_test)]
-  pdf(file.path(path_res, "inverse_posterior.pdf"), width = 6, height = 3)
-  for (i in seq_len(n_test)) {
-    x_true <- X_test[i, ]
-    cat(i, "\n")
-
-    # Linear interpolation for IS
-    is_interp <- akima::interp(x_proposal[, 1], x_proposal[, 2], is[, i], linear = TRUE)
-
-    # Compute the KDE for SIR and eSS
-    # hh <- c(MASS::bandwidth.nrd(sir[[i]][, 1]), MASS::bandwidth.nrd(sir[[i]][, 2]))
-    # if (any(hh == 0)) cat(sum(hh == 0), "hh is zero")
-    # hh[hh == 0] <- 0.01
-
-    dens_sir <- MASS::kde2d(sir[[i]][, 1], sir[[i]][, 2])
-    dens_ess <- MASS::kde2d(ess[,1,i], ess[,2,i])
-
-    # Common limits
-    xrange <- range(c(x_true[1], range(dens_sir$x), range(dens_ess$x),
-                      range(is_interp$x)))
-    yrange <- range(c(x_true[2], range(dens_sir$y), range(dens_ess$y),
-                      range(is_interp$y)))
-
-    # Plotting
-    par(mfrow = c(1, 3), mar = c(3, 3, 1, 1))
-    # IS
-    contour(is_interp$x, is_interp$y, is_interp$z,
-            main = paste0("IS, y_i = (", paste0(Y_test[i, ], collapse = ","), ")"),
-            ylim = yrange, xlim = xrange)
-    points(x_true[1], x_true[2], col = "blue", pch = 4, cex = 2)
-    abline(v = x_true[1], h = x_true[2])
-    # SIR
-    contour(dens_sir$x, dens_sir$y, dens_sir$z, main = "SIR", ylim = yrange,
-              xlim = xrange)
-    points(x_true[1], x_true[2], col = "blue", pch = 4, cex = 2)
-    abline(v = x_true[1], h = x_true[2])
-    # eSS
-    contour(dens_ess$x, dens_ess$y, dens_ess$z, main = "eSS", ylim = yrange,
-            xlim = xrange)
-    points(x_true[1], x_true[2], col = "blue", pch = 4, cex = 2)
-    abline(v = x_true[1], h = x_true[2])
-  }
-  graphics.off()
 
   i <- 1
   dim(ess[,,i])
