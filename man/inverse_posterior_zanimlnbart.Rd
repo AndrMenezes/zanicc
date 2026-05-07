@@ -9,13 +9,12 @@ inverse_posterior_zanimlnbart(
   Y,
   x_proposal,
   dir_posterior_fx,
+  method = c("sir", "ess"),
+  ndpost = object$ndpost,
+  nburnin = 10L,
   mean_prior = NULL,
   S_prior = NULL,
-  method = c("is", "ess"),
-  ndpost = object$ndpost,
-  sir = FALSE,
-  n_resampling = floor(nrow(x_proposal)/2),
-  n_rep = 1L
+  X_ini = NULL
 )
 }
 \description{
