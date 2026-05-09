@@ -18,5 +18,10 @@ double UpdateAlphaDirchlet(const std::vector<double> &alphas,
                            const double &sum_log_splitprobs,
                            const double &p, const int &k);
 arma::vec rmvnorm(int p, arma::mat &sigma_chol);
+void rmvnorm_chol(std::vector<double>& out,
+                  const std::vector<double>& mean,
+                  const std::vector<double>& L, int p);
+void rmvnorm_chol2(std::vector<double>& out,
+                   const std::vector<double>& L, int p);
 
 #endif

@@ -68,6 +68,21 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// log_I_lc
+double log_I_lc(std::vector<double>& x, std::vector<double>& mu, std::vector<double>& A, std::vector<double>& b, double eta);
+RcppExport SEXP _zanicc_log_I_lc(SEXP xSEXP, SEXP muSEXP, SEXP ASEXP, SEXP bSEXP, SEXP etaSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< std::vector<double>& >::type x(xSEXP);
+    Rcpp::traits::input_parameter< std::vector<double>& >::type mu(muSEXP);
+    Rcpp::traits::input_parameter< std::vector<double>& >::type A(ASEXP);
+    Rcpp::traits::input_parameter< std::vector<double>& >::type b(bSEXP);
+    Rcpp::traits::input_parameter< double >::type eta(etaSEXP);
+    rcpp_result_gen = Rcpp::wrap(log_I_lc(x, mu, A, b, eta));
+    return rcpp_result_gen;
+END_RCPP
+}
 // rtnorm
 double rtnorm(const double& mean, const double& sd, const double& a);
 RcppExport SEXP _zanicc_rtnorm(SEXP meanSEXP, SEXP sdSEXP, SEXP aSEXP) {
@@ -94,6 +109,17 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// mat_to_double_rowmajor
+std::vector<double> mat_to_double_rowmajor(const arma::mat& X);
+RcppExport SEXP _zanicc_mat_to_double_rowmajor(SEXP XSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const arma::mat& >::type X(XSEXP);
+    rcpp_result_gen = Rcpp::wrap(mat_to_double_rowmajor(X));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 RcppExport SEXP _rcpp_module_boot_dm_linear_reg();
 RcppExport SEXP _rcpp_module_boot_inverse_posterior();
@@ -115,8 +141,10 @@ static const R_CallMethodDef CallEntries[] = {
     {"_zanicc_log_pmf_zanim_vec", (DL_FUNC) &_zanicc_log_pmf_zanim_vec, 5},
     {"_zanicc_log_pmf_zanim_approx", (DL_FUNC) &_zanicc_log_pmf_zanim_approx, 6},
     {"_zanicc_log_pmf_zanidm", (DL_FUNC) &_zanicc_log_pmf_zanidm, 3},
+    {"_zanicc_log_I_lc", (DL_FUNC) &_zanicc_log_I_lc, 5},
     {"_zanicc_rtnorm", (DL_FUNC) &_zanicc_rtnorm, 3},
     {"_zanicc_compute_crps", (DL_FUNC) &_zanicc_compute_crps, 3},
+    {"_zanicc_mat_to_double_rowmajor", (DL_FUNC) &_zanicc_mat_to_double_rowmajor, 1},
     {"_rcpp_module_boot_dm_linear_reg", (DL_FUNC) &_rcpp_module_boot_dm_linear_reg, 0},
     {"_rcpp_module_boot_inverse_posterior", (DL_FUNC) &_rcpp_module_boot_inverse_posterior, 0},
     {"_rcpp_module_boot_multinomial_bart", (DL_FUNC) &_rcpp_module_boot_multinomial_bart, 0},

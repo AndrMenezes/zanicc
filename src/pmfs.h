@@ -12,8 +12,11 @@ double log_pmf_mult(std::vector<int> &x, int &size,
                            std::vector<double> &prob);
 double log_pmf_zanim_conditional(std::vector<int> x, std::vector<double> prob,
                                  std::vector<double> zeta);
-double log_pmf_zanim_ln_conditional(std::vector<int> x, std::vector<double> prob,
-                                    std::vector<double> zeta,
-                                    std::vector<double> chol_Sigma_V,
-                                    std::vector<double> B);
+double log_pmf_zanim_ln_conditional(std::vector<int> &x, std::vector<double> &prob,
+                                    std::vector<double> &zeta,
+                                    std::vector<double> &chol_Sigma_V,
+                                    std::vector<double> &B);
+double log_I_lc(std::vector<double> &x, std::vector<double> &mu,
+                std::vector<double> &A, std::vector<double> &b,
+                double eta);
 #endif

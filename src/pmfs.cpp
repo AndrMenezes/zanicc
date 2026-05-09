@@ -340,10 +340,10 @@ double log_pmf_zanim_conditional(std::vector<int> x, std::vector<double> prob,
 
 // Evaluate the ZANIM-LN-PMF using the hierarchical representation conditional on z
 // and u
-double log_pmf_zanim_ln_conditional(std::vector<int> x, std::vector<double> prob,
-                                    std::vector<double> zeta,
-                                    std::vector<double> chol_Sigma_V,
-                                    std::vector<double> B) {
+double log_pmf_zanim_ln_conditional(std::vector<int> &x, std::vector<double> &prob,
+                                    std::vector<double> &zeta,
+                                    std::vector<double> &chol_Sigma_V,
+                                    std::vector<double> &B) {
   int d = x.size(), dm1 = d-1;
   std::vector<int> z(d, 1.0);
   std::vector<double> v(dm1, 0.0), u(d, 0.0), vartheta(d, 0.0);
@@ -386,3 +386,30 @@ double log_pmf_zanim_ln(int mc, std::vector<int> x, std::vector<double> prob,
   return log_sum_exp(ll) - std::log(mc);
 
 }
+
+// Smooth/logistic approximation of log I_C(x), where C is a linear constraint
+// of the form C = {x\in R: Ax + b>=0}.
+// I_c(x) \approx 1 / (1 + exp(-eta (Ax* + b))) with x* = x + mu
+// [[Rcpp::export(".logIlc")]]
+double log_I_lc(std::vector<double> &x,
+                std::vector<double> &mu,
+                std::vector<double> &A, std::vector<double> &b,
+                double eta) {
+  int p = x.size();
+  int n = b.size();
+
+  double out = 0.0, u;
+  // Compute Ax + b (recall row-major order!)
+  for (int i=0; i < n; i++) {
+    u = b[i];
+    for (int j=0; j < p; j++) {
+      u += (x[j] + mu[j]) * A[i*p + j];
+    }
+    out += std::log1p(exp(-eta *u));
+  }
+  return -out;
+}
+
+
+
+

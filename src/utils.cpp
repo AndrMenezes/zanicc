@@ -49,21 +49,22 @@ arma::vec compute_crps(const arma::mat &samples,
 }
 
 // Convert an integer/double matrix to a row-major double vector
-std::vector<int> umat_to_int_rowmajor(const arma::umat &Y) {
-  int n = Y.n_rows, d = Y.n_cols;
-  std::vector<int> out(n * d);
+std::vector<int> umat_to_int_rowmajor(const arma::umat &X) {
+  int n = X.n_rows, p = X.n_cols;
+  std::vector<int> out(n * p);
   for (int i = 0; i < n; ++i)
-    for (int j = 0; j < d; ++j)
-      out[i * d + j] = static_cast<int>(Y(i, j));
+    for (int j = 0; j < p; ++j)
+      out[i * p + j] = static_cast<int>(X(i, j));
   return out;
 }
 
+// [[Rcpp::export]]
 std::vector<double> mat_to_double_rowmajor(const arma::mat &X) {
-  int n = X.n_rows, d = X.n_cols;
-  std::vector<double> out(n * d);
+  int n = X.n_rows, p = X.n_cols;
+  std::vector<double> out(n * p);
   for (int i = 0; i < n; ++i)
-    for (int j = 0; j < d; ++j)
-      out[i * d + j] = static_cast<double>(X(i, j));
+    for (int j = 0; j < p; ++j)
+      out[i * p + j] = static_cast<double>(X(i, j));
   return out;
 }
 
