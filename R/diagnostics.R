@@ -59,7 +59,7 @@ plot_ppc <- function(Y, Y_ppc = NULL, object = NULL, output = FALSE) {
 }
 #' Plot marginal QQ-plots using the posterior-predictive distribution
 #' @export
-plot_qqplot <- function(Y, Y_ppc = NULL, object = NULL, relative = FALSE,
+plot_qqplots <- function(Y, Y_ppc = NULL, object = NULL, relative = FALSE,
                         output = FALSE, len_probs = 100L, mfrow = NULL) {
   # Generate the posterior-predictive distribution
   if (!is.null(object) && is.null(Y_ppc)) {
@@ -68,7 +68,7 @@ plot_qqplot <- function(Y, Y_ppc = NULL, object = NULL, relative = FALSE,
   }
   if (relative) {
     Y_ppc <- .normalize_composition(Y_ppc)
-    Y <- .normalize_composition(Y)
+    Y <- sweep(Y, 1, rowSums(Y), "/")
   }
   # Probabilities for the quantiles
   probs <- seq(0.0, 1.0, length.out = len_probs)
@@ -82,14 +82,15 @@ plot_qqplot <- function(Y, Y_ppc = NULL, object = NULL, relative = FALSE,
   par(mfrow = mfrow, mar = c(4, 4, 1, 1))
   for (j in seq_len(d)) {
     q_obs <- quantile(Y[, j], probs = probs, names = FALSE)
-    q_teo <- .compute_quantiles(Y_rep = Y_ppc, probs = probs)
+    q_teo <- .compute_quantiles(Y_rep = Y_ppc[,,j], probs = probs)
     ry <- c(min(q_teo[, 2L]), max(q_teo[, 3L]))
     rx <- range(q_obs)
     plot(q_teo[, 1L], q_obs, ylim = ry, xlim = rx,
          main = sprintf("category j=%i", j),
          xlab = "Theoretical quantiles", ylab = "Empirical quantiles")
-    lines(q_teo[, 1L], y = q_teo[, 2L])
-    lines(q_teo[, 1L], y = q_teo[, 3L])
+    lines(q_teo[, 2L], q_obs, lty = "dashed")
+    lines(q_teo[, 3L], q_obs, lty = "dashed")
+    abline(0, 1, col = "grey60", lty = "dashed")
     if (output) list_data[[j]] <- cbind(q_obs, q_teo)
   }
   if (output) return(list_data)
