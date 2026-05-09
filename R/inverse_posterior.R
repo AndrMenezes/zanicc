@@ -42,10 +42,11 @@ rconvexhull <- function(n, X) {
 #' Inverse posterior using the ZANIM-LN-BART model
 #' @export
 inverse_posterior_zanimlnbart <- function(object, Y, x_proposal, dir_posterior_fx,
-                                          method = c("sir", "ess"),
+                                          method = c("sir", "ess", "c_ess"),
                                           ndpost = object$ndpost, nburnin = 10L,
                                           mean_prior = NULL, S_prior = NULL,
-                                          X_ini = NULL) {
+                                          X_ini = NULL, Amat = NULL, bvec = NULL,
+                                          eta = 50.0) {
   # Some checks
   method <- match.arg(method)
   if (object$d != ncol(Y)) stop("Dimension of Y does not match with forward model")
@@ -103,8 +104,13 @@ inverse_posterior_zanimlnbart <- function(object, Y, x_proposal, dir_posterior_f
       for (i in seq_len(n)) X_ini[i, ] <- stats::rnorm(p) %*% cS + mean_prior
     }
     ini <- proc.time()
-    xx <- cpp_obj$SamplerZANIMLNBARTeSS(Y, X_ini, ndpost, mean_prior, S_prior,
-                                        nburnin, B)
+    xx <- switch(method,
+      "ess" = cpp_obj$SamplerZANIMLNBARTeSS(Y, X_ini, ndpost, nburnin, mean_prior,
+                                            S_prior, B),
+      "c_ess" = cpp_obj$SamplerZANIMLNBARTceSS(Y, X_ini, ndpost, nburnin,
+                                               mean_prior, S_prior, B, Amat,
+                                               bvec, eta)
+    )
     elapsed <- proc.time() - ini
     res <- array(xx, dim = c(ndpost, p, n))
   }
