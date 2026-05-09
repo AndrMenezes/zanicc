@@ -23,10 +23,19 @@ public:
   std::vector<double> SamplerZANIMBARTeSS(arma::umat Y, arma::mat X_ini, int ndpost,
                                           std::vector<double> mean_prior,
                                           arma::mat S_prior, int n_rep, int conditional);
-  std::vector<double> SamplerZANIMLNBARTeSS(arma::umat Y, arma::mat X_ini, int ndpost,
+  std::vector<double> SamplerZANIMLNBARTeSS(arma::umat Y, arma::mat X_ini,
+                                            int ndpost, int nburnin,
                                             std::vector<double> mean_prior,
-                                            arma::mat S_prior, int n_rep,
+                                            arma::mat S_prior,
                                             arma::mat B);
+
+  std::vector<double> SamplerZANIMLNBARTceSS(arma::umat Y, arma::mat X_ini,
+                                             int ndpost, int nburnin,
+                                             std::vector<double> mean_prior,
+                                             arma::mat S_prior, arma::mat A,
+                                             arma::mat B, std::vector<double> bvec,
+                                             double eta);
+
   std::vector<int> MultipleImputationSIR(std::vector<int> y, int n_proposal,
                                          int ndpost, arma::mat B,
                                          std::string draws_dir);
@@ -43,10 +52,13 @@ public:
                               const std::vector<std::vector<Node*>> &forest_theta,
                               const std::vector<std::vector<Node*>> &forest_zeta);
 
-  // NOTE: this function isn't doing a IS targeting the cut posterior.
-  // I should remove this later on.
-  std::vector<double> GetZANIMLNBARTWeightsIS(std::vector<int> y, int n_proposal, int ndpost,
-                                              arma::mat B, std::string draws_dir);
+  double LogLikelihoodZANIMLN(std::vector<int> &y,
+                              std::vector<double> &x,
+                              int ndpost,
+                              int chain_index, arma::mat B);
+  std::vector<double> LogLikelihoodZANIMLN_2(std::vector<int> &y,
+                                             std::vector<double> &x, int ndpost,
+                                             arma::mat B);
 
   double lmlZANIM(std::vector<int> &y, std::vector<double> &x, int n_particles);
 
