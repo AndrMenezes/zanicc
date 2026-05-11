@@ -34,13 +34,17 @@ plot_ppc <- function(Y, Y_ppc = NULL, object = NULL, output = FALSE) {
 
   # Plotting
   par(mar = c(4, 4, 1, 1), mfrow = c(2, 2))
-  plot(density(res_entropy$t_ppc), main = "Entropy", xlab = "", ylab = "")
+  plot(density(res_entropy$t_ppc), main = "Entropy", xlab = "", ylab = "",
+       xlim = range(res_entropy$t_obs, res_entropy$t_ppc))
   abline(v = res_entropy$t_obs)
-  plot(density(res_mdi$t_ppc), main = "MDI", xlab = "", ylab = "")
+  plot(density(res_mdi$t_ppc), main = "MDI", xlab = "", ylab = "",
+       xlim = range(res_mdi$t_obs, res_mdi$t_ppc))
   abline(v = res_mdi$t_obs)
-  plot(density(res_zero$t_ppc), main = "Prop of zero", xlab = "", ylab = "")
+  plot(density(res_zero$t_ppc), main = "Prop of zero", xlab = "", ylab = "",
+       xlim = range(res_zero$t_obs, res_zero$t_ppc))
   abline(v = res_zero$t_obs)
-  plot(density(res_zi$t_ppc), main = "ZI", xlab = "", ylab = "")
+  plot(density(res_zi$t_ppc), main = "ZI", xlab = "", ylab = "",
+       xlim = range(res_zi$t_obs, res_zi$t_ppc))
   abline(v = res_zi$t_obs)
 
   if (output)

@@ -25,10 +25,6 @@ rtnorm <- function(mean, sd, a) {
     .Call(`_zanicc_rtnorm`, mean, sd, a)
 }
 
-compute_crps <- function(samples, truth, n_samps) {
-    .Call(`_zanicc_compute_crps`, samples, truth, n_samps)
-}
-
 mat_to_double_rowmajor <- function(X) {
     .Call(`_zanicc_mat_to_double_rowmajor`, X)
 }

@@ -46,7 +46,7 @@ inverse_posterior_zanimlnbart <- function(object, Y, x_proposal, dir_posterior_f
                                           ndpost = object$ndpost, nburnin = 10L,
                                           mean_prior = NULL, S_prior = NULL,
                                           X_ini = NULL, Amat = NULL, bvec = NULL,
-                                          eta = 50.0) {
+                                          eta = 50.0, mc = 20L) {
   # Some checks
   method <- match.arg(method)
   if (object$d != ncol(Y)) stop("Dimension of Y does not match with forward model")
@@ -88,7 +88,7 @@ inverse_posterior_zanimlnbart <- function(object, Y, x_proposal, dir_posterior_f
     res <- lapply(seq_len(n), function(i) {
       cat("Observation: ", i, "of", n, "\n")
       indices <- cpp_obj$MultipleImputationSIR(Y[i, ], n_proposal, ndpost, B,
-                                               dir_posterior_fx)
+                                               dir_posterior_fx, mc)
       x_proposal[indices + 1L, ] # C++ indices starts at 0
     })
     elapsed <- proc.time() - ini
@@ -106,7 +106,7 @@ inverse_posterior_zanimlnbart <- function(object, Y, x_proposal, dir_posterior_f
     ini <- proc.time()
     xx <- switch(method,
       "ess" = cpp_obj$SamplerZANIMLNBARTeSS(Y, X_ini, ndpost, nburnin, mean_prior,
-                                            S_prior, B),
+                                            S_prior, B, mc),
       "c_ess" = cpp_obj$SamplerZANIMLNBARTceSS(Y, X_ini, ndpost, nburnin,
                                                mean_prior, S_prior, B, Amat,
                                                bvec, eta)
