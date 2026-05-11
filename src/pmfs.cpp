@@ -374,10 +374,10 @@ double log_pmf_zanim_ln_conditional(std::vector<int> &x, std::vector<double> &pr
   return out;
 }
 
-double log_pmf_zanim_ln(int mc, std::vector<int> x, std::vector<double> prob,
-                        std::vector<double> zeta,
-                        std::vector<double> chol_Sigma_V,
-                        std::vector<double> B) {
+double log_pmf_zanim_ln(int mc, std::vector<int> &x, std::vector<double> &prob,
+                        std::vector<double> &zeta,
+                        std::vector<double> &chol_Sigma_V,
+                        std::vector<double> &B) {
   std::vector<double> ll(mc, 0.0);
   for (int k=0; k < mc; k++) {
     ll[k] = log_pmf_zanim_ln_conditional(x, prob, zeta, chol_Sigma_V,  B);
@@ -390,7 +390,6 @@ double log_pmf_zanim_ln(int mc, std::vector<int> x, std::vector<double> prob,
 // Smooth/logistic approximation of log I_C(x), where C is a linear constraint
 // of the form C = {x\in R: Ax + b>=0}.
 // I_c(x) \approx 1 / (1 + exp(-eta (Ax* + b))) with x* = x + mu
-// [[Rcpp::export(".logIlc")]]
 double log_I_lc(std::vector<double> &x,
                 std::vector<double> &mu,
                 std::vector<double> &A, std::vector<double> &b,

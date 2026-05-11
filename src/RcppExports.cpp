@@ -96,19 +96,6 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// compute_crps
-arma::vec compute_crps(const arma::mat& samples, const arma::vec& truth, const int& n_samps);
-RcppExport SEXP _zanicc_compute_crps(SEXP samplesSEXP, SEXP truthSEXP, SEXP n_sampsSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const arma::mat& >::type samples(samplesSEXP);
-    Rcpp::traits::input_parameter< const arma::vec& >::type truth(truthSEXP);
-    Rcpp::traits::input_parameter< const int& >::type n_samps(n_sampsSEXP);
-    rcpp_result_gen = Rcpp::wrap(compute_crps(samples, truth, n_samps));
-    return rcpp_result_gen;
-END_RCPP
-}
 // mat_to_double_rowmajor
 std::vector<double> mat_to_double_rowmajor(const arma::mat& X);
 RcppExport SEXP _zanicc_mat_to_double_rowmajor(SEXP XSEXP) {
@@ -143,7 +130,6 @@ static const R_CallMethodDef CallEntries[] = {
     {"_zanicc_log_pmf_zanidm", (DL_FUNC) &_zanicc_log_pmf_zanidm, 3},
     {"_zanicc_log_I_lc", (DL_FUNC) &_zanicc_log_I_lc, 5},
     {"_zanicc_rtnorm", (DL_FUNC) &_zanicc_rtnorm, 3},
-    {"_zanicc_compute_crps", (DL_FUNC) &_zanicc_compute_crps, 3},
     {"_zanicc_mat_to_double_rowmajor", (DL_FUNC) &_zanicc_mat_to_double_rowmajor, 1},
     {"_rcpp_module_boot_dm_linear_reg", (DL_FUNC) &_rcpp_module_boot_dm_linear_reg, 0},
     {"_rcpp_module_boot_inverse_posterior", (DL_FUNC) &_rcpp_module_boot_inverse_posterior, 0},
