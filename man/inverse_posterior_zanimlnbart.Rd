@@ -7,8 +7,8 @@
 inverse_posterior_zanimlnbart(
   object,
   Y,
-  x_proposal,
   dir_posterior_fx,
+  x_proposal = NULL,
   method = c("sir", "ess", "c_ess"),
   ndpost = object$ndpost,
   nburnin = 10L,

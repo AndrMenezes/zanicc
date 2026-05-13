@@ -13,7 +13,8 @@ sim_zanim_ln_gp(
   len_scale_theta = 2,
   intercept_theta = stats::runif(d, -2.3, 2.3),
   upper_bound_zeta = rep(0.5, d),
-  lower_bound_zeta = rep(0.001, d)
+  lower_bound_zeta = rep(0.001, d),
+  psi_range = c(0.3, 0.4)
 )
 }
 \description{
