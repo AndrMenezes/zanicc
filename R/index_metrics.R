@@ -200,3 +200,50 @@ compute_classification_metrics <- function(truth, estimated) {
   f1 <- 2 * tp / (2 * tp + fn + fp)
   c(sens = sensitivity, spec = specificity, mcc = mcc, f1 = f1)
 }
+
+
+#' Check if x is in the interval.
+#' @param interval matrix
+#' @param x vector
+is_inside <- function(interval, x) {
+  p <- length(x)
+  isin <- logical(p)
+  for (j in seq_len(p))
+    isin[j] <- x[j] >= interval[j, 1]  && x[j] <= interval[j, 2]
+  if (all(isin)) return(1L) else return(0L)
+}
+
+#' Compute the mode using kernel density estimates
+get_mode <- function(X) {
+  apply(X, 2, function(x) {
+    dd <- density(x)
+    dd$x[which.max(dd$y)]
+  })
+}
+
+#' Compute various prediction metrics
+#' @param x matrix
+#' @param draws an array with the draws. Each entry is a matrix with number of posterior
+#' draws and each column is the variable.
+#' @export
+compute_prediction_metrics <- function(x, draws) {
+  # draws <- lapply(draws, as.matrix)
+  n <- nrow(x)
+  stopifnot(n == dim(draws)[3L])
+  l <- lapply(seq_len(n), function(i) {
+    post <- as.matrix(draws[,,i, drop = FALSE])
+    mu <- colMeans(post)
+    md <- apply(post, 2, median)
+    mo <- get_mode(post)
+    c(mae = sum(abs(x[i, ] - md)),
+      msep = sum((x[i, ] - mu)^2),
+      dmode = sum((x[i, ] - mo)^2),
+      coverage_95 = is_inside(coda::HPDinterval(coda::as.mcmc(post), prob = 0.95), x[i, ]),
+      coverage_50 = is_inside(coda::HPDinterval(coda::as.mcmc(post), prob = 0.50), x[i, ])
+    )
+  })
+  rowMeans(do.call(cbind, l))
+}
+
+
+
