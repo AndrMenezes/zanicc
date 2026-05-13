@@ -92,7 +92,7 @@ inverse_posterior_zanimlnbart <- function(object, Y, dir_posterior_fx,
       cat("Observation: ", i, "of", n, "\n")
       indices <- cpp_obj$MultipleImputationSIR(Y[i, ], n_proposal, ndpost, B,
                                                dir_posterior_fx)
-      x_proposal[indices + 1L, ] # C++ indices starts at 0
+      x_proposal[indices + 1L, , drop = FALSE] # C++ indices starts at 0
     })
     elapsed <- proc.time() - ini
     res <- simplify2array(res)

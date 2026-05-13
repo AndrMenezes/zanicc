@@ -227,7 +227,6 @@ get_mode <- function(X) {
 #' draws and each column is the variable.
 #' @export
 compute_prediction_metrics <- function(x, draws) {
-  # draws <- lapply(draws, as.matrix)
   n <- nrow(x)
   stopifnot(n == dim(draws)[3L])
   l <- lapply(seq_len(n), function(i) {
