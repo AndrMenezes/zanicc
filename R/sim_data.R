@@ -461,36 +461,48 @@ sim_zanim_ln_s1 <- function(n_sample, random_effects = TRUE, structural_zero = T
 sim_zanim_ln_gp <- function(n, d, n_trials, X_real, len_scale_theta = 2.0,
                             intercept_theta = stats::runif(d, -2.3, 2.3),
                             upper_bound_zeta = rep(0.5, d),
-                            lower_bound_zeta = rep(0.001, d)) {
+                            lower_bound_zeta = rep(0.001, d),
+                            psi_range = c(0.30, 0.40)) {
+
+  p <- ncol(X_real)
+  if (p > 3L) stop("number of covariates should be 1, 2 or 3.")
 
   if (length(n_trials) != n) n_trials <- rep(n_trials[1L], n)
 
   # Simulate covariates
-  X <- rconvexhull(n = n, X = unique(X_real))
+  if (p == 1L) X <- matrix(stats::runif(n, min(X_real), max(X_real)), ncol = 1L)
+  else X <- rconvexhull(n = n, X = unique(X_real))
   X <- sweep(X, 2, colMeans(X), "-")
 
   # Distance
-  D <- as.matrix(fields::rdist(X))
+  D <- as.matrix(stats::dist(X)) # fields::rdist(X)
   # squared Exponential kernel
   S_GP_theta <- exp(-D^2 / len_scale_theta) + diag(sqrt(.Machine$double.eps), nrow = n)
   chol_S_GP_theta <- chol(S_GP_theta)
-  # Compositional (GP functionaal form)
+  # S_GP_zeta <- exp(-D^2 / 10) + diag(sqrt(.Machine$double.eps), nrow = n)
+  # chol_S_GP_zeta <- chol(S_GP_zeta)
+
+  # Compositional
   fx_theta <- matrix(nrow = n, ncol = d)
   for (j in seq_len(d)) fx_theta[, j] <- drop(stats::rnorm(n) %*% chol_S_GP_theta)
 
-  # Structural zero (use a logistic function)
+  # Structural zero
+  # fx_zeta <- matrix(nrow = n, ncol = d)
+  # for (j in seq_len(d)) fx_zeta[, j] <- drop(stats::rnorm(n) %*% chol_S_GP_zeta)
+
   fx_zeta <- matrix(nrow = n, ncol = d)
   scale_z <- stats::runif(d, 0.1, 1.0)
-  for (j in seq_len(d)) fx_zeta[, j] <- 1.0 / (1.0 + exp(-scale_z[j] * X[, 1L] * X[, 1L]))
+  x_zeta <- switch(p, X[, 1L], X[, 1L] * X[, 2L], X[, 1L] * X[, 2L] * X[, 3L])
+  for (j in seq_len(d)) fx_zeta[, j] <- 1.0 / (1.0 + exp(-scale_z[j] * x_zeta))
 
-  # Make sure the true theta doesn't go beyond the upper_bound_zeta
+  # Make sure the true zeta doesn't go beyond the upper_bound_zeta
   max_range <- stats::qnorm(upper_bound_zeta) - stats::qnorm(lower_bound_zeta)
   true_zetas <- stats::pnorm(t(stats::qnorm(lower_bound_zeta) + max_range * t(fx_zeta)))
 
   # Random effect
   q_factors <- zanicc:::.ledermann(d)
   Gamma <- matrix(stats::runif(d * q_factors, 0, 1), d, q_factors)
-  Psi <- diag(seq(0.2, 0.4, length.out = d))
+  Psi <- diag(seq(psi_range[1L], psi_range[2L], length.out = d))
   Sigma_U <- tcrossprod(Gamma) + Psi
   chol_Sigma_U <- chol(Sigma_U)
   U <- matrix(0.0, nrow = n, ncol = d)
@@ -518,23 +530,22 @@ sim_zanim_ln_gp <- function(n, d, n_trials, X_real, len_scale_theta = 2.0,
       Y[i, ] <- stats::rmultinom(n = 1L, size = n_trials[i], prob = true_varthetas[i, ])
     }
   }
-  # print(cbind(structural_zeros = colMeans(1 - Z),
-  #             sampling_zeros = colMeans(Y == 0) - colMeans(1 - Z),
-  #             upper_bound_zeta = upper_bound_zeta))
 
   data_sim <- data.frame(
     id = rep(seq_len(n), each = d),
     category = rep(seq_len(d), times = n),
     x1 = rep(X[, 1L], each = d),
-    x2 = rep(X[, 2L], each = d),
     theta = c(t(true_thetas)),
     zeta = c(t(true_zetas)),
     vartheta = c(t(true_varthetas)),
     total = c(t(Y)),
     prop = c(apply(Y, 1L, function(y) y / sum(y))))
+  if (p >= 2L) data_sim$x2 <- rep(X[, 2L], each = d)
+  if (p == 3L) data_sim$x3 <- rep(X[, 3L], each = d)
 
   list_data <- list(df = data_sim, Y = Y, X = X, Z = Z, true_thetas = true_thetas,
                     true_zetas = true_zetas, true_varthetas = true_varthetas)
 }
+
 
 
