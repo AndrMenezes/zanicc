@@ -17,10 +17,6 @@ log_pmf_zanidm <- function(x, alpha, zeta) {
     .Call(`_zanicc_log_pmf_zanidm`, x, alpha, zeta)
 }
 
-.logIlc <- function(x, mu, A, b, eta) {
-    .Call(`_zanicc_log_I_lc`, x, mu, A, b, eta)
-}
-
 rtnorm <- function(mean, sd, a) {
     .Call(`_zanicc_rtnorm`, mean, sd, a)
 }
