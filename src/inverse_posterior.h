@@ -27,7 +27,7 @@ public:
                                             int ndpost, int nburnin,
                                             std::vector<double> mean_prior,
                                             arma::mat S_prior,
-                                            arma::mat B, int mc);
+                                            arma::mat B);
 
   std::vector<double> SamplerZANIMLNBARTceSS(arma::umat Y, arma::mat X_ini,
                                              int ndpost, int nburnin,
@@ -38,8 +38,7 @@ public:
 
   std::vector<int> MultipleImputationSIR(std::vector<int> y, int n_proposal,
                                          int ndpost, arma::mat B,
-                                         std::string draws_dir,
-                                         int mc);
+                                         std::string draws_dir);
 
   // Get the tree-specific prediction by traversing the tree
   double GetMu(Node *tree, std::vector<double> &x);
