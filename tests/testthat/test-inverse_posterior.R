@@ -1,3 +1,228 @@
+test_that("ZANIM-LN-BART one-dimension", {
+  rm(list = ls())
+  devtools::load_all()
+
+  d <- 4L
+  n_sample <- 1000L
+
+  # Path
+  path_local <- "./tests/testthat/inverse_posterior/zanim_ln_bart/one_dimension"
+  path_results <- file.path(path_local, sprintf("d=%i", d), "results")
+  forests_dir <- file.path(path_results, "forests")
+  if (!dir.exists(forests_dir)) dir.create(forests_dir, recursive = TRUE)
+
+  if (!file.exists(file.path(path_results, "data.rds"))) {
+    # Load pollen data
+    data("pollen_data", package = "zanicc")
+    n_trials <- rowSums(pollen_data$Y)
+    # Use the marginal ZI as upper bound for zetas
+    upper_bound_zeta <- apply(pollen_data$Y, 2, zi_binomial, N = n_trials)
+    lower_bound_zeta <- colMeans(pollen_data$Y == 0) - upper_bound_zeta
+    lower_bound_zeta[lower_bound_zeta == 0] <- 0.001
+    stats::qnorm(lower_bound_zeta)
+    # Use the centered log-ratio of the empirical mean compositional as intercept
+    # for the compositional part
+    base_comp <- colMeans(sweep(pollen_data$Y, MARGIN = 1, n_trials, "/"))
+    intercept_theta <- log(base_comp / exp(mean(log(base_comp))))
+    all.equal(base_comp, exp(intercept_theta)/sum(exp(intercept_theta)))
+    set.seed(1212)
+    # Sample size and number of categories
+    n_trials <- sample(1000L:2000L, size = n_sample, replace = TRUE)
+    X_real <- unique(pollen_data$X[, "mtco", drop = FALSE])
+    int_theta <- if (d == 28) intercept_theta else stats::runif(d, -2.3, 2.3)
+    up <- if (d == 28) upper_bound_zeta else sample(upper_bound_zeta, d)
+    list_data <- sim_zanim_ln_gp(n = n_sample, d = d, X_real = X_real,
+                                 n_trials = n_trials,
+                                 len_scale_theta = 5.0,
+                                 upper_bound_zeta = up,
+                                 intercept_theta = int_theta)
+    saveRDS(object = list_data, file = file.path(path_results, "data.rds"))
+  }
+
+  list_data <- readRDS(file = file.path(path_results, "data.rds"))
+  # Split the data
+  set.seed(1212)
+  n_test <- 100L
+  id_test <- sample.int(n_sample, n_test)
+  Y_test <- list_data$Y[id_test, ]
+  X_test <- list_data$X[id_test, , drop = FALSE]
+  Y_train <- list_data$Y[-id_test, ]
+  X_train <- list_data$X[-id_test, , drop = FALSE]
+  true_thetas <- list_data$true_thetas[-id_test, ]
+  true_varthetas <- list_data$true_varthetas[-id_test, ]
+  true_zetas <- list_data$true_zetas[-id_test, ]
+  cbind(structural_zeros = colMeans(1 - list_data$Z),
+        sampling_zeros = colMeans(list_data$Y == 0) - colMeans(1 - list_data$Z))
+
+  # Fit forward model
+  NDPOST <- 5000L
+  NSKIP <- 10000L
+  NTREES_THETA <- 100L
+  NTREES_ZETA <- 20L
+
+  if (file.exists(file.path(path_results, "mod.rds"))) {
+    zanim_ln_bart <- load_model(model_dir = path_results)
+  } else {
+    zanim_ln_bart <- zanicc(Y = Y_train, X_count = X_train, X_zi = X_train,
+                            model = "zanim_ln_bart", ntrees_theta = NTREES_THETA,
+                            ntrees_zeta = NTREES_ZETA, ndpost = NDPOST,
+                            nskip = NSKIP, save_trees = TRUE, forests_dir = forests_dir,
+                            q_factors = .ledermann(d) + 1L)
+    save_model(object = zanim_ln_bart, model_dir = path_results)
+    zanim_ln_bart <- load_model(model_dir = path_results)
+
+    # Plot true parameters versus estimates
+    mfrow_op <- grDevices::n2mfrow(d) #c(3, 2)#
+    pdf(file.path(path_results, "diagnostics.pdf"), width = 8, height = 6)
+    par(mfrow = mfrow_op, mar = c(3, 3, 1, 1))
+    for (j in seq_len(d)) {
+      plot(true_thetas[,j], rowMeans(zanim_ln_bart$draws_theta[,j,]),
+           xlab = "true", ylab = "estimate", main = sprintf("theta_{i%d}", j))
+      abline(0, 1)
+    }
+    par(mfrow = mfrow_op, mar = c(3, 3, 1, 1))
+    for (j in seq_len(d)) {
+      plot(true_varthetas[,j], rowMeans(zanim_ln_bart$draws_abundance[,j,]),
+           xlab = "true", ylab = "estimate", main = sprintf("vartheta_{i%d}", j))
+      abline(0, 1)
+    }
+    par(mfrow = mfrow_op, mar = c(3, 3, 1, 1))
+    for (j in seq_len(d)) {
+      plot(true_zetas[,j], rowMeans(zanim_ln_bart$draws_zeta[,j,]),
+           xlab = "true", ylab = "estimate", main = sprintf("zeta_{i%d}", j))
+      abline(0, 1)
+    }
+    # Plot convergence of vartheta
+    par(mfrow = c(1,1), mar = c(3, 3, 1, 1))
+    kl <- compute_kl_simplex_chain(true_values = true_varthetas,
+                                   draws = zanim_ln_bart$draws_abundance)
+    plot(kl, type = "l", main = "KL")
+
+    Y_ppc <- ppd(zanim_ln_bart, relative = FALSE)
+
+    # Plot PPC
+    plot_ppc(Y_train, Y_ppc)
+
+    # Plot QQ-plotS
+    plot_qqplots(Y_train, Y_ppc, relative = TRUE)
+
+    graphics.off()
+
+    # Compute metrics
+    compute_kl_simplex(true_values = true_thetas,
+                       estimates = apply(zanim_ln_bart$draws_theta, c(1, 2), mean))
+    compute_kl_simplex(true_values = true_varthetas,
+                       estimates = apply(zanim_ln_bart$draws_abundance, c(1, 2), mean))
+    mean(compute_kl_prob(true_values = true_zetas,
+                         estimates = apply(zanim_ln_bart$draws_zeta, c(1, 2), mean)))
+    compute_coverage(true_values = true_thetas,
+                     apply(zanim_ln_bart$draws_theta, c(1, 2), quantile, probs = 0.025),
+                     apply(zanim_ln_bart$draws_theta, c(1, 2), quantile, probs = 0.975))
+    compute_coverage(true_values = true_varthetas,
+                     apply(zanim_ln_bart$draws_abundance, c(1, 2), quantile, probs = 0.025),
+                     apply(zanim_ln_bart$draws_abundance, c(1, 2), quantile, probs = 0.975))
+
+    # Plot parameter against covariates
+    data_sim <- list_data$df[!(list_data$df$id %in% id_test), ]
+    data_sim$id <- rep(seq_len(nrow(Y_train)), each = d)
+    data_theta <- zanicc::summarise_draws_3d(x = zanim_ln_bart$draws_theta)
+    data_zeta <- zanicc::summarise_draws_3d(x = zanim_ln_bart$draws_zeta)
+    data_theta$x1 <- data_zeta$x1 <- rep(c(X_train), times = d)
+    library(ggplot2)
+    p_theta <- ggplot(data = data_sim) +
+      geom_line(mapping = aes(x = x1, y = theta, col = "Truth", fill = "Truth"),
+                linewidth = 0.8) +
+      facet_wrap(~category, scales = "free_y") +
+      geom_rug(data = dplyr::filter(data_sim, total == 0L),
+               mapping = aes(y = NA_real_, x = x1)) +
+      geom_line(data = data_theta, mapping = aes(x = x1, y = median),
+                col = "dodgerblue") +
+      geom_ribbon(data = data_theta,
+                  aes(x = x1, ymin = ci_lower, ymax = ci_upper), fill = "dodgerblue",
+                  alpha = 0.3)
+    cowplot::save_plot(filename = file.path(path_results, "posterior_theta.png"),
+                       plot = p_theta, bg = "white", base_height = 9)
+    p_zeta <- ggplot(data = data_sim) +
+      geom_line(mapping = aes(x = x1, y = zeta, col = "Truth", fill = "Truth"),
+                linewidth = 0.8) +
+      facet_wrap(~category, labeller = label_parsed) +
+      # geom_rug(data = dplyr::filter(data_sim, total == 0L),
+      #          mapping = aes(y = NA_real_, x = x)) +
+      geom_line(data = data_zeta, mapping = aes(x = x1, y = median),
+                col = "dodgerblue") +
+      geom_ribbon(data = data_zeta,
+                  aes(x = x1, ymin = ci_lower, ymax = ci_upper), fill = "dodgerblue",
+                  alpha = 0.3)
+    cowplot::save_plot(filename = file.path(path_results, "posterior_zeta.png"),
+                       plot = p_zeta, bg = "white", base_height = 9)
+  }
+
+  # Generate uniform proposal in the convex-hull
+  N_PROPOSAL <- 2000L
+  if (file.exists(file.path(path_results, "x_proposal.rds"))) {
+    x_proposal <- readRDS(file.path(path_results, "x_proposal.rds"))
+  } else {
+    x_proposal <- matrix(seq(min(X_train), max(X_train),
+                             length.out = N_PROPOSAL), ncol = 1L)
+    saveRDS(x_proposal, file.path(path_results, "x_proposal.rds"))
+  }
+
+  # Run multiple imputation with SIR
+  ff_sir <- file.path(path_results, "sir.rds")
+  if (file.exists(ff_sir)) {
+    sir <- readRDS(file = ff_sir)
+  } else {
+    sir <- inverse_posterior_zanimlnbart(object = zanim_ln_bart, Y = Y_test,
+                                         x_proposal = x_proposal,
+                                         dir_posterior_fx = path_results,
+                                         method = "sir")
+    # Save results
+    saveRDS(object = sir, file = ff_sir)
+  }
+
+  # Run eSS
+  ff_ess <- file.path(path_results, "ess.rds")
+  if (file.exists(ff_ess)) {
+    ess <- readRDS(file = ff_ess)
+  } else {
+    ess <- inverse_posterior_zanimlnbart(object = zanim_ln_bart, Y = Y_test,
+                                         x_proposal = x_proposal,
+                                         dir_posterior_fx = path_results,
+                                         method = "ess",
+                                         mean_prior = mean(X_train),
+                                         S_prior = diag(1.5*var(X_train[, 1]), nrow = 1),
+                                         nburnin = 1L)
+    # Save results
+    saveRDS(object = ess, file = ff_ess)
+  }
+  attr(sir, "elapsed_time")
+  attr(ess, "elapsed_time")
+
+  sd(X_test)
+  sir_metrics <- compute_prediction_metrics(x = X_test, draws = sir)
+  ess_metrics <- compute_prediction_metrics(x = X_test, draws = ess)
+
+
+  # Check eSS
+  devtools::load_all()
+  ess <- inverse_posterior_zanimlnbart(object = zanim_ln_bart, Y = Y_test[2, , drop = FALSE],
+                                       dir_posterior_fx = path_results,
+                                       method = "ess", nburnin = 1L,
+                                       mean_prior = mean(X_train),
+                                       S_prior = diag(1.5*var(X_train[, 1]), nrow = 1))
+
+  ess2 <- inverse_posterior_zanimlnbart(object = zanim_ln_bart, Y = Y_test[2, , drop = FALSE],
+                                        dir_posterior_fx = path_results,
+                                        method = "ess", nburnin = 1L,
+                                        mean_prior = 0.0,
+                                        S_prior = diag(1.5*var(X_train[, 1]), nrow = 1))
+  plot(density(sir[,1,2]))
+  lines(density(ess[,1,1]), col = "red")
+  lines(density(ess2[,1,1]), col = "green")
+  points(X_test[2, ], 0.001, pch = 19, cex = 2, col = "blue")
+
+})
+
 test_that("ZANIM-LN-BART two-dimension", {
 
   rm(list = ls())
@@ -8,8 +233,8 @@ test_that("ZANIM-LN-BART two-dimension", {
 
   # Path
   path_local <- "./tests/testthat/inverse_posterior/zanim_ln_bart/two_dimension"
-  path_res <- file.path(path_local, region, sprintf("d=%i", d), "results")
-  forests_dir <- file.path(path_res, "forests")
+  path_results <- file.path(path_local, region, sprintf("d=%i", d), "results")
+  forests_dir <- file.path(path_results, "forests")
   if (!dir.exists(forests_dir)) dir.create(forests_dir, recursive = TRUE)
 
   set.seed(1212)
@@ -48,7 +273,7 @@ test_that("ZANIM-LN-BART two-dimension", {
     geom_point()
   p_grid <- cowplot::plot_grid(p1, p2, ncol = 1)
   p_grid
-  cowplot::save_plot(filename = file.path(path_res, "data.png"), plot = p_grid,
+  cowplot::save_plot(filename = file.path(path_results, "data.png"), plot = p_grid,
                      bg = "white", base_height = 8)
 
   # Fit forward model
@@ -56,20 +281,20 @@ test_that("ZANIM-LN-BART two-dimension", {
   NSKIP <- 10000L
   NTREES <- 100L
 
-  if (file.exists(file.path(path_res, "mod.rds"))) {
-    zanim_ln_bart <- load_model(model_dir = path_res)
+  if (file.exists(file.path(path_results, "mod.rds"))) {
+    zanim_ln_bart <- load_model(model_dir = path_results)
   } else {
     zanim_ln_bart <- zanicc(Y = Y_train, X_count = X_train, X_zi = X_train,
                             model = "zanim_ln_bart", ntrees_theta = NTREES,
                             ntrees_zeta = NTREES, ndpost = NDPOST, nskip = NSKIP,
                             save_trees = TRUE, forests_dir = forests_dir, q_factors = 2)
-    save_model(object = zanim_ln_bart, model_dir = path_res)
+    save_model(object = zanim_ln_bart, model_dir = path_results)
     # Plotting
     true_thetas <- tmp$true_thetas[-id_test, ]
     true_varthetas <- tmp$true_varthetas[-id_test, ]
     true_zetas <- tmp$true_zetas[-id_test, ]
     mfrow_op <- c(2, 2)
-    pdf(file.path(path_res, "posterior_mean_vs_true.pdf"), width = 8, height = 6)
+    pdf(file.path(path_results, "posterior_mean_vs_true.pdf"), width = 8, height = 6)
     par(mfrow = mfrow_op, mar = c(3, 3, 1, 1))
     for (j in seq_len(d)) {
       plot(true_thetas[,j], rowMeans(zanim_ln_bart$draws_theta[,j,]),
@@ -100,23 +325,23 @@ test_that("ZANIM-LN-BART two-dimension", {
 
   # Generate uniform proposal in the convex-hull
   N_PROPOSAL <- 2000L
-  if (file.exists(file.path(path_res, "x_proposal.rds"))) {
-    x_proposal <- readRDS(file.path(path_res, "x_proposal.rds"))
+  if (file.exists(file.path(path_results, "x_proposal.rds"))) {
+    x_proposal <- readRDS(file.path(path_results, "x_proposal.rds"))
   } else {
     set.seed(1212)
     x_proposal <- rconvexhull(n = N_PROPOSAL, X = X_train)
-    saveRDS(x_proposal, file.path(path_res, "x_proposal.rds"))
+    saveRDS(x_proposal, file.path(path_results, "x_proposal.rds"))
   }
 
   # Inverse posterior
   sir <- inverse_posterior_zanimlnbart(object = zanim_ln_bart, Y = Y_test[1:3, ],
                                        x_proposal = x_proposal,
-                                       dir_posterior_fx = path_res,
+                                       dir_posterior_fx = path_results,
                                        method = "sir")
   S <- 2*cov(X_train)
   ess <- inverse_posterior_zanimlnbart(object = zanim_ln_bart, Y = Y_test[1, , drop = FALSE],
                                        x_proposal = x_proposal,
-                                       dir_posterior_fx = path_res,
+                                       dir_posterior_fx = path_results,
                                        method = "ess", nburnin = 1000L, S_prior = S)
   # smooth-ess
   # Get the H-representation of convex-hull
@@ -132,7 +357,7 @@ test_that("ZANIM-LN-BART two-dimension", {
   c_ess <- inverse_posterior_zanimlnbart(object = zanim_ln_bart,
                                          Y = Y_test[1:10, , drop = FALSE],
                                          x_proposal = x_proposal,
-                                         dir_posterior_fx = path_res,
+                                         dir_posterior_fx = path_results,
                                          method = "c_ess", nburnin = 100L,
                                          S_prior = S,
                                          mean_prior = m,
@@ -151,7 +376,7 @@ test_that("ZANIM-LN-BART two-dimension", {
   x2range <- range(x_proposal[, 2])
 
   # Plotting only c-eSS
-  pdf(file.path(path_res, "inverse_posterior_cess.pdf"), width = 6, height = 3)
+  pdf(file.path(path_results, "inverse_posterior_cess.pdf"), width = 6, height = 3)
   for (i in seq_len(dim(c_ess)[3])) {
     x_true <- X_test[i, ]
     cat(i, "\n")
@@ -177,7 +402,7 @@ test_that("ZANIM-LN-BART two-dimension", {
   graphics.off()
 
   # Plotting only SIR
-  pdf(file.path(path_res, "inverse_posterior_sir.pdf"), width = 6, height = 3)
+  pdf(file.path(path_results, "inverse_posterior_sir.pdf"), width = 6, height = 3)
   for (i in seq_len(length(sir))) {
     x_true <- X_test[i, ]
     cat(i, "\n")
@@ -200,7 +425,7 @@ test_that("ZANIM-LN-BART two-dimension", {
   graphics.off()
 
   # SIR and eSS
-  pdf(file.path(path_res, "inverse_posterior_comparison.pdf"), width = 6, height = 3)
+  pdf(file.path(path_results, "inverse_posterior_comparison.pdf"), width = 6, height = 3)
   for (i in seq_len(length(sir))) {
     x_true <- X_test[i, ]
     cat(i, "\n")
@@ -264,8 +489,8 @@ test_that("laplace approximation", {
   region <- "convexhull"
   # Path
   path_local <- "./tests/testthat/inverse_posterior/zanim_ln_bart/two_dimension"
-  path_res <- file.path(path_local, region, sprintf("d=%i", d), "results")
-  forests_dir <- file.path(path_res, "forests")
+  path_results <- file.path(path_local, region, sprintf("d=%i", d), "results")
+  forests_dir <- file.path(path_results, "forests")
   if (!dir.exists(forests_dir)) dir.create(forests_dir, recursive = TRUE)
 
   # Data
@@ -284,7 +509,7 @@ test_that("laplace approximation", {
   X_train <- tmp$X[-id_test, , drop = FALSE]
 
 
-  zanim_ln_bart <- load_model(model_dir = path_res)
+  zanim_ln_bart <- load_model(model_dir = path_results)
   ml <- Rcpp::Module(module = "inverse_posterior", PACKAGE = "zanicc")
   cpp_obj <- new(ml$InversePosterior, zanim_ln_bart$d, zanim_ln_bart$ntrees_theta,
                  zanim_ln_bart$ntrees_zeta, zanim_ln_bart$forests_dir)
@@ -332,9 +557,9 @@ test_that("laplace approximation", {
   points(x_true[1], x_true[2], col = "red", pch = 19, cex = 4)
 
   # what about use the posterior mean of the parameters?
-  thetas <- load_bin_predictions(fname = file.path(path_res, "theta_ij.bin"),
+  thetas <- load_bin_predictions(fname = file.path(path_results, "theta_ij.bin"),
                                  n = 2000, d = d, m = ndpost)
-  zetas <- load_bin_predictions(fname = file.path(path_res, "theta_ij.bin"),
+  zetas <- load_bin_predictions(fname = file.path(path_results, "theta_ij.bin"),
                                  n = 2000, d = d, m = ndpost)
   chol_Sigma_V <- load_bin_coefficients(fname = file.path(forests_dir, "chol_Sigma_V.bin"),
                                         p = d-1, d = d-1, m = ndpost)
