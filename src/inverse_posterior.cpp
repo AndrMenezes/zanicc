@@ -78,7 +78,7 @@ std::vector<double> InversePosterior::SamplerMLBARTeSS(arma::umat Y,
                                                        int ndpost,
                                                        std::vector<double> mean_prior,
                                                        arma::mat S_prior,
-                                                       int n_rep) {
+                                                       int nburnin) {
 
   int p = X_ini.n_cols;
   int n_samples = Y.n_rows;
@@ -102,16 +102,14 @@ std::vector<double> InversePosterior::SamplerMLBARTeSS(arma::umat Y,
   // Define objects use inside the loop
   // arma::rowvec nu = arma::zeros<arma::rowvec>(p);
   // arma::rowvec x_star = arma::zeros<arma::rowvec>(p);
-  std::vector<double> nu(p, 0.0);
-  std::vector<double> x_cur(p, 0.0);
-  std::vector<double> x_star(p, 0.0);
+  std::vector<double> nu(p, 0.0), x_cur(p, 0.0), x_tilde(p, 0.0), x_star(p, 0.0);
   std::vector<double> theta(d, 0.0);
   double u_s, nu_angle, nu_max, nu_min;
 
   // Compute the Cholesky and transform it to row-major
   arma::mat chol_S = arma::chol(S_prior);
   std::vector<double> chol_Srm = mat_to_double_rowmajor(chol_S);
-  std::cout << chol_Srm[0] << "\n";
+  // std::cout << chol_Srm[0] << "\n";
 
   // Create vector to allocate the counts for a given i
   std::vector<int> y(d, 0);
@@ -166,14 +164,14 @@ std::vector<double> InversePosterior::SamplerMLBARTeSS(arma::umat Y,
       }
 
       // For a given MCMC draw of "f" run a nested MCMC
-      for (int k=0; k < n_rep; k++) {
+      for (int k=0; k < nburnin; k++) {
         // Draw from the prior
-        rmvnorm_chol(nu, mean_prior, chol_Srm, p);
-        // nu = mean_prior + arma::randn<arma::rowvec>(p) * chol_S;
-
+        // rmvnorm_chol(nu, mean_prior, chol_Srm, p);
+        rmvnorm_chol2(nu, chol_Srm, p);
         // Get the predictions for theta and zeta given the x_cur
         std::fill(theta.begin(), theta.end(), 0.0);
-        GetPredictionMLBART(x_cur, theta, forest_theta);
+        for (int l=0; l < p; l++) x_tilde[l] = x_cur[l] + mean_prior[l];
+        GetPredictionMLBART(x_tilde, theta, forest_theta);
         // Set a log-likelihood threshold
         u_s = log(R::unif_rand());
         u_s += log_pmf_mult(y, ntrial, theta);
@@ -184,11 +182,12 @@ std::vector<double> InversePosterior::SamplerMLBARTeSS(arma::umat Y,
         // x_star = x_cur * cos(nu_angle) + nu * sin(nu_angle);
         // for (int j = 0; j < p; j++) x_star[j] = cos(nu_angle) * x_cur[j] + sin(nu_angle) * nu[j];
         axpby(x_star.data(), x_cur.data(), nu.data(), cos(nu_angle), sin(nu_angle), p);
+        for (int l=0; l < p; l++) x_tilde[l] = x_star[l] + mean_prior[l];
         // Start slice sampling
         do {
           std::fill(theta.begin(), theta.end(), 0.0);
           // Get the predictions for theta  given the x_star
-          GetPredictionMLBART(x_star, theta, forest_theta);
+          GetPredictionMLBART(x_tilde, theta, forest_theta);
           // double ll = log_pmf_mult(y, total, theta);
           // std::cout << counter << " " << ll << " " << u_s << " nu_angle " << nu_angle << " nu_min: " << nu_min << " nu_max: " << nu_max << "\n";
           if (log_pmf_mult(y, ntrial, theta) > u_s) break;
@@ -198,13 +197,13 @@ std::vector<double> InversePosterior::SamplerMLBARTeSS(arma::umat Y,
           nu_angle = nu_min + (nu_max - nu_min) * R::unif_rand();
           // for (int j = 0; j < p;j++) x_star[j] = cos(nu_angle) * x_cur[j] + sin(nu_angle) * nu[j];
           axpby(x_star.data(), x_cur.data(), nu.data(), cos(nu_angle), sin(nu_angle), p);
-          // x_star = x_cur * cos(nu_angle) + nu * sin(nu_angle);
+          for (int l=0; l < p; l++) x_tilde[l] = x_star[l] + mean_prior[l];
         } while (true);
         // Update x_cur
         x_cur = x_star;
       }
       // Save the posterior draw
-      for (int k = 0; k < p; k++) x_posterior[base_i + t * p + k] = x_cur[k];
+      for (int k = 0; k < p; k++) x_posterior[base_i + t * p + k] = x_cur[k] + mean_prior[k];
       // Remove the trees (to free the memory usage)
       for (int j = 0; j < d; ++j)
         for (auto *tree : forest_theta[j]) delete tree;
@@ -236,7 +235,7 @@ std::vector<double> InversePosterior::SamplerZANIMBARTeSS(arma::umat Y,
                                                           int ndpost,
                                                           std::vector<double> mean_prior,
                                                           arma::mat S_prior,
-                                                          int n_rep, int conditional) {
+                                                          int nburnin, int conditional) {
 
   // Dimension
   int p = X_ini.n_cols, n_samples = Y.n_rows, np = 1;
@@ -276,7 +275,7 @@ std::vector<double> InversePosterior::SamplerZANIMBARTeSS(arma::umat Y,
   std::vector<double> x_posterior(ndpost*p*n_samples, 0.0);
 
   // Define objects use inside the loop
-  std::vector<double> nu(p, 0.0), x_cur(p, 0.0), x_star(p, 0.0), theta(d, 0.0), zeta(d, 0.0);
+  std::vector<double> nu(p, 0.0), x_cur(p, 0.0), x_tilde(p, 0.0), x_star(p, 0.0), theta(d, 0.0), zeta(d, 0.0);
   double u_s, nu_angle, nu_max, nu_min;
 
   // Compute the Cholesky and transform it to row-major
@@ -285,7 +284,6 @@ std::vector<double> InversePosterior::SamplerZANIMBARTeSS(arma::umat Y,
 
   // Create vector to allocate the counts for a given i
   std::vector<int> y(d, 0);
-  int ntrial = 0;
   double progress = 0.0;
 
   // Iterate over the observations samples
@@ -294,11 +292,7 @@ std::vector<double> InversePosterior::SamplerZANIMBARTeSS(arma::umat Y,
     int base_i = i * ndpost * p;
 
     // Get current values of Y_i and compute the N_i=\sum_j(y_{ij})
-    ntrial = 0;
-    for (int j = 0; j < d; j++) {
-      y[j] = Yrm[i * d + j];
-      ntrial += y[j];
-    }
+    for (int j = 0; j < d; j++) y[j] = Yrm[i * d + j];
     // Get the initial value for X
     for (int k = 0; k < p; k++) x_cur[k] = Xrm[i * p + k];
 
@@ -323,13 +317,15 @@ std::vector<double> InversePosterior::SamplerZANIMBARTeSS(arma::umat Y,
       }
 
       // For a given MCMC draw of "f" run a nested MCMC
-      for (int k=0; k < n_rep; k++) {
+      for (int k=0; k < nburnin; k++) {
         // Draw from the prior
-        rmvnorm_chol(nu, mean_prior, chol_Srm, p);
+        // rmvnorm_chol(nu, mean_prior, chol_Srm, p);
+        rmvnorm_chol2(nu, chol_Srm, p);
         // Get the predictions for theta and zeta given the x_cur
         std::fill(theta.begin(), theta.end(), 0.0);
         std::fill(zeta.begin(), zeta.end(), 0.0);
-        GetPredictionZANIMBART(x_cur, theta, zeta, forest_theta, forest_zeta);
+        for (int l=0; l < p; l++) x_tilde[l] = x_cur[l] + mean_prior[l];
+        GetPredictionZANIMBART(x_tilde, theta, zeta, forest_theta, forest_zeta);
         // Set a log-likelihood threshold
         u_s = log(R::unif_rand());
         // double ll_cur = log_pmf(y, theta, zeta);
@@ -339,12 +335,13 @@ std::vector<double> InversePosterior::SamplerZANIMBARTeSS(arma::umat Y,
         nu_max = nu_angle;
         nu_min = nu_angle - PI_2;
         axpby(x_star.data(), x_cur.data(), nu.data(), cos(nu_angle), sin(nu_angle), p);
+        for (int l=0; l < p; l++) x_tilde[l] = x_star[l] + mean_prior[l];
         // Start slice sampling
         do {
           std::fill(theta.begin(), theta.end(), 0.0);
           std::fill(zeta.begin(), zeta.end(), 0.0);
           // Get the predictions for theta  given the x_star
-          GetPredictionZANIMBART(x_star, theta, zeta, forest_theta, forest_zeta);
+          GetPredictionZANIMBART(x_tilde, theta, zeta, forest_theta, forest_zeta);
           // double ll = log_pmf(y, theta, zeta);
           //std::cout << "PROPOSAL and CURRENT log-likelihood " << ll << " " << ll_cur << " " << u_s << "\n";
           if (log_pmf(y, theta, zeta) > u_s) break;
@@ -353,12 +350,13 @@ std::vector<double> InversePosterior::SamplerZANIMBARTeSS(arma::umat Y,
           // Update the angle and the proposal
           nu_angle = nu_min + (nu_max - nu_min) * R::unif_rand();
           axpby(x_star.data(), x_cur.data(), nu.data(), cos(nu_angle), sin(nu_angle), p);
+          for (int l=0; l < p; l++) x_tilde[l] = x_star[l] + mean_prior[l];
         } while (true);
         // Update x_cur
         x_cur = x_star;
       }
       // Save the posterior draw
-      for (int k = 0; k < p; k++) x_posterior[base_i + t * p + k] = x_cur[k];
+      for (int k = 0; k < p; k++) x_posterior[base_i + t * p + k] = x_cur[k] + mean_prior[k];
       // Delete the trees (to free the memory usage)
       for (int j = 0; j < d; ++j){
         for (auto *tree : forest_theta[j]) delete tree;
@@ -370,7 +368,6 @@ std::vector<double> InversePosterior::SamplerZANIMBARTeSS(arma::umat Y,
       files_theta[j].clear(); files_theta[j].seekg(0);
       files_zeta[j].clear(); files_zeta[j].seekg(0);
     }
-
   }
 
   // Remove the trees (to free the memory usage)
@@ -414,8 +411,6 @@ std::vector<double> InversePosterior::SamplerZANIMLNBARTeSS(arma::umat Y,
   std::ifstream ff_Sigma_V(forests_dir + "/chol_Sigma_V.bin", std::ios::binary);
   // Create placeholder vector for dynamic read the posterior draws
   std::vector<double> chol_Sigma_V(dm1*dm1, 0.0);
-  // std::vector<double> chol_Sigma_V_ALL(dm1*dm1*ndpost);
-  // ff_Sigma_V.read(reinterpret_cast<char*>(chol_Sigma_V_ALL.data()), sizeof(double) * dm1 * dm1 * ndpost);
 
   if (!ff_Sigma_V) std::cerr << "Read chol(Sigma_V) failed\n";
   // std::cout << "chol_Sigma_V_ALL " << chol_Sigma_V_ALL[0] << " " << chol_Sigma_V_ALL[1] << "\n";
@@ -436,7 +431,6 @@ std::vector<double> InversePosterior::SamplerZANIMLNBARTeSS(arma::umat Y,
 
   // Create vector to allocate the counts for a given sample unit i
   std::vector<int> y(d, 0);
-  int ntrial = 0;
   double progress = 0.0;
 
   // Iterate over the observations samples
@@ -445,16 +439,9 @@ std::vector<double> InversePosterior::SamplerZANIMLNBARTeSS(arma::umat Y,
     int base_i = i * ndpost * p;
 
     // Get current values of Y_i and compute the N_i=\sum_j(y_{ij})
-    ntrial = 0;
-    for (int j = 0; j < d; j++) {
-      y[j] = Yrm[i * d + j];
-      ntrial += y[j];
-    }
+    for (int j = 0; j < d; j++) y[j] = Yrm[i * d + j];
     // Get the initial value for X
-    for (int k = 0; k < p; k++) {
-      x_cur[k] = Xrm[i * p + k];
-      x_tilde[k] = x_cur[k] + mean_prior[k];
-    }
+    for (int k = 0; k < p; k++) x_cur[k] = Xrm[i * p + k];
 
     // Iterate over the MCMC samples
     progress = 0.0;
@@ -492,8 +479,8 @@ std::vector<double> InversePosterior::SamplerZANIMLNBARTeSS(arma::umat Y,
         // Set a log-likelihood threshold
         u_s = log(R::unif_rand());
         // double ll_cur = log_pmf(y, theta, zeta);
-        u_s += log_pmf_zanim_ln_conditional(y, theta, zeta, chol_Sigma_V, Brm);
-        // u_s += log_pmf_zanim_ln(20, y, theta, zeta, chol_Sigma_V, Brm);
+        // u_s += log_pmf_zanim_ln_conditional(y, theta, zeta, chol_Sigma_V, Brm);
+        u_s += log_pmf_zanim_ln(20, y, theta, zeta, chol_Sigma_V, Brm);
         // Draw an angle and the proposal
         nu_angle = R::unif_rand() * PI_2;
         nu_max = nu_angle;
@@ -509,8 +496,8 @@ std::vector<double> InversePosterior::SamplerZANIMLNBARTeSS(arma::umat Y,
           GetPredictionZANIMBART(x_tilde, theta, zeta, forest_theta, forest_zeta);
           // double ll = log_pmf_zanim_ln_conditional(y, theta, zeta, chol_Sigma_V, Brm);
           // std::cout << ll << " " << u_s << " " << counter << "\n";
-          if (log_pmf_zanim_ln_conditional(y, theta, zeta, chol_Sigma_V, Brm) > u_s) break;
-          // if (log_pmf_zanim_ln(20, y, theta, zeta, chol_Sigma_V, Brm) > u_s) break;
+          // if (log_pmf_zanim_ln_conditional(y, theta, zeta, chol_Sigma_V, Brm) > u_s) break;
+          if (log_pmf_zanim_ln(20, y, theta, zeta, chol_Sigma_V, Brm) > u_s) break;
           if (nu_angle < 0) nu_min = nu_angle;
           else nu_max = nu_angle;
           // Update the angle and the proposal
@@ -697,11 +684,11 @@ std::vector<double> InversePosterior::SamplerZANIMLNBARTceSS(arma::umat Y,
 }
 
 // Run multiple imputation with SIR approach to sample the inverse posterior
-std::vector<int> InversePosterior::MultipleImputationSIR(std::vector<int> y,
-                                                         int n_proposal,
-                                                         int ndpost,
-                                                         arma::mat B,
-                                                         std::string draws_dir) {
+std::vector<int> InversePosterior::SIRZANIMLNBART(std::vector<int> y,
+                                                  int n_proposal,
+                                                  int ndpost,
+                                                  arma::mat B,
+                                                  std::string draws_dir) {
 
   // Dimension
   int d = y.size(), dm1 = d - 1;
@@ -765,6 +752,137 @@ std::vector<int> InversePosterior::MultipleImputationSIR(std::vector<int> y,
   // Close files
   ff_zeta.close();  ff_theta.close(); ff_Sigma_V.close();
   // return log_w;
+  return sir_indices;
+}
+
+// MI with SIR for ML-BART
+std::vector<int> InversePosterior::SIRZANIMBART(std::vector<int> y,
+                                                int n_proposal,
+                                                int ndpost,
+                                                std::string draws_dir,
+                                                int conditional) {
+
+
+  std::function<double(const std::vector<int>&, const std::vector<double>&,
+                       const std::vector<double>&)> log_pmf;
+  if (conditional) {
+    log_pmf = [](const std::vector<int>& y,
+                 const std::vector<double>& theta,
+                 const std::vector<double>& zeta) {
+      return log_pmf_zanim_conditional(y, theta, zeta);
+    };
+  } else {
+    log_pmf = [](const std::vector<int>& y,
+                 const std::vector<double>& theta,
+                 const std::vector<double>& zeta) {
+      return log_pmf_zanim(y, theta, zeta);
+    };
+  }
+
+  // Dimension
+  int d = y.size(), dm1 = d - 1;
+
+  // Open file for the the posterior draws of chol(Sigma_V)
+  std::ifstream ff_theta(draws_dir + "/theta_ij.bin", std::ios::binary);
+  std::ifstream ff_zeta(draws_dir + "/zeta_ij.bin", std::ios::binary);
+
+  // Create vector to read the posterior draws of chol_Sigma_V
+  std::vector<double> chol_Sigma_V(dm1*dm1, 0.0);
+
+  // Create vector to read one posterior draw of theta_ij and zeta_ij
+  std::vector<double> theta(n_proposal*d, 0.0);
+  std::vector<double> zeta(n_proposal*d, 0.0);
+  // Another vector to copy the values for a given observation i
+  std::vector<double> theta_cur(d, 0.0);
+  std::vector<double> zeta_cur(d, 0.0);
+
+  // Create vector to allocate the counts for a given sample unit i
+  int ntrial = std::accumulate(y.begin(), y.end(), 0.0);
+  // The predictions are stored by posterior draws, so
+  // [1 block][2 block]...[ndpost block], for k = ndpost
+  // Each k block is (n_proposal × d) in column-major.
+  std::vector<double> log_w(n_proposal, 0.0), probs(n_proposal);
+  std::vector<int> sir_indices(ndpost, 0);
+
+  double m, ll, progress = 0.0;
+  // Iterate over posterior draws
+  for (int k=0; k < ndpost; k++) {
+    progress = (double) 100 * k / ndpost;
+    Rprintf("%3.2f%% completed for computing the log-weights", progress);
+    Rprintf("\r");
+    // Read one block (n_proposal*d)
+    ff_theta.read(reinterpret_cast<char*>(theta.data()),
+                  sizeof(double) * n_proposal * d);
+    ff_zeta.read(reinterpret_cast<char*>(zeta.data()),
+                 sizeof(double) * n_proposal * d);
+    // Iterate over proposal values (samples) and compute the log-likelihood
+    for (int i=0; i < n_proposal; i++) {
+      // Copy the current theta_ij
+      for (int j=0; j < d; j++) {
+        theta_cur[j] = theta[j*n_proposal + i];
+        zeta_cur[j] = zeta[j*n_proposal + i];
+      }
+      // Compute the log-likelihood of observation i and posterior draw k
+      // log_w[i] = log_pmf_zanim_ln_conditional(y, theta_cur, zeta_cur, chol_Sigma_V, Brm);
+      log_w[i] = log_pmf(y, theta_cur, zeta_cur);
+      // log_w[i*ndpost + k] = ll ;
+    }
+    // Normalise weights and resample (only one draw)
+    probs = normalise_weights(log_w, n_proposal);
+    sir_indices[k] = sample_discrete(probs, n_proposal);
+  }
+  // Close files
+  ff_zeta.close();  ff_theta.close();
+  // return log_w;
+  return sir_indices;
+}
+
+// MI with SIR for ML-BART
+std::vector<int> InversePosterior::SIRMLBART(std::vector<int> y,
+                                             int n_proposal, int ndpost,
+                                             std::string draws_dir) {
+
+  // Dimension
+  int d = y.size(), dm1 = d - 1;
+
+  // Open file for the the posterior draws of chol(Sigma_V)
+  std::ifstream ff_theta(draws_dir + "/theta_ij.bin", std::ios::binary);
+
+  // Create vector to read one posterior draw of theta_ij  and copy
+  // the values for a given observation i
+  std::vector<double> theta(n_proposal*d, 0.0);
+  std::vector<double> theta_cur(d, 0.0);
+
+  // Create vector to allocate the counts for a given sample unit i
+  int ntrial = std::accumulate(y.begin(), y.end(), 0.0);
+  // The predictions are stored by posterior draws, so
+  // [1 block][2 block]...[ndpost block], for k = ndpost
+  // Each k block is (n_proposal × d) in column-major.
+  std::vector<double> log_w(n_proposal, 0.0), probs(n_proposal);
+  std::vector<int> sir_indices(ndpost, 0);
+
+  double m, ll, progress = 0.0;
+  // Iterate over posterior draws
+  for (int k=0; k < ndpost; k++) {
+    progress = (double) 100 * k / ndpost;
+    Rprintf("%3.2f%% completed for computing the log-weights", progress);
+    Rprintf("\r");
+    // Read one block (n_proposal*d)
+    ff_theta.read(reinterpret_cast<char*>(theta.data()),
+                  sizeof(double) * n_proposal * d);
+    // Iterate over proposal values (samples) and compute the log-likelihood
+    for (int i=0; i < n_proposal; i++) {
+      // Copy the current theta_ij
+      for (int j=0; j < d; j++) theta_cur[j] = theta[j*n_proposal + i];
+      // Compute the log-likelihood of observation i and posterior draw k
+      log_w[i] = log_pmf_mult(y, ntrial, theta_cur);
+    }
+    // Normalise weights and resample (only one draw)
+    probs = normalise_weights(log_w, n_proposal);
+    sir_indices[k] = sample_discrete(probs, n_proposal);
+  }
+  // Close files
+  ff_theta.close();
   return sir_indices;
 }
 
@@ -977,7 +1095,9 @@ RCPP_MODULE(inverse_posterior) {
   .method("SamplerZANIMBARTeSS", &InversePosterior::SamplerZANIMBARTeSS)
   .method("SamplerZANIMLNBARTeSS", &InversePosterior::SamplerZANIMLNBARTeSS)
   .method("SamplerZANIMLNBARTceSS", &InversePosterior::SamplerZANIMLNBARTceSS)
-  .method("MultipleImputationSIR", &InversePosterior::MultipleImputationSIR)
+  .method("SIRZANIMLNBART", &InversePosterior::SIRZANIMLNBART)
+  .method("SIRZANIMBART", &InversePosterior::SIRZANIMBART)
+  .method("SIRMLBART", &InversePosterior::SIRMLBART)
   .method("lmlZANIM", &InversePosterior::lmlZANIM)
   .method("LogLikelihoodZANIMLN", &InversePosterior::LogLikelihoodZANIMLN)
   .method("LogLikelihoodZANIMLN_2", &InversePosterior::LogLikelihoodZANIMLN_2)

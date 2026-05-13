@@ -205,11 +205,20 @@ test_that("ZANIM-LN-BART one-dimension", {
 
   # Check eSS
   devtools::load_all()
-  ess <- inverse_posterior_zanimlnbart(object = zanim_ln_bart, Y = Y_test[2, , drop = FALSE],
+  mean_prior = mean(X_train)
+  S_prior = diag(1.5*var(X_train[, 1]), nrow = 1)
+  i=8
+  ess <- inverse_posterior_zanimlnbart(object = zanim_ln_bart, Y = Y_test[i, , drop = FALSE],
                                        dir_posterior_fx = path_results,
                                        method = "ess", nburnin = 1L,
-                                       mean_prior = mean(X_train),
-                                       S_prior = diag(1.5*var(X_train[, 1]), nrow = 1))
+                                       mean_prior = mean_prior,
+                                       S_prior = S_prior)
+  plot(density(ess[,1,1]))
+  rug(ess[,1,1])
+  points(X_test[i, ], 0.001, pch = 19, cex = 2, col = "blue")
+
+  apply(ess, c(2,3), mean)
+  X_test[1:2, ]
 
   ess2 <- inverse_posterior_zanimlnbart(object = zanim_ln_bart, Y = Y_test[2, , drop = FALSE],
                                         dir_posterior_fx = path_results,

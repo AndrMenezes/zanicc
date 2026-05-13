@@ -77,7 +77,7 @@ inverse_posterior_zanimlnbart <- function(object, Y, dir_posterior_fx,
     do_predict <- FALSE
     if (!file.exists(ftheta) || !file.exists(fzeta)) {
       do_predict <- TRUE
-      cat("files {theta_ij.bin} and {zeta_ij.bin} with the posterior distribution of f^{(c)}(x*) and f^{(0)}(x*) do exist in the folder {dir_posterior_fx}. Computing such predictions...\n")
+      cat("files {theta_ij.bin} and {zeta_ij.bin} with the posterior distribution of f^{(c)}(x*) and f^{(0)}(x*) do not exist in the folder {dir_posterior_fx}. Computing such predictions...\n")
       # Compute the posterior distribution of f^{(c)}_j(x*) and f^{(0)}_j(x*) for x*~\pi(x*) and j=1,...,d
       ini <- proc.time()
       predict(object, newdata = x_proposal, load = FALSE, output_dir = dir_posterior_fx,
@@ -90,8 +90,8 @@ inverse_posterior_zanimlnbart <- function(object, Y, dir_posterior_fx,
     ini <- proc.time()
     res <- lapply(seq_len(n), function(i) {
       cat("Observation: ", i, "of", n, "\n")
-      indices <- cpp_obj$MultipleImputationSIR(Y[i, ], n_proposal, ndpost, B,
-                                               dir_posterior_fx)
+      indices <- cpp_obj$SIRZANIMLNBART(Y[i, ], n_proposal, ndpost, B,
+                                        dir_posterior_fx)
       x_proposal[indices + 1L, , drop = FALSE] # C++ indices starts at 0
     })
     elapsed <- proc.time() - ini
@@ -122,3 +122,144 @@ inverse_posterior_zanimlnbart <- function(object, Y, dir_posterior_fx,
   res
 }
 
+#' Inverse posterior using the ZANIM-BART model
+#' @export
+inverse_posterior_zanimbart <- function(object, Y, dir_posterior_fx,
+                                        x_proposal = NULL,
+                                        method = c("sir", "ess"),
+                                        ndpost = object$ndpost, nburnin = 10L,
+                                        mean_prior = NULL, S_prior = NULL,
+                                        X_ini = NULL, conditional_loglik = FALSE) {
+  # Some checks
+  method <- match.arg(method)
+  if (object$d != ncol(Y)) stop("Dimension of Y does not match with forward model")
+  if (ndpost > object$ndpost) {
+    warning("{ndpost} should be at least {object$ndpost}. Setting {ndpost} to  {object$ndpost}")
+    ndpost <- object$ndpost
+  }
+  if (method == "sir" && is.null(x_proposal))
+    stop("You should given the {x_proposal} for sir!")
+
+  # Some common arguments
+  n <- nrow(Y)
+  p <- object$p_theta
+
+  # Initialise C++ class
+  ml <- Rcpp::Module(module = "inverse_posterior", PACKAGE = "zanicc")
+  cpp_obj <- new(ml$InversePosterior, object$d, object$ntrees_theta,
+                 object$ntrees_zeta, object$forests_dir)
+
+  # Check which method to dispatch
+  if (method == "sir") {
+    n_proposal <- nrow(x_proposal)
+    # Check if the files with parameter predictions exist
+    ftheta <- file.path(dir_posterior_fx, "theta_ij.bin")
+    fzeta <- file.path(dir_posterior_fx, "zeta_ij.bin")
+    do_predict <- FALSE
+    if (!file.exists(ftheta) || !file.exists(fzeta)) {
+      do_predict <- TRUE
+      cat("files {theta_ij.bin} and {zeta_ij.bin} with the posterior distribution of f^{(c)}(x*) and f^{(0)}(x*) do not exist in the folder {dir_posterior_fx}. Computing such predictions...\n")
+      # Compute the posterior distribution of f^{(c)}_j(x*) and f^{(0)}_j(x*) for x*~\pi(x*) and j=1,...,d
+      ini <- proc.time()
+      predict(object, newdata = x_proposal, load = FALSE, output_dir = dir_posterior_fx,
+              type = "theta")
+      predict(object, newdata = x_proposal, load = FALSE, output_dir = dir_posterior_fx,
+              type = "zeta")
+      end_predict <- proc.time() - ini
+    }
+    # For each posterior draw of f's run SIR
+    ini <- proc.time()
+    res <- lapply(seq_len(n), function(i) {
+      cat("Observation: ", i, "of", n, "\n")
+      indices <- cpp_obj$SIRZANIMBART(Y[i, ], n_proposal, ndpost,
+                                      dir_posterior_fx, as.integer(conditional_loglik))
+      x_proposal[indices + 1L, , drop = FALSE] # C++ indices starts at 0
+    })
+    elapsed <- proc.time() - ini
+    res <- simplify2array(res)
+    if (do_predict) attr(res, "elapsed_time_predict") <- end_predict
+  } else {
+    if (is.null(mean_prior)) mean_prior <- rep(0.0, p)
+    if (is.null(S_prior)) S_prior <- diag(1.0, p, p)
+
+    # If there is no initial value sample from the prior
+    if (is.null(X_ini)) {
+      X_ini <- matrix(nrow = n, ncol = p)
+      cS <- chol(S_prior)
+      for (i in seq_len(n)) X_ini[i, ] <- stats::rnorm(p) %*% cS + mean_prior
+    }
+    ini <- proc.time()
+    xx <- cpp_obj$SamplerZANIMBARTeSS(Y, X_ini, ndpost, mean_prior,
+                                      S_prior, nburnin, as.integer(conditional_loglik))
+    elapsed <- proc.time() - ini
+    res <- array(xx, dim = c(ndpost, p, n))
+  }
+  attr(res, "elapsed_time") <- elapsed
+  res
+}
+
+#' Inverse posterior using the ML-BART model
+#' @export
+inverse_posterior_mlbart <- function(object, Y, dir_posterior_fx,
+                                          x_proposal = NULL,
+                                          method = c("sir", "ess"),
+                                          ndpost = object$ndpost, nburnin = 10L,
+                                          mean_prior = NULL, S_prior = NULL,
+                                          X_ini = NULL) {
+  # Some checks
+  method <- match.arg(method)
+  if (object$d != ncol(Y)) stop("Dimension of Y does not match with forward model")
+  if (ndpost > object$ndpost) {
+    warning("{ndpost} should be at least {object$ndpost}. Setting {ndpost} to  {object$ndpost}")
+    ndpost <- object$ndpost
+  }
+  if (method == "sir" && is.null(x_proposal))
+    stop("You should given the {x_proposal} for sir!")
+  # Some common arguments
+  n <- nrow(Y)
+  p <- object$p
+  # Initialise C++ class
+  ml <- Rcpp::Module(module = "inverse_posterior", PACKAGE = "zanicc")
+  cpp_obj <- new(ml$InversePosterior, object$d, object$ntrees,
+                 object$ntrees, object$forests_dir)
+  # Check which method to dispatch
+  if (method == "sir") {
+    n_proposal <- nrow(x_proposal)
+    # Check if the files with parameter predictions exist
+    ftheta <- file.path(dir_posterior_fx, "theta_ij.bin")
+    do_predict <- FALSE
+    if (!file.exists(ftheta)) {
+      do_predict <- TRUE
+      cat("files {theta_ij.bin} with the posterior distribution of f_j(x*) does not exist in the folder {dir_posterior_fx}. Computing such predictions...\n")
+      # Compute the posterior distribution of f_j(x*) for x*~\pi(x*) and j=1,...,d
+      ini <- proc.time()
+      predict(object, newdata = x_proposal, load = FALSE, output_dir = dir_posterior_fx)
+      end_predict <- proc.time() - ini
+    }
+    # For each posterior draw of f's run SIR
+    ini <- proc.time()
+    res <- lapply(seq_len(n), function(i) {
+      cat("Observation: ", i, "of", n, "\n")
+      indices <- cpp_obj$SIRMLBART(Y[i, ], n_proposal, ndpost, dir_posterior_fx)
+      x_proposal[indices + 1L, , drop = FALSE] # C++ indices starts at 0
+    })
+    elapsed <- proc.time() - ini
+    res <- simplify2array(res)
+    if (do_predict) attr(res, "elapsed_time_predict") <- end_predict
+  } else {
+    if (is.null(mean_prior)) mean_prior <- rep(0.0, p)
+    if (is.null(S_prior)) S_prior <- diag(1.0, p, p)
+    # If there is no initial value sample from the prior
+    if (is.null(X_ini)) {
+      X_ini <- matrix(nrow = n, ncol = p)
+      cS <- chol(S_prior)
+      for (i in seq_len(n)) X_ini[i, ] <- stats::rnorm(p) %*% cS + mean_prior
+    }
+    ini <- proc.time()
+    xx <- cpp_obj$SamplerMLBARTeSS(Y, X_ini, ndpost, mean_prior, S_prior, nburnin)
+    elapsed <- proc.time() - ini
+    res <- array(xx, dim = c(ndpost, p, n))
+  }
+  attr(res, "elapsed_time") <- elapsed
+  res
+}

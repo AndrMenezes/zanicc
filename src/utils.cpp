@@ -47,7 +47,7 @@ std::vector<double> mat_to_double_rowmajor(const arma::mat &X) {
 // a*x + b*y
 void axpby(double* out, double* x, double* y,
            double a, double b, int p) {
-  for (int j = 0; j < p;j++) out[j] = a * x[j] + b * y[j];
+  for (int j = 0; j < p; j++) out[j] = a * x[j] + b * y[j];
 }
 
 // Normalise log-weights (use in SIR)

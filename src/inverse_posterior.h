@@ -20,9 +20,12 @@ public:
   std::vector<double> SamplerMLBARTeSS(arma::umat Y, arma::mat X_ini, int ndpost,
                                        std::vector<double> mean_prior, arma::mat S_prior,
                                        int n_rep);
+
   std::vector<double> SamplerZANIMBARTeSS(arma::umat Y, arma::mat X_ini, int ndpost,
                                           std::vector<double> mean_prior,
-                                          arma::mat S_prior, int n_rep, int conditional);
+                                          arma::mat S_prior, int nburnin,
+                                          int conditional);
+
   std::vector<double> SamplerZANIMLNBARTeSS(arma::umat Y, arma::mat X_ini,
                                             int ndpost, int nburnin,
                                             std::vector<double> mean_prior,
@@ -36,9 +39,13 @@ public:
                                              arma::mat B, std::vector<double> bvec,
                                              double eta);
 
-  std::vector<int> MultipleImputationSIR(std::vector<int> y, int n_proposal,
-                                         int ndpost, arma::mat B,
-                                         std::string draws_dir);
+  std::vector<int> SIRZANIMLNBART(std::vector<int> y, int n_proposal,
+                                  int ndpost, arma::mat B,
+                                  std::string draws_dir);
+  std::vector<int> SIRMLBART(std::vector<int> y, int n_proposal,
+                             int ndpost, std::string draws_dir);
+  std::vector<int> SIRZANIMBART(std::vector<int> y, int n_proposal, int ndpost,
+                                std::string draws_dir, int conditional);
 
   // Get the tree-specific prediction by traversing the tree
   double GetMu(Node *tree, std::vector<double> &x);
