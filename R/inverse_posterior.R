@@ -41,12 +41,13 @@ rconvexhull <- function(n, X) {
 
 #' Inverse posterior using the ZANIM-LN-BART model
 #' @export
-inverse_posterior_zanimlnbart <- function(object, Y, x_proposal, dir_posterior_fx,
+inverse_posterior_zanimlnbart <- function(object, Y, dir_posterior_fx,
+                                          x_proposal = NULL,
                                           method = c("sir", "ess", "c_ess"),
                                           ndpost = object$ndpost, nburnin = 10L,
                                           mean_prior = NULL, S_prior = NULL,
                                           X_ini = NULL, Amat = NULL, bvec = NULL,
-                                          eta = 50.0, mc = 20L) {
+                                          eta = 50.0) {
   # Some checks
   method <- match.arg(method)
   if (object$d != ncol(Y)) stop("Dimension of Y does not match with forward model")
@@ -54,6 +55,8 @@ inverse_posterior_zanimlnbart <- function(object, Y, x_proposal, dir_posterior_f
     warning("{ndpost} should be at least {object$ndpost}. Setting {ndpost} to  {object$ndpost}")
     ndpost <- object$ndpost
   }
+  if (method == "sir" && is.null(x_proposal))
+    stop("You should given the {x_proposal} for sir!")
 
   # Some common arguments
   B <- t(object$Bt)
@@ -88,10 +91,11 @@ inverse_posterior_zanimlnbart <- function(object, Y, x_proposal, dir_posterior_f
     res <- lapply(seq_len(n), function(i) {
       cat("Observation: ", i, "of", n, "\n")
       indices <- cpp_obj$MultipleImputationSIR(Y[i, ], n_proposal, ndpost, B,
-                                               dir_posterior_fx, mc)
+                                               dir_posterior_fx)
       x_proposal[indices + 1L, ] # C++ indices starts at 0
     })
     elapsed <- proc.time() - ini
+    res <- simplify2array(res)
     if (do_predict) attr(res, "elapsed_time_predict") <- end_predict
   } else {
     if (is.null(mean_prior)) mean_prior <- rep(0.0, object$p_theta)
@@ -106,7 +110,7 @@ inverse_posterior_zanimlnbart <- function(object, Y, x_proposal, dir_posterior_f
     ini <- proc.time()
     xx <- switch(method,
       "ess" = cpp_obj$SamplerZANIMLNBARTeSS(Y, X_ini, ndpost, nburnin, mean_prior,
-                                            S_prior, B, mc),
+                                            S_prior, B),
       "c_ess" = cpp_obj$SamplerZANIMLNBARTceSS(Y, X_ini, ndpost, nburnin,
                                                mean_prior, S_prior, B, Amat,
                                                bvec, eta)
