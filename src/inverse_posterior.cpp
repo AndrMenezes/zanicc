@@ -500,7 +500,7 @@ std::vector<double> InversePosterior::SamplerZANIMLNBARTeSS(arma::umat Y,
         nu_min = nu_angle - PI_2;
         axpby(x_star.data(), x_cur.data(), nu.data(), cos(nu_angle), sin(nu_angle), p);
         for (int l=0; l < p; l++) x_tilde[l] = x_star[l] + mean_prior[l];
-        int counter = 0;
+        // int counter = 0;
         // Start slice sampling
         do {
           std::fill(theta.begin(), theta.end(), 0.0);
@@ -518,7 +518,7 @@ std::vector<double> InversePosterior::SamplerZANIMLNBARTeSS(arma::umat Y,
           axpby(x_star.data(), x_cur.data(), nu.data(), cos(nu_angle), sin(nu_angle), p);
           for (int l=0; l < p; l++) x_tilde[l] = x_star[l] + mean_prior[l];
           // std::cout << counter << "\n";
-          counter++;
+          // counter++;
         } while (true);
         // Update x_cur
         x_cur = x_star;
