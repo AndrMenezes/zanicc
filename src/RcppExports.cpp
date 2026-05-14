@@ -81,6 +81,32 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// rmvnorm_chol_22
+std::vector<double> rmvnorm_chol_22(const std::vector<double>& mean, const std::vector<double>& L, int p);
+RcppExport SEXP _zanicc_rmvnorm_chol_22(SEXP meanSEXP, SEXP LSEXP, SEXP pSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const std::vector<double>& >::type mean(meanSEXP);
+    Rcpp::traits::input_parameter< const std::vector<double>& >::type L(LSEXP);
+    Rcpp::traits::input_parameter< int >::type p(pSEXP);
+    rcpp_result_gen = Rcpp::wrap(rmvnorm_chol_22(mean, L, p));
+    return rcpp_result_gen;
+END_RCPP
+}
+// rmvnorm_chol_33
+std::vector<double> rmvnorm_chol_33(std::vector<double>& mean, arma::mat Sigma, int p);
+RcppExport SEXP _zanicc_rmvnorm_chol_33(SEXP meanSEXP, SEXP SigmaSEXP, SEXP pSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< std::vector<double>& >::type mean(meanSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type Sigma(SigmaSEXP);
+    Rcpp::traits::input_parameter< int >::type p(pSEXP);
+    rcpp_result_gen = Rcpp::wrap(rmvnorm_chol_33(mean, Sigma, p));
+    return rcpp_result_gen;
+END_RCPP
+}
 // mat_to_double_rowmajor
 std::vector<double> mat_to_double_rowmajor(const arma::mat& X);
 RcppExport SEXP _zanicc_mat_to_double_rowmajor(SEXP XSEXP) {
@@ -114,6 +140,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_zanicc_log_pmf_zanim_approx", (DL_FUNC) &_zanicc_log_pmf_zanim_approx, 6},
     {"_zanicc_log_pmf_zanidm", (DL_FUNC) &_zanicc_log_pmf_zanidm, 3},
     {"_zanicc_rtnorm", (DL_FUNC) &_zanicc_rtnorm, 3},
+    {"_zanicc_rmvnorm_chol_22", (DL_FUNC) &_zanicc_rmvnorm_chol_22, 3},
+    {"_zanicc_rmvnorm_chol_33", (DL_FUNC) &_zanicc_rmvnorm_chol_33, 3},
     {"_zanicc_mat_to_double_rowmajor", (DL_FUNC) &_zanicc_mat_to_double_rowmajor, 1},
     {"_rcpp_module_boot_dm_linear_reg", (DL_FUNC) &_rcpp_module_boot_dm_linear_reg, 0},
     {"_rcpp_module_boot_inverse_posterior", (DL_FUNC) &_rcpp_module_boot_inverse_posterior, 0},

@@ -30,7 +30,13 @@ public:
                                             int ndpost, int nburnin,
                                             std::vector<double> mean_prior,
                                             arma::mat S_prior,
-                                            arma::mat B);
+                                            arma::mat B, int mc);
+
+  std::vector<double> ESSZANIMLNBART(arma::umat Y, arma::mat X_ini,
+                                     int ndpost, int nburnin,
+                                     std::vector<double> mean_prior,
+                                     arma::mat S_prior,
+                                     arma::mat B);
 
   std::vector<double> SamplerZANIMLNBARTceSS(arma::umat Y, arma::mat X_ini,
                                              int ndpost, int nburnin,
@@ -41,7 +47,7 @@ public:
 
   std::vector<int> SIRZANIMLNBART(std::vector<int> y, int n_proposal,
                                   int ndpost, arma::mat B,
-                                  std::string draws_dir);
+                                  std::string draws_dir, int mc);
   std::vector<int> SIRMLBART(std::vector<int> y, int n_proposal,
                              int ndpost, std::string draws_dir);
   std::vector<int> SIRZANIMBART(std::vector<int> y, int n_proposal, int ndpost,
@@ -57,7 +63,8 @@ public:
   void GetPredictionZANIMBART(std::vector<double> &x, std::vector<double> &theta,
                               std::vector<double> &zeta,
                               const std::vector<std::vector<Node*>> &forest_theta,
-                              const std::vector<std::vector<Node*>> &forest_zeta);
+                              const std::vector<std::vector<Node*>> &forest_zeta,
+                              int transform);
 
   double LogLikelihoodZANIMLN(std::vector<int> &y,
                               std::vector<double> &x,

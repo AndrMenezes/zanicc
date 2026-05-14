@@ -205,7 +205,7 @@ void ProbitBART::SetMCMC(double k, int ntrees_, int ndpost_, int nskip_,
 
   int flag_grow = 0, flag_prune = 0, flag_change = 0;
 
-  std::cout << "Model set up!" << "\n\n";
+  // std::cout << "Model set up!" << "\n\n";
 }
 
 // Method to Run MCMC

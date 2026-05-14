@@ -132,3 +132,43 @@ void rmvnorm_chol2(std::vector<double>& out,
   }
 }
 
+// [[Rcpp::export]]
+std::vector<double> rmvnorm_chol_22(
+                  const std::vector<double>& mean,
+                  const std::vector<double>& L, int p) {
+  std::vector<double> z(p);
+  std::vector<double> out(p);
+
+  for (int j = 0; j < p; j++) z[j] = R::rnorm(0.0, 1.0);
+
+  // Matrix multiplication using the fact that L is upper triangle
+  double sum;
+  for (int j = 0; j < p; j++) {
+    sum = 0.0;
+    for (int k = 0; k <= j; k++) sum += z[k] * L[k * p + j];
+    out[j] = mean[j] + sum;
+  }
+  return out;
+}
+
+// [[Rcpp::export]]
+std::vector<double> rmvnorm_chol_33(
+                  std::vector<double>& mean,
+                  arma::mat Sigma, int p) {
+  std::vector<double> z(p);
+  std::vector<double> out(p);
+
+  arma::mat S_chol = arma::chol(Sigma);
+  std::vector<double> L = mat_to_double_rowmajor(S_chol);
+
+  for (int j = 0; j < p; j++) z[j] = R::rnorm(0.0, 1.0);
+
+  // Matrix multiplication using the fact that L is upper triangle
+  double sum;
+  for (int j = 0; j < p; j++) {
+    sum = 0.0;
+    for (int k = 0; k <= j; k++) sum += z[k] * L[k * p + j];
+    out[j] = mean[j] + sum;
+  }
+  return out;
+}
