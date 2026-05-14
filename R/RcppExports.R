@@ -21,6 +21,14 @@ rtnorm <- function(mean, sd, a) {
     .Call(`_zanicc_rtnorm`, mean, sd, a)
 }
 
+rmvnorm_chol_22 <- function(mean, L, p) {
+    .Call(`_zanicc_rmvnorm_chol_22`, mean, L, p)
+}
+
+rmvnorm_chol_33 <- function(mean, Sigma, p) {
+    .Call(`_zanicc_rmvnorm_chol_33`, mean, Sigma, p)
+}
+
 mat_to_double_rowmajor <- function(X) {
     .Call(`_zanicc_mat_to_double_rowmajor`, X)
 }
