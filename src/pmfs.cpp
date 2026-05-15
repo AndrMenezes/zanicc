@@ -209,14 +209,15 @@ double log_pmf_zanim_approx(std::vector<int> x, std::vector<double> prob,
 }
 
 // Log PMF of Dirichlet-multinomial
-inline double log_pmf_dm(std::vector<int> &x, int &size,
-                         std::vector<double> &alpha) {
+// [[Rcpp::export]]
+double log_pmf_dm(std::vector<int> &x, int &size,
+                  std::vector<double> &alpha) {
   double a0 = std::accumulate(alpha.begin(), alpha.end(), 0.0);
   double r = std::lgamma(a0) + std::lgamma(size + 1) - std::lgamma(size + a0);
   for(int j = 0; j < x.size(); j++) {
     r += lgamma(x[j] + alpha[j]) - lgamma(alpha[j]) - lgamma(x[j] + 1L);
   }
-  return(r);
+  return r;
 }
 
 // Implement log_dzanidm
@@ -385,6 +386,24 @@ double log_pmf_zanim_ln(int mc, std::vector<int> &x, std::vector<double> &prob,
 
   return log_sum_exp(ll) - std::log(mc);
 
+}
+
+// Augmented likelihood under ZANIM-LN
+double log_pmf_zanim_ln_augmented(std::vector<int> &x,
+                                  std::vector<double> &z,
+                                  std::vector<double> &zeta,
+                                  std::vector<double> &lambda,
+                                  std::vector<double> &u,
+                                  double &phi) {
+  int d = x.size();
+  double ll = 0;
+  for (int j=0; j < d; j++) {
+    if (z[j] == 0) ll += std::log(zeta[j]);
+    else {
+      ll +=  std::log1p(-zeta[j]) + x[j] * std::log(lambda[j]) - phi*lambda[j]*exp(u[j]);
+    }
+  }
+  return ll;
 }
 
 // Smooth/logistic approximation of log I_C(x), where C is a linear constraint

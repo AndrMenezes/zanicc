@@ -55,6 +55,19 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// log_pmf_dm
+double log_pmf_dm(std::vector<int>& x, int& size, std::vector<double>& alpha);
+RcppExport SEXP _zanicc_log_pmf_dm(SEXP xSEXP, SEXP sizeSEXP, SEXP alphaSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< std::vector<int>& >::type x(xSEXP);
+    Rcpp::traits::input_parameter< int& >::type size(sizeSEXP);
+    Rcpp::traits::input_parameter< std::vector<double>& >::type alpha(alphaSEXP);
+    rcpp_result_gen = Rcpp::wrap(log_pmf_dm(x, size, alpha));
+    return rcpp_result_gen;
+END_RCPP
+}
 // log_pmf_zanidm
 double log_pmf_zanidm(std::vector<int> x, std::vector<double> alpha, std::vector<double> zeta);
 RcppExport SEXP _zanicc_log_pmf_zanidm(SEXP xSEXP, SEXP alphaSEXP, SEXP zetaSEXP) {
@@ -138,6 +151,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_zanicc_log_pmf_zanim", (DL_FUNC) &_zanicc_log_pmf_zanim, 3},
     {"_zanicc_log_pmf_zanim_vec", (DL_FUNC) &_zanicc_log_pmf_zanim_vec, 5},
     {"_zanicc_log_pmf_zanim_approx", (DL_FUNC) &_zanicc_log_pmf_zanim_approx, 6},
+    {"_zanicc_log_pmf_dm", (DL_FUNC) &_zanicc_log_pmf_dm, 3},
     {"_zanicc_log_pmf_zanidm", (DL_FUNC) &_zanicc_log_pmf_zanidm, 3},
     {"_zanicc_rtnorm", (DL_FUNC) &_zanicc_rtnorm, 3},
     {"_zanicc_rmvnorm_chol_22", (DL_FUNC) &_zanicc_rmvnorm_chol_22, 3},

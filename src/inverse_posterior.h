@@ -9,7 +9,7 @@ public:
   // Constructor
   InversePosterior(int d, int ntrees_theta, int ntrees_zeta, std::string forests_dir);
 
-  int d, ntrees_theta, ntrees_zeta, n_particles;
+  int d, ntrees_theta, ntrees_zeta, p, n_samples, dm1;
 
   // Path with the posterior draws of the latent field (BART)
   std::string forests_dir;
@@ -26,25 +26,13 @@ public:
                                           arma::mat S_prior, int nburnin,
                                           int conditional);
 
-  std::vector<double> SamplerZANIMLNBARTeSS(arma::umat Y, arma::mat X_ini,
-                                            int ndpost, int nburnin,
-                                            std::vector<double> mean_prior,
-                                            arma::mat S_prior,
-                                            arma::mat B, int mc);
-
-  std::vector<double> ESSZANIMLNBART(arma::umat Y, arma::mat X_ini,
-                                     int ndpost, int nburnin,
-                                     std::vector<double> mean_prior,
-                                     arma::mat S_prior,
-                                     arma::mat B);
-
   std::vector<double> SamplerZANIMLNBARTceSS(arma::umat Y, arma::mat X_ini,
                                              int ndpost, int nburnin,
                                              std::vector<double> mean_prior,
                                              arma::mat S_prior, arma::mat A,
                                              arma::mat B, std::vector<double> bvec,
                                              double eta);
-
+  // SIR
   std::vector<int> SIRZANIMLNBART(std::vector<int> y, int n_proposal,
                                   int ndpost, arma::mat B,
                                   std::string draws_dir, int mc);
@@ -63,9 +51,8 @@ public:
   void GetPredictionZANIMBART(std::vector<double> &x, std::vector<double> &theta,
                               std::vector<double> &zeta,
                               const std::vector<std::vector<Node*>> &forest_theta,
-                              const std::vector<std::vector<Node*>> &forest_zeta,
-                              int transform);
-
+                              const std::vector<std::vector<Node*>> &forest_zeta);
+  // Log-likelihoods
   double LogLikelihoodZANIMLN(std::vector<int> &y,
                               std::vector<double> &x,
                               int ndpost,
@@ -76,6 +63,58 @@ public:
 
   double lmlZANIM(std::vector<int> &y, std::vector<double> &x, int n_particles);
 
+  //----- New implementations
+
+  // Internal function to set-up variables
+  // void Set();
+
+  // Common fields for the ESS
+  std::vector<double> chol_S_prior, mu_prior;
+
+
+  // Update ESS using the multinomial likelihood
+  std::vector<double> UpdateESSZANIMLNBART(
+      std::vector<double> &x_cur,
+      std::vector<int> &y,
+      std::vector<double> &chol_Sigma_V,
+      std::vector<double> &B,
+      std::vector<double> &theta, std::vector<double> &zeta,
+      const std::vector<std::vector<Node*>> &forest_theta,
+      const std::vector<std::vector<Node*>> &forest_zeta,
+      int mc);
+
+  std::vector<double> ESSZANIMLNBART(arma::umat Y, arma::mat X_ini,
+                                     int ndpost, int nburnin,
+                                     std::vector<double> mean_prior,
+                                     arma::mat S_prior,
+                                     arma::mat B, int mc);
+
+
+  // Get BART predictions
+  void GetTreesPredictionsZANIMBART(std::vector<double> &x,
+                                    std::vector<double> &lambda,
+                                    std::vector<double> &zeta,
+                                    const std::vector<std::vector<Node*>> &forest_theta,
+                                    const std::vector<std::vector<Node*>> &forest_zeta);
+
+  // Run one update of ESS using the Poisson-type likelihood
+  std::vector<double> UpdateESSZANIMLNBART2(
+      std::vector<double> &x_cur,
+      // std::vector<double> &mean_prior,
+      // std::vector<double> &chol_S_prior,
+      std::vector<int> &y,
+      std::vector<double> &z, std::vector<double> &u,
+      double &phi,
+      std::vector<double> &lambda, std::vector<double> &zeta,
+      const std::vector<std::vector<Node*>> &forest_theta,
+      const std::vector<std::vector<Node*>> &forest_zeta);
+
+  // Run ESS
+  std::vector<double> ESSZANIMLNBART2(arma::umat Y, arma::mat X_ini,
+                                     int ndpost, int nburnin,
+                                     std::vector<double> mean_prior,
+                                     arma::mat S_prior,
+                                     arma::mat B);
 
 };
 #endif
