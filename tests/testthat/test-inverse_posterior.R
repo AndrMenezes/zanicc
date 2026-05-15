@@ -195,12 +195,30 @@ test_that("ZANIM-LN-BART one-dimension", {
     # Save results
     saveRDS(object = ess, file = ff_ess)
   }
+  ff_ess2 <- file.path(path_results, "ess2.rds")
+  if (file.exists(ff_ess2)) {
+    ess2 <- readRDS(file = ff_ess2)
+  } else {
+    ess2 <- inverse_posterior_zanimlnbart(object = zanim_ln_bart, Y = Y_test,
+                                          X_ini = X_test,
+                                          dir_posterior_fx = path_results,
+                                          method = "ess2",
+                                          mean_prior = mean(X_train),
+                                          S_prior = diag(1.5*var(X_train[, 1]), nrow = 1),
+                                          nburnin = 1L)
+    # Save results
+    saveRDS(object = ess2, file = ff_ess2)
+  }
   attr(sir, "elapsed_time")
   attr(ess, "elapsed_time")
+  attr(ess2, "elapsed_time")
 
   sd(X_test)
   sir_metrics <- compute_prediction_metrics(x = X_test, draws = sir)
   ess_metrics <- compute_prediction_metrics(x = X_test, draws = ess)
+  ess2_metrics <- compute_prediction_metrics(x = X_test, draws = ess2)
+
+
 
 
   # Check eSS
@@ -225,10 +243,12 @@ test_that("ZANIM-LN-BART one-dimension", {
                                         method = "ess", nburnin = 1L,
                                         mean_prior = 0.0,
                                         S_prior = diag(1.5*var(X_train[, 1]), nrow = 1))
-  plot(density(sir[,1,2]))
+  plot(density(sir[,1,1]))
   lines(density(ess[,1,1]), col = "red")
   lines(density(ess2[,1,1]), col = "green")
-  points(X_test[2, ], 0.001, pch = 19, cex = 2, col = "blue")
+  points(X_test[1, ], 0.001, pch = 19, cex = 2, col = "blue")
+
+
 
 })
 

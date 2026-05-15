@@ -43,7 +43,7 @@ rconvexhull <- function(n, X) {
 #' @export
 inverse_posterior_zanimlnbart <- function(object, Y, dir_posterior_fx,
                                           x_proposal = NULL,
-                                          method = c("sir", "ess", "c_ess"),
+                                          method = c("sir", "ess", "ess2", "c_ess"),
                                           ndpost = object$ndpost, nburnin = 10L,
                                           mean_prior = NULL, S_prior = NULL,
                                           X_ini = NULL, Amat = NULL, bvec = NULL,
@@ -105,12 +105,14 @@ inverse_posterior_zanimlnbart <- function(object, Y, dir_posterior_fx,
     if (is.null(X_ini)) {
       X_ini <- matrix(nrow = n, ncol = p)
       cS <- chol(S_prior)
-      for (i in seq_len(n)) X_ini[i, ] <- stats::rnorm(p) %*% cS + mean_prior
+      for (i in seq_len(n)) X_ini[i, ] <- drop(stats::rnorm(p) %*% cS + mean_prior)
     }
     ini <- proc.time()
     xx <- switch(method,
-      "ess" = cpp_obj$SamplerZANIMLNBARTeSS(Y, X_ini, ndpost, nburnin, mean_prior,
-                                            S_prior, B, mc),
+      "ess" = cpp_obj$ESSZANIMLNBART(Y, X_ini, ndpost, nburnin, mean_prior,
+                                      S_prior, B, mc),
+      "ess2" =  cpp_obj$ESSZANIMLNBART2(Y, X_ini, ndpost, nburnin, mean_prior,
+                                       S_prior, B),
       "c_ess" = cpp_obj$SamplerZANIMLNBARTceSS(Y, X_ini, ndpost, nburnin,
                                                mean_prior, S_prior, B, Amat,
                                                bvec, eta)

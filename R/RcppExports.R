@@ -13,6 +13,10 @@ log_pmf_zanim_vec <- function(n, d, x, prob, zeta) {
     .Call(`_zanicc_log_pmf_zanim_approx`, x, prob, zeta, scale, mc, nskip)
 }
 
+log_pmf_dm <- function(x, size, alpha) {
+    .Call(`_zanicc_log_pmf_dm`, x, size, alpha)
+}
+
 log_pmf_zanidm <- function(x, alpha, zeta) {
     .Call(`_zanicc_log_pmf_zanidm`, x, alpha, zeta)
 }
