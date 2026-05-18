@@ -341,6 +341,7 @@ double log_pmf_zanim_conditional(std::vector<int> x, std::vector<double> prob,
 
 // Evaluate the ZANIM-LN-PMF using the hierarchical representation conditional on z
 // and u
+// [[Rcpp::export]]
 double log_pmf_zanim_ln_conditional(std::vector<int> &x, std::vector<double> &prob,
                                     std::vector<double> &zeta,
                                     std::vector<double> &chol_Sigma_V,

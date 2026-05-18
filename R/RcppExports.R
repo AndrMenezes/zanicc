@@ -21,6 +21,10 @@ log_pmf_zanidm <- function(x, alpha, zeta) {
     .Call(`_zanicc_log_pmf_zanidm`, x, alpha, zeta)
 }
 
+log_pmf_zanim_ln_conditional <- function(x, prob, zeta, chol_Sigma_V, B) {
+    .Call(`_zanicc_log_pmf_zanim_ln_conditional`, x, prob, zeta, chol_Sigma_V, B)
+}
+
 rtnorm <- function(mean, sd, a) {
     .Call(`_zanicc_rtnorm`, mean, sd, a)
 }

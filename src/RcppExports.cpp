@@ -81,6 +81,21 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// log_pmf_zanim_ln_conditional
+double log_pmf_zanim_ln_conditional(std::vector<int>& x, std::vector<double>& prob, std::vector<double>& zeta, std::vector<double>& chol_Sigma_V, std::vector<double>& B);
+RcppExport SEXP _zanicc_log_pmf_zanim_ln_conditional(SEXP xSEXP, SEXP probSEXP, SEXP zetaSEXP, SEXP chol_Sigma_VSEXP, SEXP BSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< std::vector<int>& >::type x(xSEXP);
+    Rcpp::traits::input_parameter< std::vector<double>& >::type prob(probSEXP);
+    Rcpp::traits::input_parameter< std::vector<double>& >::type zeta(zetaSEXP);
+    Rcpp::traits::input_parameter< std::vector<double>& >::type chol_Sigma_V(chol_Sigma_VSEXP);
+    Rcpp::traits::input_parameter< std::vector<double>& >::type B(BSEXP);
+    rcpp_result_gen = Rcpp::wrap(log_pmf_zanim_ln_conditional(x, prob, zeta, chol_Sigma_V, B));
+    return rcpp_result_gen;
+END_RCPP
+}
 // rtnorm
 double rtnorm(const double& mean, const double& sd, const double& a);
 RcppExport SEXP _zanicc_rtnorm(SEXP meanSEXP, SEXP sdSEXP, SEXP aSEXP) {
@@ -153,6 +168,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_zanicc_log_pmf_zanim_approx", (DL_FUNC) &_zanicc_log_pmf_zanim_approx, 6},
     {"_zanicc_log_pmf_dm", (DL_FUNC) &_zanicc_log_pmf_dm, 3},
     {"_zanicc_log_pmf_zanidm", (DL_FUNC) &_zanicc_log_pmf_zanidm, 3},
+    {"_zanicc_log_pmf_zanim_ln_conditional", (DL_FUNC) &_zanicc_log_pmf_zanim_ln_conditional, 5},
     {"_zanicc_rtnorm", (DL_FUNC) &_zanicc_rtnorm, 3},
     {"_zanicc_rmvnorm_chol_22", (DL_FUNC) &_zanicc_rmvnorm_chol_22, 3},
     {"_zanicc_rmvnorm_chol_33", (DL_FUNC) &_zanicc_rmvnorm_chol_33, 3},
