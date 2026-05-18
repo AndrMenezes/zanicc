@@ -1,0 +1,248 @@
+rm(list = ls())
+# Install package from the inverse_posterior branch
+# remotes::install_github("andrmenezes/zanicc@inverse_posterior")
+library(zanicc)
+library(ggplot2)
+
+d <- 4L
+n_sample <- 1000L
+
+# Path (Change here)
+path_local <- "./tests/testthat/inverse_posterior/zanim_ln_bart/one_dimension"
+path_results <- file.path(path_local, sprintf("d=%i", d), "results")
+
+
+list_data <- readRDS(file = file.path(path_results, "data.rds"))
+# Split the data
+set.seed(1212)
+n_test <- 100L
+id_test <- sample.int(n_sample, n_test)
+Y_test <- list_data$Y[id_test, ]
+X_test <- list_data$X[id_test, , drop = FALSE]
+Y_train <- list_data$Y[-id_test, ]
+X_train <- list_data$X[-id_test, , drop = FALSE]
+data_sim <- list_data$df[!(list_data$df$id %in% id_test), ]
+data_sim$id <- rep(seq_len(nrow(Y_train)), each = d)
+
+# Create splines basis
+# X_train_basis <- cbind(1, X_train, X_train^2, X_train^3)
+rangeX <- range(X_train)
+df <- 6L
+degree <- 3L
+knots <- seq(rangeX[1], rangeX[2], length.out = df - degree - 1 + 2)
+knots <- knots[1:(df-degree)]
+X_train_basis <- splines::bs(X_train, df = df, degree = degree, intercept = FALSE,
+                             knots = knots, Boundary.knots = rangeX)
+
+
+
+# Using C++
+# X_train_basis2 <- BayesComposition::bs_cpp(x = X_train, df = dof, interior_knots = knots,
+#                                           degree = degree, intercept = FALSE,
+#                                           Boundary_knots = rangeX)
+# head(X_train_basis)
+# head(X_train_basis2)
+
+
+# Fit model
+if (!file.exists(file.path(path_results, "zanidm_reg.rds"))) {
+  mod <- zanicc(Y = Y_train, X_count = X_train_basis, X_zi = X_train_basis,
+                model = "zanidm_reg", ndpost = 4000L, nskip = 4000L)
+  save_model(object = mod, model_dir = path_results, file_name = "zanidm_reg.rds")
+}
+mod <- load_model(model_dir = path_results, file_name = "zanidm_reg.rds")
+
+dim(mod$draws_betas)
+
+Y_ppc <- ppd(mod, relative = FALSE)
+plot_qqplots(Y = Y_train, Y_ppc = Y_ppc, relative = TRUE)
+plot_ppc(Y = Y_train, Y_ppc = Y_ppc)
+
+
+data_theta <- summarise_draws_3d(x = mod$draws_theta)
+data_zeta <- summarise_draws_3d(x = mod$draws_zeta)
+data_theta$x1 <- data_zeta$x1 <- rep(c(X_train), times = d)
+
+p_theta <- ggplot(data = data_sim) +
+  geom_line(mapping = aes(x = x1, y = theta, col = "Truth", fill = "Truth"),
+            linewidth = 0.8) +
+  facet_wrap(~category, scales = "free_y") +
+  geom_rug(data = dplyr::filter(data_sim, total == 0L),
+           mapping = aes(y = NA_real_, x = x1)) +
+  geom_line(data = data_theta, mapping = aes(x = x1, y = median),
+            col = "dodgerblue") +
+  geom_ribbon(data = data_theta,
+              aes(x = x1, ymin = ci_lower, ymax = ci_upper), fill = "dodgerblue",
+              alpha = 0.3)
+cowplot::save_plot(filename = file.path(path_results, "posterior_theta__zanidm_reg.png"),
+                   plot = p_theta, bg = "white", base_height = 9)
+p_zeta <- ggplot(data = data_sim) +
+  geom_line(mapping = aes(x = x1, y = zeta, col = "Truth", fill = "Truth"),
+            linewidth = 0.8) +
+  facet_wrap(~category, labeller = label_parsed) +
+  # geom_rug(data = dplyr::filter(data_sim, total == 0L),
+  #          mapping = aes(y = NA_real_, x = x)) +
+  geom_line(data = data_zeta, mapping = aes(x = x1, y = median),
+            col = "dodgerblue") +
+  geom_ribbon(data = data_zeta,
+              aes(x = x1, ymin = ci_lower, ymax = ci_upper), fill = "dodgerblue",
+              alpha = 0.3)
+cowplot::save_plot(filename = file.path(path_results, "posterior_zeta__zanidm_reg.png"),
+                   plot = p_zeta, bg = "white", base_height = 9)
+
+# Parameters for the splines
+parms_bs <- list(df = df, degree = degree, intercept = FALSE, knots = knots,
+                 Boundary.knots = rangeX)
+
+
+###################################################################################
+#' Get the DM concentration parameter
+get_parms <- function(x, betas_alpha, betas_zeta, parms_bs) {
+  X_mat <- splines::bs(x, df = parms_bs$df, degree = parms_bs$degree,
+                       intercept = parms_bs$intercept,
+                       knots = parms_bs$knots,
+                       Boundary.knots = parms_bs$Boundary.knots)
+  alpha <- exp(drop(X_mat %*% betas_alpha))
+  zeta <- stats::pnorm(drop(X_mat %*% betas_zeta))
+  list(alpha, zeta)
+}
+
+log_pmf_zanidm_cond <- function(x, alpha, zeta) {
+  d <- length(alpha)
+  z <- stats::rbinom(n = d, size = 1, prob = 1.0 - zeta)
+  ld <- stats::rgamma(n = d, shape = alpha)
+  p <- ld * z
+  if (all(p == 0))  return(-1000.0)
+  stats::dmultinom(x = x, prob = p/sum(p), log = TRUE)
+}
+
+# NA can happen when zetas are 1, in other words, when x is far from the observed range.
+log_pmf_zanidm2 <- function(x, alpha, zeta) {
+  ll <- zanicc:::log_pmf_zanidm(x = x, alpha = alpha, zeta = zeta)
+  if (is.na(ll)) return(-1000.0)
+  return(ll)
+}
+
+#' Update x using ESS
+udpate_ess <- function(x, y, betas_alpha, betas_zeta, sd_prior, mu_prior,
+                       parms_bs) {
+  # Set log-likelihood threshold
+  tmp <- get_parms(x = x, betas_alpha = betas_alpha, betas_zeta = betas_zeta,
+                   parms_bs = parms_bs)
+  lr <- (log(stats::runif(1)) +
+           # log_pmf_zanidm2(x = y, alpha = tmp[[1]], zeta = tmp[[2]])
+           log_pmf_zanidm_cond(x = y, alpha = tmp[[1]], zeta = tmp[[2]])
+         )
+  # Draw angle
+  nu <- stats::rnorm(1L, sd = sd_prior)
+  angle <- stats::runif(1) * 2*pi
+  angle_max <- angle
+  angle_min <- angle - 2*pi
+  # Draw proposal
+  x_proposal <- x * cos(angle) + nu * sin(angle)
+  x_tilde <- x_proposal + mu_prior
+  tmp <- get_parms(x = x_tilde, betas_alpha = betas_alpha, betas_zeta = betas_zeta,
+                   parms_bs = parms_bs)
+  counter <- 0L
+  repeat {
+    ll <- log_pmf_zanidm_cond(x = y, alpha = tmp[[1]], zeta = tmp[[2]])
+    # ll <- log_pmf_zanidm2(x = y, alpha = tmp[[1]], zeta = tmp[[2]])
+    if (ll > lr) break
+    if (counter > 100) {
+      # cat("More than 100 slices, leaving the loop\n", ll, lr)
+      break
+    }
+    if (angle < 0) angle_min <- angle
+    else angle_max <- angle
+    angle <- angle_min + (angle_max - angle_min) * stats::runif(1L)
+    # Draw new proposal
+    x_proposal <- x * cos(angle) + nu * sin(angle)
+    x_tilde <- x_proposal + mu_prior
+    # Get ZANIDM's parameters (alpha and zeta)
+    tmp <- get_parms(x = x_tilde, betas_alpha = betas_alpha,
+                     betas_zeta = betas_zeta, parms_bs = parms_bs)
+    counter <- counter + 1L
+  }
+  return(x_proposal)
+}
+
+# Normal prior
+sd_prior <- sd(X_train)
+mu_prior <- mean(X_train)
+
+udpate_ess(x = 0.0, y = Y_test[1, ], betas_alpha = mod$draws_betas_alpha[,,1],
+              betas_zeta = mod$draws_betas_zeta[,,1], sd_prior = sd_prior,
+              mu_prior = mu_prior, parms_bs = parms_bs)
+
+ndpost <- mod$ndpost
+
+# Keep the draws
+x_draws <- matrix(nrow = n_test, ncol = ndpost)
+
+# Start MCMC
+for (i in seq_len(n_test)) {
+  if (i %% 10 == 0) cat(i, "\n")
+  y <- Y_test[i, ]
+  # Initial value for x
+  # x_cur <- X_ini[i, ]
+  x_cur <- stats::rnorm(1L, mean = mu_prior, sd = sd_prior)
+  for (k in seq_len(ndpost)) {
+    # Load current model parameters
+    betas_alpha <- mod$draws_betas_alpha[,,k]
+    betas_zeta <- mod$draws_betas_zeta[,,k]
+    # Run ESS
+    x_cur <- udpate_ess(x = x_cur, y = y, betas_alpha = betas_alpha,
+                        betas_zeta = betas_zeta, sd_prior = sd_prior,
+                        mu_prior = mu_prior, parms_bs = parms_bs)
+    x_draws[i, k] <- x_cur + mu_prior
+  }
+}
+
+# Re-arrange the format to use `zanicc` function for compute predictions
+ip_zanidm_splines <- array(dim = c(ndpost, 1L, n_test))
+for (i in seq_len(n_test)) ip_zanidm_splines[,1L,i] <- x_draws[i, ]
+
+saveRDS(object = ip_zanidm_splines,
+        file = file.path(path_results, "ip_zanidm_splines_marginal.rds"))
+
+# Load the conditional
+ip_zanidm_splines2 <- readRDS(file = file.path(path_results, "ip_zanidm_splines.rds"))
+
+
+conditional <- compute_prediction_metrics(x = X_test, draws = ip_zanidm_splines)
+marginal <- compute_prediction_metrics(x = X_test, draws = ip_zanidm_splines2)
+rbind(marginal, conditional)
+
+# # A tibble: 5 × 6
+# method               mae  msep dmode coverage_95 coverage_50
+# <chr>              <dbl> <dbl> <dbl>       <dbl>       <dbl>
+# 1 sir_zanim_ln_bart  10.4  201.   348.        0.96        0.56
+# 2 ess_zanim_ln_bart  11.9  247.   341.        1           0.68
+# 3 dm_gp              6.55  86.9  112.        0.97        0.58
+# 4 zanim_bart         11.3  276.   332.        0.6         0.23
+# 5 ml_bart            11.4  352.   352.        0.16        0.05
+#      mae        msep       dmode coverage_95 coverage_50
+# 8.706904  119.769922  139.166287    0.970000    0.400000
+
+#      mae        msep       dmode coverage_95 coverage_50
+# 7.501984   93.838546  135.459912    0.970000    0.460000
+
+
+# Compare the marginal against the conditional likelihood
+
+pdf(file = file.path(path_results, "ip_zanidm_marg_cond.pdf"), width = 6, height = 3)
+for (i in seq_len(n_test)) {
+  dmarg <- density(ip_zanidm_splines2[,1,i])
+  dcond <- density(ip_zanidm_splines[,1,i])
+  par(mar = c(4, 4, 1, 1))
+  plot(dmarg, type = "l", ylim = range(dmarg$y, dcond$y),
+       xlim = range(dmarg$x, dcond$x),
+       main = paste0("y=(", paste(Y_test[i, ], collapse = ","), ")"),
+       xlab = "", ylab = "")
+  lines(dcond, col = "red")
+  legend("topleft", legend = c("marginal", "conditional"), col = c("black", "red"), lwd = 1)
+  points(X_test[i,], 0.001, col = "blue", pch = 4, cex = 2)
+}
+graphics.off()
+
+

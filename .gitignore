@@ -6,7 +6,6 @@
 *.bkp
 *.DS_Store
 *.rda
-/dev
 
 # Do not version data files
 *.parquet
