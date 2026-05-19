@@ -172,3 +172,43 @@ std::vector<double> rmvnorm_chol_33(
   }
   return out;
 }
+
+
+std::vector<int> rzanimln(int n_trial, std::vector<double> &prob,
+                          std::vector<double> &zeta,
+                          std::vector<double> &chol_Sigma_V,
+                          std::vector<double> &B) {
+
+  int d = prob.size(), dm1 = d-1;
+  std::vector<double> z(d, 1.0), v(dm1, 0.0), u(d, 0.0), vartheta(d, 0.0);
+  std::vector<int> y(d, 0);
+
+  // Simulate random effect v ~ N_{d-1}[0, Sigma_V]
+  std::vector<double> m0(dm1, 0.0);
+  rmvnorm_chol2(v, chol_Sigma_V, dm1);
+  // Transform to u = Bv
+  // double sum = 0.0;
+  // Iterate rows first then columns
+  for (int i=0; i < d; i++) {
+    for (int j=0; j < dm1; j++) u[i] += v[j] * B[i*dm1 + j];
+  }
+
+  // Compute \vartheta_{ij} \propto theta_j*z_ij * e^{u_ij}
+  double s = 0.0;
+  for (int j = 0; j < d; j++) {
+    z[j] = (double)R::rbinom(1, 1.0 - zeta[j]);
+    vartheta[j] = prob[j] * z[j] * exp(u[j]);
+    s += vartheta[j];
+  }
+
+  if (s == 0.0) return y;
+
+  // Normalise
+  for (int j=0; j < d; j++) vartheta[j] /= s;
+
+  // Multinomial draw
+  R::rmultinom(n_trial, vartheta.data(), d, y.data());
+
+  return y;
+}
+

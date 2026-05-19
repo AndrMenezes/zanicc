@@ -50,6 +50,15 @@ void axpby(double* out, double* x, double* y,
   for (int j = 0; j < p; j++) out[j] = a * x[j] + b * y[j];
 }
 
+// Transform to u = Bv, iterate over rows first then columns
+void Bv(std::vector<double> &u, std::vector<double> &v, std::vector<double> &B,
+        int d, int dm1) {
+  std::fill(u.begin(), u.end(), 0.0);
+  for (int l=0; l < d; l++) {
+    for (int j=0; j < dm1; j++) u[l] += v[j] * B[l*dm1 + j];
+  }
+}
+
 // Normalise log-weights (use in SIR)
 std::vector<double> normalise_weights(std::vector<double> &log_weights, int n) {
   double lw_max = *std::max_element(log_weights.begin(), log_weights.end());
@@ -64,5 +73,12 @@ std::vector<double> normalise_weights(std::vector<double> &log_weights, int n) {
   return w;
 }
 
-
+// log-Kernel Gaussian
+double log_kernel_gauss(std::vector<double> &x1, std::vector<double> &x2, double h) {
+  int d = x1.size();
+  double u = 0;
+  for (int j=0; j < d; j++)  u += std::pow(x1[j] - x2[j], 2);
+  return -0.5 * std::pow(h, -2.0) * u;
+  // return R::dnorm4(std::sqrt(u), 0.0, h, 1);
+}
 

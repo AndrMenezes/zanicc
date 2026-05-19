@@ -41,6 +41,11 @@ public:
   std::vector<int> SIRZANIMBART(std::vector<int> y, int n_proposal, int ndpost,
                                 std::string draws_dir, int conditional);
 
+  std::vector<int> ABCSIRZANIMLNBART(std::vector<int> y, int n_proposal,
+                                     int ndpost, arma::mat B,
+                                     std::string draws_dir,
+                                     double h);
+
   // Get the tree-specific prediction by traversing the tree
   double GetMu(Node *tree, std::vector<double> &x);
 
@@ -115,6 +120,18 @@ public:
                                      std::vector<double> mean_prior,
                                      arma::mat S_prior,
                                      arma::mat B);
+
+  // Functions to sample from the full conditional of u_i = (u_i1, ..., u_id) under
+  // the ZANIM-LN-BART model
+  double LogTargetU(std::vector<double> &u, std::vector<int> &y,
+                    std::vector<double> &z,
+                    std::vector<double> &lambda);
+  std::vector<double> UpdateESSV(std::vector<double> &v,
+                       std::vector<double> &chol_Sigma_V,
+                       std::vector<double> &B,
+                       std::vector<int> &y, std::vector<double> &z,
+                       std::vector<double> &lambda);
+
 
 };
 #endif

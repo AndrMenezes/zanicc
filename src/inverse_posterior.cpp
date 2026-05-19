@@ -690,6 +690,89 @@ std::vector<double> InversePosterior::SamplerZANIMLNBARTceSS(arma::umat Y,
 }
 
 // Run multiple imputation with SIR approach to sample the inverse posterior
+std::vector<int> InversePosterior::ABCSIRZANIMLNBART(std::vector<int> y,
+                                                     int n_proposal,
+                                                     int ndpost,
+                                                     arma::mat B,
+                                                     std::string draws_dir,
+                                                     double h) {
+
+  // Dimension
+  int d = y.size(), dm1 = d - 1;
+
+  // Transform data into row-major vectors
+  std::vector<double> Brm = mat_to_double_rowmajor(B);
+
+  // Open file for the the posterior draws of chol(Sigma_V)
+  std::ifstream ff_Sigma_V(forests_dir + "/chol_Sigma_V.bin", std::ios::binary);
+  std::ifstream ff_theta(draws_dir + "/theta_ij.bin", std::ios::binary);
+  std::ifstream ff_zeta(draws_dir + "/zeta_ij.bin", std::ios::binary);
+
+  // Create vector to read the posterior draws of chol_Sigma_V
+  std::vector<double> chol_Sigma_V(dm1*dm1, 0.0);
+
+  // Create vector to read one posterior draw of theta_ij and zeta_ij
+  std::vector<double> theta(n_proposal*d, 0.0);
+  std::vector<double> zeta(n_proposal*d, 0.0);
+  // Another vector to copy the values for a given observation i
+  std::vector<double> theta_cur(d, 0.0);
+  std::vector<double> zeta_cur(d, 0.0);
+
+  // Number of trials, and the summary statistics for a given observed count is
+  // s(y_i) = (y_i1, ..., y_id) / n_trial
+  int ntrial = std::accumulate(y.begin(), y.end(), 0.0);
+  std::vector<double> sy(d, 0.0);
+  for(int j=0; j < d; j++) sy[j] = (double)y[j] / ntrial;
+
+  std::vector<double> sy_prop(d, 0.0);
+
+  // The predictions are stored by posterior draws, so
+  // [1 block][2 block]...[ndpost block], for k = ndpost
+  // Each k block is (n_proposal × d) in column-major.
+  std::vector<double> log_w(n_proposal, 0.0), probs(n_proposal);
+  std::vector<int> sir_indices(ndpost, 0);
+
+  double m, ll, progress = 0.0;
+  // Iterate over posterior draws
+  for (int k=0; k < ndpost; k++) {
+    progress = (double) 100 * k / ndpost;
+    Rprintf("%3.2f%% completed for computing the log-weights", progress);
+    Rprintf("\r");
+    // Read one block (n_proposal*d)
+    ff_theta.read(reinterpret_cast<char*>(theta.data()),
+                  sizeof(double) * n_proposal * d);
+    ff_zeta.read(reinterpret_cast<char*>(zeta.data()),
+                 sizeof(double) * n_proposal * d);
+    // Read current posterior draw of chol(Sigma_V)
+    ff_Sigma_V.read(reinterpret_cast<char*>(chol_Sigma_V.data()),
+                    sizeof(double) * dm1 * dm1);
+    // Iterate over proposal values (samples) and compute the log-likelihood
+    for (int i=0; i < n_proposal; i++) {
+      // Copy the current theta_ij
+      for (int j=0; j < d; j++) {
+        theta_cur[j] = theta[j*n_proposal + i];
+        zeta_cur[j] = zeta[j*n_proposal + i];
+      }
+      // Simulate y_proposal | theta(x), zeta(x)
+      std::vector<int> y_prop = rzanimln(ntrial, theta_cur, zeta_cur, chol_Sigma_V, Brm);
+
+      // Compute summary statistics (y_prop / n_trial)
+      for (int j=0; j < d; j++) sy_prop[j] = (double) y_prop[j] / ntrial;
+
+      // Compute the Kernel
+      log_w[i] = log_kernel_gauss(sy, sy_prop, h);
+    }
+    // Normalise weights and resample (only one draw)
+    probs = normalise_weights(log_w, n_proposal);
+    sir_indices[k] = sample_discrete(probs, n_proposal);
+  }
+  // Close files
+  ff_zeta.close();  ff_theta.close(); ff_Sigma_V.close();
+  // return log_w;
+  return sir_indices;
+}
+
+// Run multiple imputation with SIR approach to sample the inverse posterior
 std::vector<int> InversePosterior::SIRZANIMLNBART(std::vector<int> y,
                                                   int n_proposal,
                                                   int ndpost,
@@ -1086,7 +1169,7 @@ std::vector<double> InversePosterior::LogLikelihoodZANIMLN_2(std::vector<int> &y
   }
   return lml;
 }
-
+// --------------------------------------------------------------------------------
 void InversePosterior::GetTreesPredictionsZANIMBART(std::vector<double> &x,
                                               std::vector<double> &lambda,
                                               std::vector<double> &zeta,
@@ -1296,11 +1379,68 @@ std::vector<double> InversePosterior::ESSZANIMLNBART(arma::umat Y,
 }
 
 
+// Log-target of u_i with marginalised phi_i
+double InversePosterior::LogTargetU(std::vector<double> &u, std::vector<int> &y,
+                                    std::vector<double> &z,
+                                    std::vector<double> &lambda) {
+
+  int idx = 0;
+  int k=0;
+  for (int j=0; j < d; j++) if (z[j] > 0) k++;
+  // int k = std::count_if(z.begin(), z.end(), [](double x) {return x > 0;});
+  std::vector<double> lterms(k, 0.0);
+  double l = 0.0, n_trials = 0.0;
+  for (int j=0; j < d; j++) {
+    n_trials += y[j];
+    l += y[j] * u[j];
+    if (z[j] > 0) lterms[idx++] = std::log(lambda[j]) + u[j];
+  }
+  if (lterms.empty()) return l; // Need to return prob = 1, i.e. l=0.
+  return l - n_trials * log_sum_exp(lterms);
+}
+
+// ESS for update v_i under the "full" covariance prior (also work for the factor model)
+std::vector<double> InversePosterior::UpdateESSV(std::vector<double> &v,
+                                                 std::vector<double> &chol_Sigma_V,
+                                                 std::vector<double> &B,
+                                                 std::vector<int> &y,
+                                                 std::vector<double> &z,
+                                                 std::vector<double> &lambda) {
+  // Create vectors
+  std::vector<double> u(d, 0.0), u_prop(d, 0.0), v_prop(dm1, 0.0), nu(dm1, 0.0);
+
+  // log-likelihood threshold
+  double logy = log(R::unif_rand());
+  Bv(u, v, B, d, dm1);
+  double ll_cur = LogTargetU(u, y, z, lambda);
+  logy += ll_cur;
+  // std::cout << logy << "\n";
+  // Draw angle
+  rmvnorm_chol2(nu, chol_Sigma_V, dm1);
+  double theta = R::unif_rand() * PI_2;
+  double theta_max = theta;
+  double theta_min = theta - PI_2;
+  // Draw proposal
+  axpby(v_prop.data(), v.data(), nu.data(), cos(theta), sin(theta), dm1);
+  Bv(u, v_prop, B, d, dm1);
+  do {
+    double ll = LogTargetU(u, y, z, lambda);
+    if (ll > logy) break;
+    // Shrink the angle
+    if (theta < 0) theta_min = theta;
+    else theta_max = theta;
+    // Draw a new angle, then a new proposal
+    theta = theta_min + (theta_max - theta_min) * R::unif_rand();
+    axpby(v_prop.data(), v.data(), nu.data(), cos(theta), sin(theta), dm1);
+    Bv(u, v_prop, B, d, dm1);
+  } while (true);
+  return v_prop;
+}
+
+
 // Run an update of ESS for ZANIM-LN-BART using Poisson-type likelihood
 std::vector<double> InversePosterior::UpdateESSZANIMLNBART2(
     std::vector<double> &x_cur,
-    // std::vector<double> &mean_prior,
-    // std::vector<double> &chol_S_prior,
     std::vector<int> &y,
     std::vector<double> &z, std::vector<double> &u,
     double &phi,
@@ -1447,15 +1587,13 @@ std::vector<double> InversePosterior::ESSZANIMLNBART2(arma::umat Y,
       std::fill(zeta.begin(), zeta.end(), 0.0);
       GetTreesPredictionsZANIMBART(x_tilde, lambda, zeta, forest_theta, forest_zeta);
 
-      // std::cout << lambda[0] << " " << lambda[1] << " " << lambda[2] << " " << lambda[3] << "\n";
-
       // Initialise latent variables drawing from their priors
       std::vector<double> z(d, 1.0), u(d, 0.0), v(dm1, 0.0);
       rmvnorm_chol2(v, chol_Sigma_V, dm1);
-      // Transform to u = Bv, iterate over rows first then columns
-      for (int l=0; l < d; l++) {
-        for (int j=0; j < dm1; j++) u[l] += v[j] * Brm[l*dm1 + j];
-      }
+      // Get u = Bv
+      Bv(u, v, Brm, d, dm1);
+
+      // Sample z and phi
       double rate = 0.0;
       for (int j = 0; j < d; j++) {
         if (y[j] == 0)
@@ -1464,28 +1602,29 @@ std::vector<double> InversePosterior::ESSZANIMLNBART2(arma::umat Y,
           rate += lambda[j] * exp(u[j]) * z[j];
       }
       double phi = R::rgamma(n_trial, 1.0 / rate);
-
       // Start inverse-sampling using ESS
       for (int k = 0; k < nburnin; k++) {
         x_cur = UpdateESSZANIMLNBART2(x_cur, y, z, u, phi, lambda, zeta, forest_theta,
                                       forest_zeta);
-        // Update latent variables
+        // Update v, then compute u = Bv
+        v = UpdateESSV(v, chol_Sigma_V, Brm, y, z, lambda);
+        Bv(u, v, Brm, d, dm1);
+        // Update latent variables using full Gibbs
         rate = 0.0;
         for (int j = 0; j < d; j++) {
-          if (y[j] == 0)
-            z[j] = R::rbinom(1, 1.0 - zeta[j]);
-          if (z[j] > 0.0)
-            rate += lambda[j] * exp(u[j]) * z[j];
+          if (y[j] == 0) {
+            double prob = (1.0 - zeta[j]) * exp(-phi * u[j] * lambda[j]);
+            prob /= (prob + zeta[j]);
+            z[j] = R::rbinom(1, prob);
+          }
+          if (z[j] > 0.0) rate += lambda[j] * exp(u[j]);
         }
         phi = R::rgamma(n_trial, 1.0 / rate);
-        // TODO: update u by sampling from its full conditional using another ESS
       }
-
       // Update the "initial" value of x for the next iteration
       for (int k = 0; k < p; k++) {
         Xrm[i * p + k] = x_cur[k];
       }
-
       // Save the posterior draw
       for (int k = 0; k < p; k++) x_posterior[base_i + t * p + k] = x_cur[k] + mean_prior[k];
     }
@@ -1520,6 +1659,7 @@ RCPP_MODULE(inverse_posterior) {
   .method("LogLikelihoodZANIMLN_2", &InversePosterior::LogLikelihoodZANIMLN_2)
   .method("ESSZANIMLNBART", &InversePosterior::ESSZANIMLNBART)
   .method("ESSZANIMLNBART2", &InversePosterior::ESSZANIMLNBART2)
+  .method("ABCSIRZANIMLNBART", &InversePosterior::ABCSIRZANIMLNBART)
 
   ;
 

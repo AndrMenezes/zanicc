@@ -23,5 +23,9 @@ void rmvnorm_chol(std::vector<double>& out,
                   const std::vector<double>& L, int p);
 void rmvnorm_chol2(std::vector<double>& out,
                    const std::vector<double>& L, int p);
+std::vector<int> rzanimln(int n_trial, std::vector<double> &prob,
+                          std::vector<double> &zeta,
+                          std::vector<double> &chol_Sigma_V,
+                          std::vector<double> &B);
 
 #endif
