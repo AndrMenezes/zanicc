@@ -1,7 +1,7 @@
 rm(list = ls())
-# Install package from the inverse_posterior branch
-# remotes::install_github("andrmenezes/zanicc@inverse_posterior")
-library(zanicc)
+
+devtools::load_all()
+# library(zanicc)
 library(ggplot2)
 
 d <- 4L
@@ -134,16 +134,16 @@ log_pmf_zanim_ln_mc2 <- function(x, prob, zeta, chol_Sigma_V, Bt, mc = 100) {
 #' Update x using ESS
 udpate_ess <- function(x, y, betas_alpha, betas_zeta, chol_Sigma_V, sd_prior, mu_prior,
                        parms_bs, B) {
+  Bt <- t(B)
   # Set log-likelihood threshold
   tmp <- get_parms(x = x, betas_alpha = betas_alpha, betas_zeta = betas_zeta,
                    parms_bs = parms_bs)
   ll <- log_pmf_zanim_ln_mc2(x = y, prob = tmp[[1]], zeta = tmp[[2]],
-                             chol_Sigma_V = chol_Sigma_V, Bt = B, mc = 100L)
+                             chol_Sigma_V = chol_Sigma_V, Bt = Bt, mc = 100L)
   # log_pmf_zanim_ln_mc(x = y, prob = tmp[[1]], zeta = tmp[[2]],
   #                     chol_Sigma_V = c(chol_Sigma_V), B = B, mc = 100L)
-  # log_pmf_zanim_ln_conditional(x = y, prob = tmp[[1]], zeta = tmp[[2]],
-  #                              chol_Sigma_V = c(chol_Sigma_V), B = B)
-
+  # ll <- log_pmf_zanim_ln_conditional(x = y, prob = tmp[[1]], zeta = tmp[[2]],
+  #                                    chol_Sigma_V = c(chol_Sigma_V), B = B)
   lr <- log(stats::runif(1)) + ll
   # cat(lr, x, ll, "\n")
   # Draw angle
@@ -159,17 +159,18 @@ udpate_ess <- function(x, y, betas_alpha, betas_zeta, chol_Sigma_V, sd_prior, mu
   counter <- 0L
   repeat {
     ll <- log_pmf_zanim_ln_mc2(x = y, prob = tmp[[1]], zeta = tmp[[2]],
-                               chol_Sigma_V = chol_Sigma_V, Bt = B, mc = 100L)
+                               chol_Sigma_V = chol_Sigma_V, Bt = Bt, mc = 10L)
     # cat(lr, x, ll, "\n")
     # ll <- log_pmf_zanim_ln_conditional(x = y, prob = tmp[[1]], zeta = tmp[[2]],
     #                                    chol_Sigma_V = c(chol_Sigma_V), B = B)
     # ll <- log_pmf_zanim_ln_mc(x = y, prob = tmp[[1]], zeta = tmp[[2]],
     #                           chol_Sigma_V = c(chol_Sigma_V), B = B, mc = 100L)
     if (ll > lr) break
-    if (counter > 100) {
-      # cat("More than 100 slices, leaving the loop\n", ll, lr)
-      break
-    }
+    if (abs(ll - lr) < 1e-5) break
+    # if (counter > 100) {
+    #   # cat("More than 100 slices, leaving the loop\n", ll, lr)
+    #   break
+    # }
     if (angle < 0) angle_min <- angle
     else angle_max <- angle
     angle <- angle_min + (angle_max - angle_min) * stats::runif(1L)
@@ -197,7 +198,7 @@ udpate_ess(x = 0.0, y = Y_test[1, ], betas_alpha = mod$draws_betas_theta[,,1],
            betas_zeta = mod$draws_betas_zeta[,,1],
            chol_Sigma_V = mod$draws_chol_Sigma_V[,,1],
            sd_prior = sd_prior,
-           mu_prior = mu_prior, parms_bs = parms_bs, B = Bt)
+           mu_prior = mu_prior, parms_bs = parms_bs, B = B)
 
 
 
@@ -222,7 +223,7 @@ for (i in seq_len(n_test)) {
     x_cur <- udpate_ess(x = x_cur, y = y, betas_alpha = betas_alpha,
                         betas_zeta = betas_zeta, chol_Sigma_V = chol_Sigma_V,
                         sd_prior = sd_prior,
-                        mu_prior = mu_prior, parms_bs = parms_bs, B = Bt)
+                        mu_prior = mu_prior, parms_bs = parms_bs, B = B)
     x_draws[i, k] <- x_cur + mu_prior
   }
 }
@@ -256,5 +257,6 @@ ip_zanim_ln_splines_marg2 <- readRDS(file = file.path(path_results,
                                                       "ip_zanim_ln_splines_marginal_mc2.rds"))
 
 marginal <- compute_prediction_metrics(x = X_test, draws = ip_zanim_ln_splines_marg)
+marginal2 <- compute_prediction_metrics(x = X_test, draws = ip_zanim_ln_splines_marg2)
 conditional <- compute_prediction_metrics(x = X_test, draws = ip_zanim_ln_splines_cond)
-rbind(marginal, conditional)
+rbind(marginal, marginal2, conditional)
