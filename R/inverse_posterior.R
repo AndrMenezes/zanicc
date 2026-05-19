@@ -43,11 +43,12 @@ rconvexhull <- function(n, X) {
 #' @export
 inverse_posterior_zanimlnbart <- function(object, Y, dir_posterior_fx,
                                           x_proposal = NULL,
-                                          method = c("sir", "ess", "ess2", "c_ess"),
+                                          method = c("sir", "ess", "ess2", "c_ess",
+                                                     "abc_sir"),
                                           ndpost = object$ndpost, nburnin = 10L,
                                           mean_prior = NULL, S_prior = NULL,
                                           X_ini = NULL, Amat = NULL, bvec = NULL,
-                                          eta = 50.0, mc = 10L) {
+                                          eta = 50.0, mc = 10L, h = 0.01) {
   # Some checks
   method <- match.arg(method)
   if (object$d != ncol(Y)) stop("Dimension of Y does not match with forward model")
@@ -69,7 +70,7 @@ inverse_posterior_zanimlnbart <- function(object, Y, dir_posterior_fx,
                  object$ntrees_zeta, object$forests_dir)
 
   # Check which method to dispatch
-  if (method == "sir") {
+  if (method %in% c("sir", "abc_sir")) {
     n_proposal <- nrow(x_proposal)
     # Check if the files with parameter predictions exist
     ftheta <- file.path(dir_posterior_fx, "theta_ij.bin")
@@ -86,15 +87,29 @@ inverse_posterior_zanimlnbart <- function(object, Y, dir_posterior_fx,
               type = "zeta")
       end_predict <- proc.time() - ini
     }
+
     # For each posterior draw of f's run SIR
-    ini <- proc.time()
-    res <- lapply(seq_len(n), function(i) {
-      cat("Observation: ", i, "of", n, "\n")
-      indices <- cpp_obj$SIRZANIMLNBART(Y[i, ], n_proposal, ndpost, B,
-                                        dir_posterior_fx, mc)
-      x_proposal[indices + 1L, , drop = FALSE] # C++ indices starts at 0
-    })
-    elapsed <- proc.time() - ini
+    if (method == "sir") {
+      ini <- proc.time()
+      res <- lapply(seq_len(n), function(i) {
+        cat("Observation: ", i, "of", n, "\n")
+        indices <- cpp_obj$SIRZANIMLNBART(Y[i, ], n_proposal, ndpost, B,
+                                          dir_posterior_fx, mc)
+        x_proposal[indices + 1L, , drop = FALSE] # C++ indices starts at 0
+      })
+      elapsed <- proc.time() - ini
+    } else if (method == "abc_sir") {
+      ini <- proc.time()
+      res <- lapply(seq_len(n), function(i) {
+        cat("Observation: ", i, "of", n, "\n")
+        indices <- cpp_obj$ABCSIRZANIMLNBART(Y[i, ], n_proposal, ndpost, B,
+                                             dir_posterior_fx, h)
+        x_proposal[indices + 1L, , drop = FALSE] # C++ indices starts at 0
+      })
+      elapsed <- proc.time() - ini
+    } else {
+      stop("Only {sir}, and {abc_sir} implemented for this class of methods.")
+    }
     res <- simplify2array(res)
     if (do_predict) attr(res, "elapsed_time_predict") <- end_predict
   } else {

@@ -180,6 +180,28 @@ test_that("ZANIM-LN-BART one-dimension", {
     saveRDS(object = sir, file = ff_sir)
   }
 
+  ff_abcsir <- file.path(path_results, "abc_sir.rds")
+  if (file.exists(ff_abcsir)) {
+    abc_sir <- readRDS(file = ff_abcsir)
+  } else {
+    abc_sir <- inverse_posterior_zanimlnbart(object = zanim_ln_bart, Y = Y_test,
+                                             x_proposal = x_proposal,
+                                             dir_posterior_fx = path_results,
+                                             method = "abc_sir", h = 0.01)
+    # Save results
+    saveRDS(object = abc_sir, file = ff_abcsir)
+  }
+  # devtools::load_all()
+  # abc_sir <- inverse_posterior_zanimlnbart(object = zanim_ln_bart,
+  #                                          Y = Y_test[4,,drop=FALSE],
+  #                                      x_proposal = x_proposal,
+  #                                      dir_posterior_fx = path_results,
+  #                                      method = "abc_sir", h = 0.01)
+  #
+  # plot(density(abc_sir[,,1]), col="red")
+  # lines(density(sir[,,4]))
+  # abline(v = X_test[4, ])
+
   # Run eSS
   ff_ess <- file.path(path_results, "ess.rds")
   if (file.exists(ff_ess)) {
@@ -204,8 +226,8 @@ test_that("ZANIM-LN-BART one-dimension", {
                                           dir_posterior_fx = path_results,
                                           method = "ess2",
                                           mean_prior = mean(X_train),
-                                          S_prior = diag(1.5*var(X_train[, 1]), nrow = 1),
-                                          nburnin = 1L)
+                                          S_prior = diag(var(X_train[, 1]), nrow = 1),
+                                          nburnin = 500L)
     # Save results
     saveRDS(object = ess2, file = ff_ess2)
   }
@@ -215,11 +237,16 @@ test_that("ZANIM-LN-BART one-dimension", {
 
   sd(X_test)
   sir_metrics <- compute_prediction_metrics(x = X_test, draws = sir)
+  abc_sir_metrics <- compute_prediction_metrics(x = X_test, draws = abc_sir)
   ess_metrics <- compute_prediction_metrics(x = X_test, draws = ess)
   ess2_metrics <- compute_prediction_metrics(x = X_test, draws = ess2)
 
 
-
+  # A tibble: 5 × 6
+  method              mae  msep dmode coverage_95 coverage_50
+  <chr>             <dbl> <dbl> <dbl>       <dbl>       <dbl>
+    1 sir_zanim_ln_bart 10.4  201.   348.        0.96        0.56
+  2 ess_zanim_ln      11.9  247.   341.        1           0.68
 
   # Check eSS
   devtools::load_all()
