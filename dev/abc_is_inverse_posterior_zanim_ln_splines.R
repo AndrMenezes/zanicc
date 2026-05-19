@@ -79,8 +79,11 @@ s_stats <- function(y) {
 }
 #' Kernel statistics
 log_k_gauss <- function(s_obs, s_prop, h) {
+  # Euclidean distance between the summary statistics
   u <- sqrt(sum((s_obs - s_prop)^2))
-  stats::dnorm(u, mean = 0.0, sd = h, log = TRUE)
+  # log-Gaussian kernel
+  return(-0.5 / h^2 * u^2)
+  # stats::dnorm(u, mean = 0.0, sd = h, log = TRUE)
 }
 
 
@@ -91,7 +94,7 @@ N_proposal <- 2000L
 x_proposal <- seq(rangeX[1], rangeX[2], length.out = N_proposal)
 
 run_abc_is <- function(y_obs, x_proposal, betas_theta, betas_zeta,
-                       chol_Sigma_V, Bt, parms_bs, h = 0.1) {
+                       chol_Sigma_V, Bt, parms_bs, h = 0.01) {
   n_proposal <- length(x_proposal)
   s_obs <- s_stats(y_obs)
   n_trial <- sum(y_obs)
@@ -115,6 +118,7 @@ i <- 1L
 x_true <- X_test[i,]
 y_obs <- Y_test[i, ]
 
+# Run for a given posterior draw
 log_weights <- run_abc_is(y_obs = y_obs, x_proposal = x_proposal,
                           betas_theta = mod$draws_betas_theta[,,1],
                           betas_zeta = mod$draws_betas_zeta[,,1],
@@ -126,6 +130,7 @@ plot(x_proposal, weights, type = "h")
 
 ndpost <- mod$ndpost
 
+# Run ABC-SIR
 indices_sir <- integer(length = ndpost)
 for (k in seq_len(ndpost)) {
   cat(k, "\n")
@@ -144,14 +149,3 @@ x_sir <- x_proposal[indices_sir]
 plot(density(x_sir))
 hist(x_sir)
 abline(v = x_true)
-
-# # Comparing against SIR using ZANIM-LN-BART and the augmented likelihood
-# ff_sir <- file.path(path_results, "sir.rds")
-# sir <- readRDS(file = ff_sir)
-# dim(sir)
-#
-# plot(density(x_sir))
-# lines(density(sir[,,1]), col="red")
-#
-
-
