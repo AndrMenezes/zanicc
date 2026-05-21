@@ -721,8 +721,11 @@ std::vector<int> InversePosterior::ABCSIRZANIMLNBART(std::vector<int> y,
   // Number of trials, and the summary statistics for a given observed count is
   // s(y_i) = (y_i1, ..., y_id) / n_trial
   int ntrial = std::accumulate(y.begin(), y.end(), 0.0);
-  std::vector<double> sy(d, 0.0);
-  for(int j=0; j < d; j++) sy[j] = (double)y[j] / ntrial;
+
+  // Summary statistics for observed data
+  std::vector<double> sy = clr(y, 0.5);
+  // std::vector<double> sy(d, 0.0);
+  // for(int j=0; j < d; j++) sy[j] = (double)y[j] / ntrial;
 
   std::vector<double> sy_prop(d, 0.0);
 
@@ -757,10 +760,11 @@ std::vector<int> InversePosterior::ABCSIRZANIMLNBART(std::vector<int> y,
       std::vector<int> y_prop = rzanimln(ntrial, theta_cur, zeta_cur, chol_Sigma_V, Brm);
 
       // Compute summary statistics (y_prop / n_trial)
-      for (int j=0; j < d; j++) sy_prop[j] = (double) y_prop[j] / ntrial;
+      // for (int j=0; j < d; j++) sy_prop[j] = (double) y_prop[j] / ntrial;
+      sy_prop = clr(y_prop, 0.5);
 
       // Compute the Kernel
-      log_w[i] = log_kernel_gauss(sy, sy_prop, h);
+      log_w[i] = log_kernel_exp(sy, sy_prop, h);
     }
     // Normalise weights and resample (only one draw)
     probs = normalise_weights(log_w, n_proposal);
@@ -831,8 +835,8 @@ std::vector<int> InversePosterior::SIRZANIMLNBART(std::vector<int> y,
         zeta_cur[j] = zeta[j*n_proposal + i];
       }
       // Compute the log-likelihood of observation i and posterior draw k
-      // log_w[i] = log_pmf_zanim_ln_conditional(y, theta_cur, zeta_cur, chol_Sigma_V, Brm);
-      log_w[i] = log_pmf_zanim_ln(mc, y, theta_cur, zeta_cur, chol_Sigma_V, Brm);
+      log_w[i] = log_pmf_zanim_ln_conditional(y, theta_cur, zeta_cur, chol_Sigma_V, Brm);
+      // log_w[i] = log_pmf_zanim_ln(mc, y, theta_cur, zeta_cur, chol_Sigma_V, Brm);
       // log_w[i*ndpost + k] = ll ;
     }
     // Normalise weights and resample (only one draw)

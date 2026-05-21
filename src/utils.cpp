@@ -82,3 +82,29 @@ double log_kernel_gauss(std::vector<double> &x1, std::vector<double> &x2, double
   // return R::dnorm4(std::sqrt(u), 0.0, h, 1);
 }
 
+// log-Kernel exponential
+double log_kernel_exp(std::vector<double> &x1, std::vector<double> &x2, double h) {
+  int d = x1.size();
+  double u = 0;
+  for (int j=0; j < d; j++)  u += std::pow(x1[j] - x2[j], 2);
+  return(-u / h);
+}
+
+// Centered log-ratio
+std::vector<double> clr(const std::vector<int> &y, double pseudo) {
+
+  int d = y.size();
+  std::vector<double> logy(d, 0.0);
+
+  double meanlogy = 0.0;
+  for (int j=0; j < d; j++) {
+    logy[j] = std::log(y[j] + pseudo);
+    meanlogy += logy[j];
+  }
+  meanlogy /= d;
+  for (int j=0; j < d; j++) logy[j] -= meanlogy;
+
+  return logy;
+}
+
+

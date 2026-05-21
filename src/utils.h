@@ -20,4 +20,6 @@ void Bv(std::vector<double> &u, std::vector<double> &v, std::vector<double> &B,
         int d, int dm1);
 std::vector<double> normalise_weights(std::vector<double> &log_weights, int n);
 double log_kernel_gauss(std::vector<double> &x1, std::vector<double> &x2, double h);
+double log_kernel_exp(std::vector<double> &x1, std::vector<double> &x2, double h);
+std::vector<double> clr(const std::vector<int> &y, double pseudo);
 #endif
