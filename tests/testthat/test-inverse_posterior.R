@@ -192,16 +192,17 @@ test_that("ZANIM-LN-BART one-dimension", {
     saveRDS(object = abc_sir, file = ff_abcsir)
   }
   # devtools::load_all()
-  # abc_sir <- inverse_posterior_zanimlnbart(object = zanim_ln_bart,
-  #                                          Y = Y_test[4,,drop=FALSE],
+  # abc_sir2 <- inverse_posterior_zanimlnbart(object = zanim_ln_bart,
+  #                                          Y = Y_test[1,,drop=FALSE],
   #                                      x_proposal = x_proposal,
   #                                      dir_posterior_fx = path_results,
-  #                                      method = "abc_sir", h = 0.01)
+  #                                      method = "abc_sir", h = 0.2)
   #
-  # plot(density(abc_sir[,,1]), col="red")
-  # lines(density(sir[,,4]))
-  # abline(v = X_test[4, ])
-
+  # plot(density(abc_sir2[,,1]), col="red")
+  # lines(density(abc_sir[,,1]), col="blue")
+  # lines(density(sir[,,1]))
+  # abline(v = X_test[1, ])
+  #
   # Run eSS
   ff_ess <- file.path(path_results, "ess.rds")
   if (file.exists(ff_ess)) {
