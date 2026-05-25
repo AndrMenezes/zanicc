@@ -48,9 +48,15 @@ inverse_posterior_zanimlnbart <- function(object, Y, dir_posterior_fx,
                                           ndpost = object$ndpost, nburnin = 10L,
                                           mean_prior = NULL, S_prior = NULL,
                                           X_ini = NULL, Amat = NULL, bvec = NULL,
-                                          eta = 50.0, mc = 10L, h = 0.01) {
+                                          n_particles = if (method %in% c("sir", "abc_sir")) 10L else 100L,
+                                          eta = 50.0,
+                                          kernel = c("gauss", "exp"),
+                                          h = 0.01,
+                                          mixture = FALSE) {
   # Some checks
   method <- match.arg(method)
+  kernel <- match.arg(kernel)
+  kernel <- if (kernel == "gauss") 0L else 1L
   if (object$d != ncol(Y)) stop("Dimension of Y does not match with forward model")
   if (ndpost > object$ndpost) {
     warning("{ndpost} should be at least {object$ndpost}. Setting {ndpost} to  {object$ndpost}")
@@ -94,7 +100,8 @@ inverse_posterior_zanimlnbart <- function(object, Y, dir_posterior_fx,
       res <- lapply(seq_len(n), function(i) {
         cat("Observation: ", i, "of", n, "\n")
         indices <- cpp_obj$SIRZANIMLNBART(Y[i, ], n_proposal, ndpost, B,
-                                          dir_posterior_fx, mc)
+                                          dir_posterior_fx, n_particles,
+                                          as.integer(mixture))
         x_proposal[indices + 1L, , drop = FALSE] # C++ indices starts at 0
       })
       elapsed <- proc.time() - ini
@@ -103,7 +110,8 @@ inverse_posterior_zanimlnbart <- function(object, Y, dir_posterior_fx,
       res <- lapply(seq_len(n), function(i) {
         cat("Observation: ", i, "of", n, "\n")
         indices <- cpp_obj$ABCSIRZANIMLNBART(Y[i, ], n_proposal, ndpost, B,
-                                             dir_posterior_fx, h)
+                                             dir_posterior_fx, kernel, h,
+                                             n_particles)
         x_proposal[indices + 1L, , drop = FALSE] # C++ indices starts at 0
       })
       elapsed <- proc.time() - ini
@@ -125,7 +133,7 @@ inverse_posterior_zanimlnbart <- function(object, Y, dir_posterior_fx,
     ini <- proc.time()
     xx <- switch(method,
       "ess" = cpp_obj$ESSZANIMLNBART(Y, X_ini, ndpost, nburnin, mean_prior,
-                                      S_prior, B, mc),
+                                      S_prior, B, n_particles),
       "ess2" =  cpp_obj$ESSZANIMLNBART2(Y, X_ini, ndpost, nburnin, mean_prior,
                                        S_prior, B),
       "c_ess" = cpp_obj$SamplerZANIMLNBARTceSS(Y, X_ini, ndpost, nburnin,
