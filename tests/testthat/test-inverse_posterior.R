@@ -242,14 +242,7 @@ test_that("ZANIM-LN-BART one-dimension", {
   ess_metrics <- compute_prediction_metrics(x = X_test, draws = ess)
   ess2_metrics <- compute_prediction_metrics(x = X_test, draws = ess2)
 
-
-  # A tibble: 5 × 6
-  method              mae  msep dmode coverage_95 coverage_50
-  <chr>             <dbl> <dbl> <dbl>       <dbl>       <dbl>
-    1 sir_zanim_ln_bart 10.4  201.   348.        0.96        0.56
-  2 ess_zanim_ln      11.9  247.   341.        1           0.68
-
-  # Check eSS
+    # Check eSS
   devtools::load_all()
   mean_prior = mean(X_train)
   S_prior = diag(1.5*var(X_train[, 1]), nrow = 1)
