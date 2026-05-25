@@ -2,6 +2,8 @@
 #include <algorithm>
 #include <cmath>
 #include "utils.h"
+#include "rng.h"
+#include "pmfs.h"
 
 // Log PMF of multinomial
 double log_pmf_mult(std::vector<int> &x, int &size,
@@ -102,7 +104,7 @@ double log_pmf_zanim(std::vector<int> x, std::vector<double> prob,
       }
     }
   }
-  return(log_sum_exp(tmp));
+  return log_sum_exp(tmp);
 }
 
 // Vectorize version of log_pmf_zanim, meaning that x, prob and zeta should have n*d
@@ -141,7 +143,7 @@ double log_pmf_zip(int &x, double &zeta, double &lambda, double &phi) {
     return(t1[0] + x * log(lambda) - std::lgamma( (double) x + 1.0));
   } else {
     t1[1] = log(zeta);
-    return(log_sum_exp(t1));
+    return log_sum_exp(t1);
   }
 }
 
@@ -351,22 +353,18 @@ double log_pmf_zanim_ln_conditional(std::vector<int> &x, std::vector<double> &pr
   std::vector<double> v(dm1, 0.0), u(d, 0.0), vartheta(d, 0.0);
 
   // Simulate random effect v ~ N_{d-1}[0, Sigma_V]
-  std::vector<double> m0(dm1, 0.0);
-  rmvnorm_chol(v, m0, chol_Sigma_V, dm1);
-  // Transform to u = Bv
-  // double sum = 0.0;
-  // Iterate rows first then columns
-  for (int i=0; i < d; i++) {
-    for (int j=0; j < dm1; j++) u[i] += v[j] * B[i*dm1 + j];
-  }
+  rmvnorm_chol2(v, chol_Sigma_V, dm1);
+  // Transform to u = Bv.
+  Bv(u, v, B, d, dm1);
   // Compute \vartheta_{ij} \propto theta_j*z_ij * e^{u_ij}
   double s = 0.0;
   for (int j = 0; j < d; j++) {
     if (x[j] == 0) z[j] = R::rbinom(1, 1.0 - zeta[j]);
+
     vartheta[j] = prob[j] * z[j] * exp(u[j]);
     s += vartheta[j];
   }
-  if (s == 0.0) return 0.0;
+  // if (s == 0.0) return -1000.0;
 
   // Compute the multinomial likelihood
   double out = std::lgamma(std::accumulate(x.begin(), x.end(), 0.0) + 1.0);
@@ -376,18 +374,41 @@ double log_pmf_zanim_ln_conditional(std::vector<int> &x, std::vector<double> &pr
   return out;
 }
 
-double log_pmf_zanim_ln(int mc, std::vector<int> &x, std::vector<double> &prob,
+double log_pmf_zanim_ln(int n_particles, std::vector<int> &x,
+                        std::vector<double> &prob,
                         std::vector<double> &zeta,
                         std::vector<double> &chol_Sigma_V,
                         std::vector<double> &B) {
-  std::vector<double> ll(mc, 0.0);
-  for (int k=0; k < mc; k++) {
-    ll[k] = log_pmf_zanim_ln_conditional(x, prob, zeta, chol_Sigma_V,  B);
+  std::vector<double> ll(n_particles, 0.0);
+  for (int k=0; k < n_particles; k++) {
+    ll[k] = log_pmf_zanim_ln_conditional(x, prob, zeta, chol_Sigma_V, B);
   }
 
-  return log_sum_exp(ll) - std::log(mc);
+  return log_sum_exp(ll) - std::log(n_particles);
 
 }
+
+double log_pmf_zanim_ln_conditional2(std::vector<int> &x, std::vector<double> &prob,
+                                    std::vector<double> &zeta,
+                                    std::vector<double> &chol_Sigma_V,
+                                    std::vector<double> &B) {
+  int d = x.size(), dm1 = d - 1;
+  std::vector<double> v(dm1, 0.0), u(d, 0.0), vartheta(d, 0.0);
+  // Simulate random effect v ~ N_{d-1}[0, Sigma_V]
+  rmvnorm_chol2(v, chol_Sigma_V, dm1);
+  Bv(u, v,  B, d,  dm1);
+  // Add random effect
+  double s = 0.0;
+  for (int j = 0; j < d; j++) {
+    vartheta[j] = prob[j] * exp(u[j]);
+    s += vartheta[j];
+  }
+  // Normalise
+  for(auto &p : vartheta) p /= s;
+  // Compute the ZANIM likelihood
+  return log_pmf_zanim(x, vartheta, zeta);
+}
+
 
 // Augmented likelihood under ZANIM-LN
 double log_pmf_zanim_ln_augmented(std::vector<int> &x,

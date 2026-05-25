@@ -695,7 +695,9 @@ std::vector<int> InversePosterior::ABCSIRZANIMLNBART(std::vector<int> y,
                                                      int ndpost,
                                                      arma::mat B,
                                                      std::string draws_dir,
-                                                     double h) {
+                                                     int kernel,
+                                                     double h,
+                                                     int n_particles) {
 
   // Dimension
   int d = y.size(), dm1 = d - 1;
@@ -732,10 +734,13 @@ std::vector<int> InversePosterior::ABCSIRZANIMLNBART(std::vector<int> y,
   // The predictions are stored by posterior draws, so
   // [1 block][2 block]...[ndpost block], for k = ndpost
   // Each k block is (n_proposal × d) in column-major.
-  std::vector<double> log_w(n_proposal, 0.0), probs(n_proposal);
+  std::vector<double> log_w(n_proposal, 0.0), log_k(n_particles, 0.0), probs(n_proposal);
   std::vector<int> sir_indices(ndpost, 0);
+  ess_sir.resize(ndpost);
+  std::fill(ess_sir.begin(), ess_sir.end(), 0.0);
 
-  double m, ll, progress = 0.0;
+  double log_n_paricles = std::log(n_particles);
+  double progress = 0.0;
   // Iterate over posterior draws
   for (int k=0; k < ndpost; k++) {
     progress = (double) 100 * k / ndpost;
@@ -756,18 +761,28 @@ std::vector<int> InversePosterior::ABCSIRZANIMLNBART(std::vector<int> y,
         theta_cur[j] = theta[j*n_proposal + i];
         zeta_cur[j] = zeta[j*n_proposal + i];
       }
-      // Simulate y_proposal | theta(x), zeta(x)
-      std::vector<int> y_prop = rzanimln(ntrial, theta_cur, zeta_cur, chol_Sigma_V, Brm);
-
-      // Compute summary statistics (y_prop / n_trial)
-      // for (int j=0; j < d; j++) sy_prop[j] = (double) y_prop[j] / ntrial;
-      sy_prop = clr(y_prop, 0.5);
-
-      // Compute the Kernel
-      log_w[i] = log_kernel_exp(sy, sy_prop, h);
+      // Iterate over the particles
+      for (int t=0; t < n_particles; t++) {
+        // Simulate y_proposal | theta(x), zeta(x)
+        std::vector<int> y_prop = rzanimln(ntrial, theta_cur, zeta_cur, chol_Sigma_V, Brm);
+        // Compute summary statistics (y_prop / n_trial)
+        // for (int j=0; j < d; j++) sy_prop[j] = (double) y_prop[j] / ntrial;
+        sy_prop = clr(y_prop, 0.5);
+        // Compute the log-Kernel
+        switch(kernel) {
+        case 0:
+          log_k[t] = log_kernel_gauss(sy, sy_prop, h);
+        case 1:
+          log_k[t] = log_kernel_exp(sy, sy_prop, h);
+        }
+        log_w[i] = log_sum_exp(log_k) - log_n_paricles;
+      }
     }
     // Normalise weights and resample (only one draw)
     probs = normalise_weights(log_w, n_proposal);
+    // effective sample size
+    for (int i=0; i < n_proposal; i++) ess_sir[k] += probs[i]*probs[i];
+
     sir_indices[k] = sample_discrete(probs, n_proposal);
   }
   // Close files
@@ -782,7 +797,8 @@ std::vector<int> InversePosterior::SIRZANIMLNBART(std::vector<int> y,
                                                   int ndpost,
                                                   arma::mat B,
                                                   std::string draws_dir,
-                                                  int mc) {
+                                                  int n_particles,
+                                                  int mixture) {
 
   // Dimension
   int d = y.size(), dm1 = d - 1;
@@ -810,10 +826,13 @@ std::vector<int> InversePosterior::SIRZANIMLNBART(std::vector<int> y,
   // The predictions are stored by posterior draws, so
   // [1 block][2 block]...[ndpost block], for k = ndpost
   // Each k block is (n_proposal × d) in column-major.
-  std::vector<double> log_w(n_proposal, 0.0), probs(n_proposal);
+  std::vector<double> log_w(n_proposal, 0.0), log_k(n_particles, 0.0), probs(n_proposal);
   std::vector<int> sir_indices(ndpost, 0);
+  ess_sir.resize(ndpost, 0.0);
+  std::fill(ess_sir.begin(), ess_sir.end(), 0.0);
 
-  double m, ll, progress = 0.0;
+  double log_n_particles = std::log(n_particles);
+  double progress = 0.0;
   // Iterate over posterior draws
   for (int k=0; k < ndpost; k++) {
     progress = (double) 100 * k / ndpost;
@@ -834,13 +853,26 @@ std::vector<int> InversePosterior::SIRZANIMLNBART(std::vector<int> y,
         theta_cur[j] = theta[j*n_proposal + i];
         zeta_cur[j] = zeta[j*n_proposal + i];
       }
+      // Iterate over the particles
+      for (int t=0; t < n_particles; t++) {
+
+        switch (mixture) {
+        case 0:
+          log_k[t] = log_pmf_zanim_ln_conditional(y, theta_cur, zeta_cur, chol_Sigma_V, Brm);
+        case 1:
+          log_k[t] = log_pmf_zanim_ln_conditional2(y, theta_cur, zeta_cur, chol_Sigma_V, Brm);
+        }
+
+      }
       // Compute the log-likelihood of observation i and posterior draw k
-      log_w[i] = log_pmf_zanim_ln_conditional(y, theta_cur, zeta_cur, chol_Sigma_V, Brm);
+      log_w[i] = log_sum_exp(log_k) - log_n_particles;
+      // log_w[i] = log_pmf_zanim_ln_conditional(y, theta_cur, zeta_cur, chol_Sigma_V, Brm);
       // log_w[i] = log_pmf_zanim_ln(mc, y, theta_cur, zeta_cur, chol_Sigma_V, Brm);
       // log_w[i*ndpost + k] = ll ;
     }
     // Normalise weights and resample (only one draw)
     probs = normalise_weights(log_w, n_proposal);
+    for (int i=0; i < n_proposal; i++) ess_sir[k] += probs[i]*probs[i];
     sir_indices[k] = sample_discrete(probs, n_proposal);
   }
   // Close files
@@ -1226,15 +1258,16 @@ std::vector<double> InversePosterior::UpdateESSZANIMLNBART(
     std::vector<double> &theta, std::vector<double> &zeta,
     const std::vector<std::vector<Node*>> &forest_theta,
     const std::vector<std::vector<Node*>> &forest_zeta,
-    int mc) {
+    int n_particles) {
 
   // Define objects
   std::vector<double> nu(p, 0.0), x_proposal(p, 0.0), x_tilde(p, 0.0);
   double lr, nu_angle, nu_max, nu_min;
 
   // Log-likelihood threshold
-  // lr = log(R::unif_rand()) + log_pmf_zanim_ln(mc, y, theta, zeta, chol_Sigma_V, B);
-  lr = log(R::unif_rand()) + log_pmf_zanim_ln_conditional(y, theta, zeta, chol_Sigma_V, B);
+  double ll_cur = log_pmf_zanim_ln(n_particles, y, theta, zeta, chol_Sigma_V, B);
+  lr = log(R::unif_rand()) + ll_cur;
+  // lr = log(R::unif_rand()) + log_pmf_zanim_ln_conditional(y, theta, zeta, chol_Sigma_V, B);
 
   // Draw the angle
   rmvnorm_chol2(nu, chol_S_prior, p);
@@ -1252,8 +1285,13 @@ std::vector<double> InversePosterior::UpdateESSZANIMLNBART(
   GetPredictionZANIMBART(x_tilde, theta, zeta, forest_theta, forest_zeta);
   // Start slice
   do {
-    // if (log_pmf_zanim_ln(mc, y, theta, zeta, chol_Sigma_V, B) > lr) break;
-    if (log_pmf_zanim_ln_conditional(y, theta, zeta, chol_Sigma_V, B) > lr) break;
+    double ll_prop = log_pmf_zanim_ln(n_particles, y, theta, zeta, chol_Sigma_V, B);
+    // std::cout << " ll_cur=" << ll_cur << " ll_prop=" << ll_prop << "\n";
+    // std::cout << " theta1=" << theta[0] << " theta2=" << theta[1] << " theta3=" << theta[2]<< " theta4=" << theta[3]
+    //           << " zeta1=" << zeta[0] << " zeta2=" << zeta[1] << " zeta3=" << zeta[2]<< " zeta4=" << zeta[3] <<"\n";
+
+    if (ll_prop > lr) break;
+    // if (log_pmf_zanim_ln_conditional(y, theta, zeta, chol_Sigma_V, B) > lr) break;
     // Update the angle
     if (nu_angle < 0) nu_min = nu_angle;
     else nu_max = nu_angle;
@@ -1277,7 +1315,7 @@ std::vector<double> InversePosterior::ESSZANIMLNBART(arma::umat Y,
                                                     int nburnin,
                                                     std::vector<double> mean_prior,
                                                     arma::mat S_prior,
-                                                    arma::mat B, int mc) {
+                                                    arma::mat B, int n_particles) {
   // To read the trees
   int np = 1;
 
@@ -1319,7 +1357,7 @@ std::vector<double> InversePosterior::ESSZANIMLNBART(arma::umat Y,
 
   // Iterate over posterior draws of forward model
   for (int t=0; t < ndpost; t++) {
-    progress = 0.0;
+    // std::cout << t << "\n";
     progress = (double) 100 * t / ndpost;
     Rprintf("%3.2f%% Sampling completed", progress);
     Rprintf("\r");
@@ -1364,7 +1402,7 @@ std::vector<double> InversePosterior::ESSZANIMLNBART(arma::umat Y,
       // Start inverse-sampling using ESS
       for (int k = 0; k < nburnin; k++) {
         x_cur = UpdateESSZANIMLNBART(x_cur, y, chol_Sigma_V, Brm, theta, zeta,
-                                     forest_theta, forest_zeta, mc);
+                                     forest_theta, forest_zeta, n_particles);
       }
       // Update the "initial" value of x for the next iteration
       for (int k = 0; k < p; k++) {
@@ -1664,6 +1702,9 @@ RCPP_MODULE(inverse_posterior) {
   .method("ESSZANIMLNBART", &InversePosterior::ESSZANIMLNBART)
   .method("ESSZANIMLNBART2", &InversePosterior::ESSZANIMLNBART2)
   .method("ABCSIRZANIMLNBART", &InversePosterior::ABCSIRZANIMLNBART)
+
+  // effective sample size of SIR
+  .field("ess_sir", &InversePosterior::ess_sir);
 
   ;
 

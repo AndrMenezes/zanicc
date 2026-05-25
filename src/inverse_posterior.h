@@ -35,7 +35,7 @@ public:
   // SIR
   std::vector<int> SIRZANIMLNBART(std::vector<int> y, int n_proposal,
                                   int ndpost, arma::mat B,
-                                  std::string draws_dir, int mc);
+                                  std::string draws_dir, int n_particles, int mixture);
   std::vector<int> SIRMLBART(std::vector<int> y, int n_proposal,
                              int ndpost, std::string draws_dir);
   std::vector<int> SIRZANIMBART(std::vector<int> y, int n_proposal, int ndpost,
@@ -44,7 +44,12 @@ public:
   std::vector<int> ABCSIRZANIMLNBART(std::vector<int> y, int n_proposal,
                                      int ndpost, arma::mat B,
                                      std::string draws_dir,
-                                     double h);
+                                     int kernel,
+                                     double h,
+                                     int n_particles);
+
+  // Field to keep the effective sample size of SIR
+  std::vector<double> ess_sir;
 
   // Get the tree-specific prediction by traversing the tree
   double GetMu(Node *tree, std::vector<double> &x);
@@ -92,7 +97,7 @@ public:
                                      int ndpost, int nburnin,
                                      std::vector<double> mean_prior,
                                      arma::mat S_prior,
-                                     arma::mat B, int mc);
+                                     arma::mat B, int n_particles);
 
 
   // Get BART predictions
