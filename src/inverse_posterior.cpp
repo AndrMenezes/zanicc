@@ -782,7 +782,6 @@ std::vector<int> InversePosterior::ABCSIRZANIMLNBART(std::vector<int> y,
     probs = normalise_weights(log_w, n_proposal);
     // effective sample size
     for (int i=0; i < n_proposal; i++) ess_sir[k] += probs[i]*probs[i];
-
     sir_indices[k] = sample_discrete(probs, n_proposal);
   }
   // Close files
@@ -866,9 +865,6 @@ std::vector<int> InversePosterior::SIRZANIMLNBART(std::vector<int> y,
       }
       // Compute the log-likelihood of observation i and posterior draw k
       log_w[i] = log_sum_exp(log_k) - log_n_particles;
-      // log_w[i] = log_pmf_zanim_ln_conditional(y, theta_cur, zeta_cur, chol_Sigma_V, Brm);
-      // log_w[i] = log_pmf_zanim_ln(mc, y, theta_cur, zeta_cur, chol_Sigma_V, Brm);
-      // log_w[i*ndpost + k] = ll ;
     }
     // Normalise weights and resample (only one draw)
     probs = normalise_weights(log_w, n_proposal);
@@ -877,7 +873,6 @@ std::vector<int> InversePosterior::SIRZANIMLNBART(std::vector<int> y,
   }
   // Close files
   ff_zeta.close();  ff_theta.close(); ff_Sigma_V.close();
-  // return log_w;
   return sir_indices;
 }
 

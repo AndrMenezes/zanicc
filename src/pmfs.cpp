@@ -396,7 +396,7 @@ double log_pmf_zanim_ln_conditional2(std::vector<int> &x, std::vector<double> &p
   std::vector<double> v(dm1, 0.0), u(d, 0.0), vartheta(d, 0.0);
   // Simulate random effect v ~ N_{d-1}[0, Sigma_V]
   rmvnorm_chol2(v, chol_Sigma_V, dm1);
-  Bv(u, v,  B, d,  dm1);
+  Bv(u, v, B, d, dm1);
   // Add random effect
   double s = 0.0;
   for (int j = 0; j < d; j++) {
