@@ -49,7 +49,21 @@ public:
                                      int n_particles);
 
   // Field to keep the effective sample size of SIR
-  std::vector<double> ess_sir;
+  std::vector<double> ess_sir, x_posterior;
+  // std::vector<int> sir_indices;
+
+
+  // Implementation of adaptive Population Monte Carlo method
+  double ess;
+  double ComputeEfSS(std::vector<double> &x);
+  void WeightedMeanVar(double &mu, double &s2, std::vector<double> &x,
+                       std::vector<double> &probs);
+  void PopulationMC(std::vector<int> y,
+                    int ndpost, int n_particles_x,
+                    int n_particles_l, arma::mat B,
+                    std::vector<double> range_prior);
+
+
 
   // Get the tree-specific prediction by traversing the tree
   double GetMu(Node *tree, std::vector<double> &x);

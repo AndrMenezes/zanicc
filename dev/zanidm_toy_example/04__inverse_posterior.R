@@ -51,6 +51,11 @@ ml <- Rcpp::Module(module = "inverse_posterior", PACKAGE = "zanicc")
 cpp_obj <- new(ml$InversePosterior, zanim_ln_bart$d, zanim_ln_bart$ntrees_theta,
                zanim_ln_bart$ntrees_zeta, zanim_ln_bart$forests_dir)
 
+# ndpost <- 10L
+# n_particles_x <- 10L
+# n_particles_l <- 1L
+# range_prior <- range(list_data$X)
+# cpp_obj$PopulationMC(y_new, ndpost, n_particles_x, n_particles_l, B, range_prior)
 
 
 # ESS --------------------------------------------------------------------------
@@ -176,18 +181,28 @@ points(x_true, min(d_true$y), col = "blue", cex = 2, pch = 19)
 
 
 
+# Population-MC ----------------------------------------------------------------
+devtools::load_all()
+ml <- Rcpp::Module(module = "inverse_posterior", PACKAGE = "zanicc")
+cpp_obj <- new(ml$InversePosterior, zanim_ln_bart$d, zanim_ln_bart$ntrees_theta,
+               zanim_ln_bart$ntrees_zeta, zanim_ln_bart$forests_dir)
 
 
-# Check different scenarios ----------------------------------------------------
+i <- 12L #2L #1L
+y_new <- Y_test[i, ]
+x_true <- X_test[i, ]
 
-parms <- expand.grid(kernel = c(0L, 1L), h = c(0.1, 0.01),
-                     n_particles = c(1L, 10L, 100L))
+ndpost <- 5000L
+n_particles_x <- 1000L
+n_particles_l <- 2L
+range_prior <- range(list_data$X)
+cpp_obj$PopulationMC(y_new, ndpost, n_particles_x, n_particles_l, B, range_prior)
 
-kernel <- 1L # 0: gaussian, 1: exponential
-h <- 0.01 # bandiwith
-n_particles <- 10L
+# cpp_obj$ess_sir
+x_posterior <- cpp_obj$x_posterior
 
-for (k in seq_len(nrow(parms))) {
-
-}
-
+x_posterior <- matrix(x_posterior, nrow = n_particles_x, ncol = ndpost)
+par(mfrow = c(1, 2))
+hist(x_posterior)
+abline(v = x_true)
+hist(cpp_obj$ess_sir)

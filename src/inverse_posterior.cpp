@@ -49,6 +49,10 @@ void InversePosterior::GetPredictionZANIMBART(std::vector<double> &x,
                                               std::vector<double> &zeta,
                                               const std::vector<std::vector<Node*>> &forest_theta,
                                               const std::vector<std::vector<Node*>> &forest_zeta) {
+
+  std::fill(theta.begin(), theta.end(), 0.0);
+  std::fill(zeta.begin(), zeta.end(), 0.0);
+
   // Iterate over categories
   for (int j = 0; j < d; j++) {
     // Iterate over trees
@@ -322,8 +326,6 @@ std::vector<double> InversePosterior::SamplerZANIMBARTeSS(arma::umat Y,
         // rmvnorm_chol(nu, mean_prior, chol_Srm, p);
         rmvnorm_chol2(nu, chol_Srm, p);
         // Get the predictions for theta and zeta given the x_cur
-        std::fill(theta.begin(), theta.end(), 0.0);
-        std::fill(zeta.begin(), zeta.end(), 0.0);
         for (int l=0; l < p; l++) x_tilde[l] = x_cur[l] + mean_prior[l];
         GetPredictionZANIMBART(x_tilde, theta, zeta, forest_theta, forest_zeta);
         // Set a log-likelihood threshold
@@ -338,8 +340,6 @@ std::vector<double> InversePosterior::SamplerZANIMBARTeSS(arma::umat Y,
         for (int l=0; l < p; l++) x_tilde[l] = x_star[l] + mean_prior[l];
         // Start slice sampling
         do {
-          std::fill(theta.begin(), theta.end(), 0.0);
-          std::fill(zeta.begin(), zeta.end(), 0.0);
           // Get the predictions for theta  given the x_star
           GetPredictionZANIMBART(x_tilde, theta, zeta, forest_theta, forest_zeta);
           // double ll = log_pmf(y, theta, zeta);
@@ -635,8 +635,6 @@ std::vector<double> InversePosterior::SamplerZANIMLNBARTceSS(arma::umat Y,
         // Draw from the prior
         rmvnorm_chol2(nu, chol_Srm, p);
         // Get the predictions for theta and zeta given the x_cur
-        std::fill(theta.begin(), theta.end(), 0.0);
-        std::fill(zeta.begin(), zeta.end(), 0.0);
         GetPredictionZANIMBART(x_cur, theta, zeta, forest_theta, forest_zeta);
         // Set a log-likelihood threshold
         u_s = log(R::unif_rand());
@@ -650,8 +648,6 @@ std::vector<double> InversePosterior::SamplerZANIMLNBARTceSS(arma::umat Y,
         axpby(x_star.data(), x_cur.data(), nu.data(), cos(nu_angle), sin(nu_angle), p);
         // Start slice sampling
         do {
-          std::fill(theta.begin(), theta.end(), 0.0);
-          std::fill(zeta.begin(), zeta.end(), 0.0);
           // Get the predictions for theta  given the x_star
           GetPredictionZANIMBART(x_star, theta, zeta, forest_theta, forest_zeta);
           double ll = log_pmf_zanim_ln_conditional(y, theta, zeta, chol_Sigma_V, Brm);
@@ -1008,6 +1004,206 @@ std::vector<int> InversePosterior::SIRMLBART(std::vector<int> y,
 }
 
 
+////////////////////////////////////////////////////////////////////////////////////
+// Implement SMC
+
+double InversePosterior::ComputeEfSS(std::vector<double> &probs) {
+  double s = 0.0;
+  for (int j=0; j < probs.size(); j++) s += probs[j]*probs[j];
+  return 1.0 / s;
+}
+void InversePosterior::WeightedMeanVar(double &mu, double &s2,
+                                       std::vector<double> &x,
+                                       std::vector<double> &probs) {
+  mu = 0.0;
+  s2 = 0.0;
+  int n=x.size();
+  for (int i=0; i < n; i++) mu += probs[i] * x[i];
+  for (int i = 0; i < n; i++) s2 += probs[i] * std::pow(x[i] - mu, 2.0);
+}
+
+void InversePosterior::PopulationMC(std::vector<int> y,
+                                    int ndpost,
+                                    int n_particles_x,
+                                    int n_particles_l, arma::mat B,
+                                    std::vector<double> range_prior) {
+  // To read the trees
+  int np = 1;
+
+  // Setting field
+  p = 1;
+
+  // Transform B matrix into row-major vectors
+  std::vector<double> Brm = mat_to_double_rowmajor(B);
+
+  // Open files to read the forests
+  std::vector<std::ifstream> files_theta, files_zeta;
+  for (int j=0; j < d; j++) {
+    std::string ff1 = forests_dir + "/forests_theta_" + std::to_string(j) + ".bin";
+    std::string ff2 = forests_dir + "/forests_zeta_" + std::to_string(j) + ".bin";
+    files_theta.emplace_back(ff1, std::ios::binary);
+    files_zeta.emplace_back(ff2, std::ios::binary);
+  }
+  // Open file for the the posterior draws of chol(Sigma_V)
+  std::ifstream ff_Sigma_V(forests_dir + "/chol_Sigma_V.bin", std::ios::binary);
+  // Create placeholder vector for dynamic read the posterior draws
+  std::vector<double> chol_Sigma_V(dm1*dm1, 0.0);
+
+  // Vector to keep the posterior draws and the current "particles"
+  std::vector<double> x_particles(n_particles_x,  0.0), old_particles(n_particles_x,  0.0);
+  std::vector<double> theta(d, 0.0), zeta(d, 0.0);
+  // Vector to keep the posterior
+  x_posterior.resize(ndpost*n_particles_x, 0.0);
+  std::fill(x_posterior.begin(), x_posterior.end(), 0.0);
+
+  ess_sir.resize(ndpost);
+  std::fill(ess_sir.begin(), ess_sir.end(), 0.0);
+
+  // Vector to allocate the log-(un-normalised) weights
+  std::vector<double> log_weights(n_particles_x, 0.0), probs(n_particles_x, 0.0);
+
+  double progress = 0.0;
+  double mu, s2, sd;
+
+
+
+
+  //////////////
+  // Initialise the particles, using first posterior draw of f's.
+
+  // Load regression trees parameters
+  std::vector<std::vector<Node*>> forest_theta(d);
+  std::vector<std::vector<Node*>> forest_zeta(d);
+  for (int j = 0; j < d; j++) {
+    for (int h = 0; h < ntrees_theta; h++) {
+      forest_theta[j].push_back(deserialise_tree(files_theta[j], np));
+    }
+    for (int h = 0; h < ntrees_zeta; h++) {
+      forest_zeta[j].push_back(deserialise_tree(files_zeta[j], np));
+    }
+  }
+  // Load current posterior draw of chol_Sigma_V
+  ff_Sigma_V.read(reinterpret_cast<char*>(chol_Sigma_V.data()),
+                  sizeof(double) * dm1 * dm1);
+  std::vector<double> x_prop(p, 0.0);
+  // Sample from uniform prior and compute the log-likelihood
+  for (int j = 0; j < n_particles_x; j++) {
+    // std::cout<< j << "\n";
+    x_prop[0] = R::runif(range_prior[0], range_prior[1]);
+    x_particles[j] = x_prop[0];
+    // Compute the forests predictions for given observation.
+    GetPredictionZANIMBART(x_prop, theta, zeta, forest_theta, forest_zeta);
+    // Get the log-likelihood
+    log_weights[j] = log_pmf_zanim_ln_conditional(y, theta, zeta, chol_Sigma_V, Brm);
+  }
+  probs = normalise_weights(log_weights, n_particles_x);
+  ess_sir[0] = ComputeEfSS(probs);
+  // Computed weighted mean and variance to used for the new Gaussian proposal
+  WeightedMeanVar(mu, s2, x_particles, probs);
+  sd = std::sqrt(s2);
+  // Resample
+  old_particles = x_particles;
+  for (int j=0; j < n_particles_x; j++) {
+    x_particles[j] = old_particles[sample_discrete(probs, n_particles_x)];
+    x_posterior[j] = x_particles[j];
+  }
+
+  // Delete the trees (to free the memory usage)
+  for (int j = 0; j < d; ++j){
+    for (auto *tree : forest_theta[j]) delete tree;
+    for (auto *tree : forest_zeta[j]) delete tree;
+    // files_zeta[j].clear(); files_zeta[j].seekg(0);
+  }
+
+
+  // // Iterate over posterior draws of forward model
+  for (int t=1; t < ndpost; t++) {
+    // std::cout << t << "\n";
+    progress = (double) 100 * t / ndpost;
+    Rprintf("%3.2f%% Sampling completed", progress);
+    Rprintf("\r");
+
+    // Load regression trees parameters
+    std::vector<std::vector<Node*>> forest_theta(d);
+    std::vector<std::vector<Node*>> forest_zeta(d);
+    for (int j = 0; j < d; j++) {
+      for (int h = 0; h < ntrees_theta; h++) {
+        forest_theta[j].push_back(deserialise_tree(files_theta[j], np));
+      }
+      for (int h = 0; h < ntrees_zeta; h++) {
+        forest_zeta[j].push_back(deserialise_tree(files_zeta[j], np));
+      }
+    }
+    // Load current posterior draw of chol_Sigma_V
+    ff_Sigma_V.read(reinterpret_cast<char*>(chol_Sigma_V.data()),
+                    sizeof(double) * dm1 * dm1);
+
+    // Generated new proposal and update the log-weights
+    for (int j = 0; j < n_particles_x; j++) {
+      x_prop[0] = R::norm_rand()*sd + mu;
+      x_particles[j] = x_prop[0];
+      // Compute the forests predictions for given observation.
+      GetPredictionZANIMBART(x_prop, theta, zeta, forest_theta, forest_zeta);
+      // Get the log-likelihood
+      if (x_particles[j] < range_prior[0] || x_particles[j] > range_prior[1]) {
+        log_weights[j] = -5000;
+      } else {
+      log_weights[j] = log_pmf_zanim_ln_conditional(y, theta, zeta, chol_Sigma_V, Brm)
+        - R::dnorm4(x_particles[j], mu, sd, 1)
+        - std::log(range_prior[1]-range_prior[0]);
+      }
+    }
+    probs = normalise_weights(log_weights, n_particles_x);
+    WeightedMeanVar(mu, s2, x_particles, probs);
+    sd = 1.2*std::sqrt(s2);
+    // Resample
+    old_particles = x_particles;
+    for (int j=0; j < n_particles_x; j++) {
+      int idx = sample_discrete(probs, n_particles_x);
+      // std::cout << idx << "\n";
+      x_particles[j] = old_particles[idx];
+      x_posterior[t * n_particles_x + j] = x_particles[j];
+    }
+    ess_sir[t] = ComputeEfSS(probs);
+    // Delete the trees (to free the memory usage)
+    for (int j = 0; j < d; ++j){
+      for (auto *tree : forest_theta[j]) delete tree;
+      for (auto *tree : forest_zeta[j]) delete tree;
+    }
+  }
+
+}
+
+////////////////////////////////
+// Draft for a proper SMC2 algorithm
+// if (ess < ess_min) {
+//   // Compute weighted mean and variance using current particles
+//   WeightedMeanVar(mu_mh, s2_mh, x_particles, probs);
+//   // Resample
+//   std::vector<double> x_resampled(n_particles_x, 0.0);
+//   for (int j = 0; j < n_particles_x; j++) {
+//     x_resampled[j] = x_particles[sample_discrete(probs, n_particles_x)];
+//   }
+//   // Move (generated proposal from normal (run for `len_chain` and keep the last))
+//   for (int j = 0; j < n_particles_x; j++) {
+//     double ll_cur = log_weights[j];
+//     double x_cur = x_resampled[j];
+//     for (int k = 0; k < len_chain; k++) {
+//       x_prop[0] = R::norm_rand()*std::sqrt(s2_mh) + mu_mh;
+//       GetPredictionZANIMBART(x_prop, theta, zeta, forest_theta, forest_zeta);
+//       double ll_prop = log_pmf_zanim_ln_conditional(y, theta, zeta, chol_Sigma_V, Brm);
+//       double lr = ll_prop - ll_cur;
+//       if (std::log(R::unif_rand()) < lr) {
+//         x_cur = x_prop[0];
+//         ll_cur = ll_prop;
+//       }
+//     }
+//   }
+//
+// }
+
+////////////////////////////////////////////////////////////////////////////////////
+
 // Compute the Log-likelihood of ZANIM-BART given y and x,
 double InversePosterior::lmlZANIM(std::vector<int> &y, std::vector<double> &x,
                                   int n_particles) {
@@ -1047,8 +1243,6 @@ double InversePosterior::lmlZANIM(std::vector<int> &y, std::vector<double> &x,
       }
     }
     // Compute the regression trees predictions for the
-    std::fill(theta.begin(), theta.end(), 0.0);
-    std::fill(zeta.begin(), zeta.end(), 0.0);
     GetPredictionZANIMBART(x, theta, zeta, forest_theta, forest_zeta);
 
     // Compute the likelihood
@@ -1066,6 +1260,8 @@ double InversePosterior::lmlZANIM(std::vector<int> &y, std::vector<double> &x,
 
   return log_sum_exp(lml) - log(n_particles);
 }
+
+
 
 // Compute the Log-likelihood of ZANIM-LN-BART given y and x across the MCMC
 // draws of f
@@ -1697,9 +1893,11 @@ RCPP_MODULE(inverse_posterior) {
   .method("ESSZANIMLNBART", &InversePosterior::ESSZANIMLNBART)
   .method("ESSZANIMLNBART2", &InversePosterior::ESSZANIMLNBART2)
   .method("ABCSIRZANIMLNBART", &InversePosterior::ABCSIRZANIMLNBART)
+  .method("PopulationMC", &InversePosterior::PopulationMC)
 
   // effective sample size of SIR
-  .field("ess_sir", &InversePosterior::ess_sir);
+  .field("ess_sir", &InversePosterior::ess_sir)
+  .field("x_posterior", &InversePosterior::x_posterior);
 
   ;
 
