@@ -450,6 +450,11 @@ double log_I_lc(std::vector<double> &x,
   return -out;
 }
 
+double ldtrucnorm(double &x, double &mean, double &sd, double &a, double &b) {
+
+  double lpdf = R::dnorm4(x, mean, sd, 1);
+  return lpdf - std::log(R::pnorm5(b, mean, sd, 1, 0) - R::pnorm5(a, mean, sd, 1, 0));
+}
 
 
 

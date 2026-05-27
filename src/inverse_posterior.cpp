@@ -53,6 +53,7 @@ void InversePosterior::GetPredictionZANIMBART(std::vector<double> &x,
   std::fill(theta.begin(), theta.end(), 0.0);
   std::fill(zeta.begin(), zeta.end(), 0.0);
 
+  double s_theta = 0.0;
   // Iterate over categories
   for (int j = 0; j < d; j++) {
     // Iterate over trees
@@ -64,14 +65,11 @@ void InversePosterior::GetPredictionZANIMBART(std::vector<double> &x,
       // Do the predictions
       zeta[j] += GetMu(forest_zeta[j][h], x);
     }
-  }
-  // Map the regression trees predictions to the model parameters
-  double s_theta = 0.0;
-  for (int j=0; j < d; j++) {
+    zeta[j] = R::pnorm5(zeta[j], 0.0, 1.0, 1.0, 0.0);
     theta[j] = exp(theta[j]);
     s_theta += theta[j];
-    zeta[j] = R::pnorm5(zeta[j], 0.0, 1.0, 1.0, 0.0);
   }
+  // Normalise the theta's
   for (auto &u : theta) u /= s_theta;
 }
 
@@ -850,21 +848,18 @@ std::vector<int> InversePosterior::SIRZANIMLNBART(std::vector<int> y,
       }
       // Iterate over the particles
       for (int t=0; t < n_particles; t++) {
-
-        switch (mixture) {
-        case 0:
+        if (mixture) {
           log_k[t] = log_pmf_zanim_ln_conditional(y, theta_cur, zeta_cur, chol_Sigma_V, Brm);
-        case 1:
-          log_k[t] = log_pmf_zanim_ln_conditional2(y, theta_cur, zeta_cur, chol_Sigma_V, Brm);
+        } else {
+          log_k[t] = log_pmf_zanim_ln_conditional(y, theta_cur, zeta_cur, chol_Sigma_V, Brm);
         }
-
       }
       // Compute the log-likelihood of observation i and posterior draw k
       log_w[i] = log_sum_exp(log_k) - log_n_particles;
     }
     // Normalise weights and resample (only one draw)
     probs = normalise_weights(log_w, n_proposal);
-    for (int i=0; i < n_proposal; i++) ess_sir[k] += probs[i]*probs[i];
+    ess_sir[k] = ComputeEfSS(probs);
     sir_indices[k] = sample_discrete(probs, n_proposal);
   }
   // Close files
@@ -1005,11 +1000,11 @@ std::vector<int> InversePosterior::SIRMLBART(std::vector<int> y,
 
 
 ////////////////////////////////////////////////////////////////////////////////////
-// Implement SMC
+// Implement Adaptive IS (PMC)
 
 double InversePosterior::ComputeEfSS(std::vector<double> &probs) {
   double s = 0.0;
-  for (int j=0; j < probs.size(); j++) s += probs[j]*probs[j];
+  for (size_t j=0; j < probs.size(); j++) s += probs[j]*probs[j];
   return 1.0 / s;
 }
 void InversePosterior::WeightedMeanVar(double &mu, double &s2,
@@ -1017,16 +1012,24 @@ void InversePosterior::WeightedMeanVar(double &mu, double &s2,
                                        std::vector<double> &probs) {
   mu = 0.0;
   s2 = 0.0;
-  int n=x.size();
+  int n = x.size();
   for (int i=0; i < n; i++) mu += probs[i] * x[i];
   for (int i = 0; i < n; i++) s2 += probs[i] * std::pow(x[i] - mu, 2.0);
+}
+void InversePosterior::OnlineBatchVar(double &mu, double &m2,
+                                      int nt, double mu_batch, double s2_batch) {
+  double diff = mu_batch - mu;
+  // update running mean
+  mu += diff / (nt + 1.0);
+  // pooled variance update
+  m2 += s2_batch + ( (nt) / (nt + 1.0) ) * diff * diff;
 }
 
 void InversePosterior::PopulationMC(std::vector<int> y,
                                     int ndpost,
-                                    int n_particles_x,
-                                    int n_particles_l, arma::mat B,
-                                    std::vector<double> range_prior) {
+                                    int n_particles_x, arma::mat B,
+                                    std::vector<double> range_prior,
+                                    double scale_prop) {
   // To read the trees
   int np = 1;
 
@@ -1050,8 +1053,9 @@ void InversePosterior::PopulationMC(std::vector<int> y,
   std::vector<double> chol_Sigma_V(dm1*dm1, 0.0);
 
   // Vector to keep the posterior draws and the current "particles"
-  std::vector<double> x_particles(n_particles_x,  0.0), old_particles(n_particles_x,  0.0);
+  std::vector<double> x_particles(n_particles_x,  0.0), old_particles(n_particles_x,  0.0), x_prop(p, 0.0);
   std::vector<double> theta(d, 0.0), zeta(d, 0.0);
+
   // Vector to keep the posterior
   x_posterior.resize(ndpost*n_particles_x, 0.0);
   std::fill(x_posterior.begin(), x_posterior.end(), 0.0);
@@ -1060,15 +1064,11 @@ void InversePosterior::PopulationMC(std::vector<int> y,
   std::fill(ess_sir.begin(), ess_sir.end(), 0.0);
 
   // Vector to allocate the log-(un-normalised) weights
-  std::vector<double> log_weights(n_particles_x, 0.0), probs(n_particles_x, 0.0);
+  std::vector<double> log_w(n_particles_x, 0.0), probs(n_particles_x, 0.0);
 
   double progress = 0.0;
-  double mu, s2, sd;
+  double sd, mu_batch, s2_batch, mu = 0.0, m2 = 0.0, s2 = 0.0;
 
-
-
-
-  //////////////
   // Initialise the particles, using first posterior draw of f's.
 
   // Load regression trees parameters
@@ -1082,25 +1082,33 @@ void InversePosterior::PopulationMC(std::vector<int> y,
       forest_zeta[j].push_back(deserialise_tree(files_zeta[j], np));
     }
   }
+
   // Load current posterior draw of chol_Sigma_V
   ff_Sigma_V.read(reinterpret_cast<char*>(chol_Sigma_V.data()),
                   sizeof(double) * dm1 * dm1);
-  std::vector<double> x_prop(p, 0.0);
+
+  // Log-prior
+  double l_prior = std::log(range_prior[1] - range_prior[0]);
+  double step = (range_prior[1] - range_prior[0]) / (n_particles_x - 1);
+
   // Sample from uniform prior and compute the log-likelihood
   for (int j = 0; j < n_particles_x; j++) {
-    // std::cout<< j << "\n";
-    x_prop[0] = R::runif(range_prior[0], range_prior[1]);
+    x_prop[0] = range_prior[0] + j * step; //R::runif(range_prior[0], range_prior[1]);
     x_particles[j] = x_prop[0];
     // Compute the forests predictions for given observation.
     GetPredictionZANIMBART(x_prop, theta, zeta, forest_theta, forest_zeta);
-    // Get the log-likelihood
-    log_weights[j] = log_pmf_zanim_ln_conditional(y, theta, zeta, chol_Sigma_V, Brm);
+    // Compute the log-likelihood
+    log_w[j] = log_pmf_zanim_ln_conditional(y, theta, zeta, chol_Sigma_V, Brm);
   }
-  probs = normalise_weights(log_weights, n_particles_x);
+  probs = normalise_weights(log_w, n_particles_x);
   ess_sir[0] = ComputeEfSS(probs);
   // Computed weighted mean and variance to used for the new Gaussian proposal
-  WeightedMeanVar(mu, s2, x_particles, probs);
-  sd = std::sqrt(s2);
+  WeightedMeanVar(mu_batch, s2_batch, x_particles, probs);
+  mu = mu_batch;
+  m2 = s2_batch;
+  s2 = s2_batch;
+  sd = std::sqrt(scale_prop*s2);
+
   // Resample
   old_particles = x_particles;
   for (int j=0; j < n_particles_x; j++) {
@@ -1112,9 +1120,7 @@ void InversePosterior::PopulationMC(std::vector<int> y,
   for (int j = 0; j < d; ++j){
     for (auto *tree : forest_theta[j]) delete tree;
     for (auto *tree : forest_zeta[j]) delete tree;
-    // files_zeta[j].clear(); files_zeta[j].seekg(0);
   }
-
 
   // // Iterate over posterior draws of forward model
   for (int t=1; t < ndpost; t++) {
@@ -1138,30 +1144,27 @@ void InversePosterior::PopulationMC(std::vector<int> y,
     ff_Sigma_V.read(reinterpret_cast<char*>(chol_Sigma_V.data()),
                     sizeof(double) * dm1 * dm1);
 
-    // Generated new proposal and update the log-weights
+    // Simulate new particles and compute its weights
     for (int j = 0; j < n_particles_x; j++) {
-      x_prop[0] = R::norm_rand()*sd + mu;
+      double x_prev = x_particles[j];
+      x_prop[0] = rtnorm_ab(x_prev, sd, range_prior[0], range_prior[1]);
       x_particles[j] = x_prop[0];
-      // Compute the forests predictions for given observation.
       GetPredictionZANIMBART(x_prop, theta, zeta, forest_theta, forest_zeta);
-      // Get the log-likelihood
-      if (x_particles[j] < range_prior[0] || x_particles[j] > range_prior[1]) {
-        log_weights[j] = -5000;
-      } else {
-      log_weights[j] = log_pmf_zanim_ln_conditional(y, theta, zeta, chol_Sigma_V, Brm)
-        - R::dnorm4(x_particles[j], mu, sd, 1)
-        - std::log(range_prior[1]-range_prior[0]);
-      }
+      log_w[j] = log_pmf_zanim_ln_conditional(y, theta, zeta, chol_Sigma_V, Brm)
+        - l_prior - ldtrucnorm(x_particles[j], x_prev, sd, range_prior[0], range_prior[1]);
     }
-    probs = normalise_weights(log_weights, n_particles_x);
-    WeightedMeanVar(mu, s2, x_particles, probs);
-    sd = 1.2*std::sqrt(s2);
+
+    // Compute probabilities, and updated the sd
+    probs = normalise_weights(log_w, n_particles_x);
+    WeightedMeanVar(mu_batch, s2_batch, x_particles, probs);
+    // OnlineBatchVar(mu, m2, t, mu_batch, s2_batch);
+    // s2 = m2 / (t + 1);
+    sd = std::sqrt(scale_prop*s2_batch);
+
     // Resample
     old_particles = x_particles;
     for (int j=0; j < n_particles_x; j++) {
-      int idx = sample_discrete(probs, n_particles_x);
-      // std::cout << idx << "\n";
-      x_particles[j] = old_particles[idx];
+      x_particles[j] = old_particles[sample_discrete(probs, n_particles_x)];
       x_posterior[t * n_particles_x + j] = x_particles[j];
     }
     ess_sir[t] = ComputeEfSS(probs);
@@ -1897,8 +1900,7 @@ RCPP_MODULE(inverse_posterior) {
 
   // effective sample size of SIR
   .field("ess_sir", &InversePosterior::ess_sir)
-  .field("x_posterior", &InversePosterior::x_posterior);
-
+  .field("x_posterior", &InversePosterior::x_posterior)
   ;
 
 }

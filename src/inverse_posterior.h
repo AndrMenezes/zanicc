@@ -49,7 +49,7 @@ public:
                                      int n_particles);
 
   // Field to keep the effective sample size of SIR
-  std::vector<double> ess_sir, x_posterior;
+  std::vector<double> ess_sir, x_posterior, x_probs;
   // std::vector<int> sir_indices;
 
 
@@ -58,12 +58,15 @@ public:
   double ComputeEfSS(std::vector<double> &x);
   void WeightedMeanVar(double &mu, double &s2, std::vector<double> &x,
                        std::vector<double> &probs);
+  void OnlineBatchVar(double &mu, double &m2,
+                      int nt, double mu_batch, double s2_batch);
   void PopulationMC(std::vector<int> y,
                     int ndpost, int n_particles_x,
-                    int n_particles_l, arma::mat B,
-                    std::vector<double> range_prior);
+                    arma::mat B,
+                    std::vector<double> range_prior,
+                    double scale_prop);
 
-
+  // std::vector<double> theta_posterior, zeta_posterior;
 
   // Get the tree-specific prediction by traversing the tree
   double GetMu(Node *tree, std::vector<double> &x);

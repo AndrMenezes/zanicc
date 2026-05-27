@@ -11,6 +11,7 @@ double target_sigma_prior(double &x, int &n, double &sum_log_lambda,
 int sample_discrete(const std::vector<double> &probs, const int &k);
 int sample_discrete(const int &k);
 double rtnorm(const double &mean, const double &sd, const double &a);
+double rtnorm_ab(const double &mean, const double &sd, const double &a, const double &b);
 std::vector<double> UpdateSplitProbs(const arma::uvec &m, const double &a,
                                      const int &p);
 double UpdateAlphaDirchlet(const std::vector<double> &alphas,
