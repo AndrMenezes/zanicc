@@ -41,18 +41,27 @@ rconvexhull <- function(n, X) {
 
 #' Inverse posterior using the ZANIM-LN-BART model
 #' @export
-inverse_posterior_zanimlnbart <- function(object, Y, dir_posterior_fx,
+inverse_posterior_zanimlnbart <- function(object, Y, dir_posterior_fx = NULL,
                                           x_proposal = NULL,
-                                          method = c("sir", "ess", "ess2", "c_ess",
-                                                     "abc_sir"),
+                                          method = c("sir", "abc_sir",
+                                                     "ess", "ess2", "c_ess",
+                                                     "pmc"),
                                           ndpost = object$ndpost, nburnin = 10L,
                                           mean_prior = NULL, S_prior = NULL,
                                           X_ini = NULL, Amat = NULL, bvec = NULL,
-                                          n_particles = if (method %in% c("sir", "abc_sir")) 10L else 100L,
+                                          n_particles = NULL,
                                           eta = 50.0,
                                           kernel = c("gauss", "exp"),
                                           h = 0.01,
-                                          mixture = FALSE) {
+                                          mixture = FALSE,
+                                          range_prior = NULL, scale_prop = 0.6) {
+
+  if (is.null(n_particles)) {
+    if (method == "pmc") n_particles <- 1000L
+    if (method == "ess") n_particles <- 100L
+    if (method %in% c("sir", "abc_sir")) n_particles <- 10L
+  }
+
   # Some checks
   method <- match.arg(method)
   kernel <- match.arg(kernel)
@@ -120,7 +129,7 @@ inverse_posterior_zanimlnbart <- function(object, Y, dir_posterior_fx,
     }
     res <- simplify2array(res)
     if (do_predict) attr(res, "elapsed_time_predict") <- end_predict
-  } else {
+  } else if (method %in% c("ess", "ess2", "c_ess")) {
     if (is.null(mean_prior)) mean_prior <- rep(0.0, object$p_theta)
     if (is.null(S_prior)) S_prior <- diag(1.0, object$p_theta, object$p_theta)
 
@@ -142,6 +151,17 @@ inverse_posterior_zanimlnbart <- function(object, Y, dir_posterior_fx,
     )
     elapsed <- proc.time() - ini
     res <- array(xx, dim = c(ndpost, p, n))
+  } else if (method == "pmc") {
+    ini <- proc.time()
+    res <- lapply(seq_len(n), function(i) {
+      cat("Observation: ", i, "of", n, "\n")
+      cpp_obj$PopulationMC(Y[i, ], ndpost, n_particles, B, range_prior, scale_prop)
+      x_pmc <- cpp_obj$x_posterior
+      attr(x_pmc, "ess") <- cpp_obj$ess_sir
+      return(x_pmc)
+    })
+    # res <- simplify2array(res)
+    elapsed <- proc.time() - ini
   }
   attr(res, "elapsed_time") <- elapsed
   res

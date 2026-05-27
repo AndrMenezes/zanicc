@@ -244,5 +244,27 @@ compute_prediction_metrics <- function(x, draws) {
   rowMeans(do.call(cbind, l))
 }
 
+#' Compute various prediction metrics
+#' @param x vector
+#' @param draws a list with the draws.
+#' @export
+compute_prediction_metrics_list <- function(x, draws) {
+  n <- length(x)
+  l <- lapply(seq_len(n), function(i) {
+    post <- draws[[i]]
+    mu <- mean(post)
+    md <- median(post)
+    dd <- density(post)
+    mo <- dd$x[which.max(dd$y)]
+    c(mae = sum(abs(x[i] - md)),
+      msep = sum((x[i] - mu)^2),
+      dmode = sum((x[i] - mo)^2),
+      coverage_95 = is_inside(coda::HPDinterval(coda::as.mcmc(post), prob = 0.95), x[i]),
+      coverage_50 = is_inside(coda::HPDinterval(coda::as.mcmc(post), prob = 0.50), x[i])
+    )
+  })
+  rowMeans(do.call(cbind, l))
+}
+
 
 
