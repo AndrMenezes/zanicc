@@ -182,27 +182,113 @@ points(x_true, min(d_true$y), col = "blue", cex = 2, pch = 19)
 
 
 # Population-MC ----------------------------------------------------------------
+
 devtools::load_all()
 ml <- Rcpp::Module(module = "inverse_posterior", PACKAGE = "zanicc")
 cpp_obj <- new(ml$InversePosterior, zanim_ln_bart$d, zanim_ln_bart$ntrees_theta,
                zanim_ln_bart$ntrees_zeta, zanim_ln_bart$forests_dir)
 
-
 i <- 12L #2L #1L
 y_new <- Y_test[i, ]
 x_true <- X_test[i, ]
 
-ndpost <- 5000L
+scale_prop <- 0.5
+ndpost <- 1000L
 n_particles_x <- 1000L
-n_particles_l <- 2L
 range_prior <- range(list_data$X)
-cpp_obj$PopulationMC(y_new, ndpost, n_particles_x, n_particles_l, B, range_prior)
+cpp_obj$PopulationMC(y_new, ndpost, n_particles_x, B, range_prior, scale_prop)
+ess_pmc <- cpp_obj$ess_sir
+x_pmc <- cpp_obj$x_posterior
+
+x_pmc_mat <- matrix(x_pmc, nrow = n_particles_x)
+plot(density(x_pmc), col = "blue")
+# lines(density(colMeans(x_pmc_mat)))
+lines(density(x_pmc_mat[1L, ]))
+lines(density(x_pmc_mat[2L, ]))
+abline(v = x_true)
+
+# Check ESS
+idx_sir1 <- cpp_obj$SIRZANIMLNBART(y_new, n_proposal, ndpost, B,
+                                   path_results, 1, 0L)
+x_sir1 <- x_proposal[idx_sir1 + 1L, ]
+ess_sir1 <- cpp_obj$ess_sir
+hist(ess_pmc)
+mean(ess_pmc); mean(ess_sir1)
+# cbind(ess_pmc, ess_sir1)
+
+plot(density(x_pmc_mat[1, ]), col = "blue", main = "")
+lines(density(x_sir1))
+abline(v = x_true)
+
+
+##############
+range_prior <- range(list_data$X)
+res <- inverse_posterior_zanimlnbart(zanim_ln_bart, Y = Y_test[chosen_obs, ],
+                                     dir_posterior_fx = path_results, method = "pmc",
+                                     ndpost = 100L,
+                                     n_particles = 1000L, range_prior = range_prior,
+                                     scale_prop = 0.5)
+lapply(res, function(x) attr(x, "ess"))
+
+
+
+
+
+
+
+
+
+
+
+# Check posterior predictions
+theta_posterior <- t(matrix(cpp_obj$theta_posterior, nrow = 4, ncol = n_particles_x))
+zeta_posterior <- t(matrix(cpp_obj$zeta_posterior, nrow = 4, ncol = n_particles_x))
+
+# load predictions, theta and zeta given "uniform" proposal
+theta_pred <- load_bin_predictions(file.path(path_results, "theta_ij.bin"),
+                                   n = n_proposal, d = 4, m = 1)
+zeta_pred <- load_bin_predictions(file.path(path_results, "zeta_ij.bin"),
+                                  n = n_proposal, d = 4, m = 1)
+theta_pred <- theta_pred[,,1]
+zeta_pred <- zeta_pred[,,1]
+
+
+tail(theta_pred)
+tail(theta_posterior)
+
+head(zeta_posterior)
+head(zeta_pred)
+
+
 
 # cpp_obj$ess_sir
 x_posterior <- cpp_obj$x_posterior
+ess_pmc <- cpp_obj$ess_sir
+ess_pmc
+effsize_sir1
+tail(x_proposal)
+
 
 x_posterior <- matrix(x_posterior, nrow = n_particles_x, ncol = ndpost)
 par(mfrow = c(1, 2))
 hist(x_posterior)
-abline(v = x_true)
-hist(cpp_obj$ess_sir)
+abline(v = x_true, col = "blue", lwd = 2)
+hist(ess)
+
+
+
+idx_sir1 <- cpp_obj$SIRZANIMLNBART(y_new, n_proposal, ndpost, B,
+                                   path_results, 1, 0L)
+effsize_sir1 <- cpp_obj$ess_sir
+x_sir1 <- x_proposal[idx_sir1 + 1L, ]
+
+
+par(mfrow = c(1, 2))
+plot(density(x_posterior), col = "blue")
+lines(density(x_sir1))
+abline(v = x_true, col = "red", lwd = 2)
+
+plot(density(effsize_sir1))
+plot(density(ess), col = "red")
+
+

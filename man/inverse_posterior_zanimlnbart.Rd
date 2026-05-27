@@ -7,9 +7,9 @@
 inverse_posterior_zanimlnbart(
   object,
   Y,
-  dir_posterior_fx,
+  dir_posterior_fx = NULL,
   x_proposal = NULL,
-  method = c("sir", "ess", "ess2", "c_ess", "abc_sir"),
+  method = c("sir", "abc_sir", "ess", "ess2", "c_ess", "pmc"),
   ndpost = object$ndpost,
   nburnin = 10L,
   mean_prior = NULL,
@@ -17,9 +17,13 @@ inverse_posterior_zanimlnbart(
   X_ini = NULL,
   Amat = NULL,
   bvec = NULL,
+  n_particles = NULL,
   eta = 50,
-  mc = 10L,
-  h = 0.01
+  kernel = c("gauss", "exp"),
+  h = 0.01,
+  mixture = FALSE,
+  range_prior = NULL,
+  scale_prop = 0.6
 )
 }
 \description{
