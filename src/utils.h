@@ -19,4 +19,5 @@ std::vector<double> normalise_weights(std::vector<double> &log_weights, int n);
 double log_kernel_gauss(std::vector<double> &x1, std::vector<double> &x2, double h);
 double log_kernel_exp(std::vector<double> &x1, std::vector<double> &x2, double h);
 std::vector<double> clr(const std::vector<int> &y, double pseudo);
+std::vector<double> quantile(std::vector<double> x, std::vector<double> probs);
 #endif

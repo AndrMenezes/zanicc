@@ -107,4 +107,22 @@ std::vector<double> clr(const std::vector<int> &y, double pseudo) {
   return logy;
 }
 
+// Implementation of the type 7 quantile function of R, but without augmented the
+// sorted vector "x" as: x <- c(x[1L], x[1L], x, x[n], x[n])
+std::vector<double> quantile(std::vector<double> x, std::vector<double> probs) {
+  std::sort(x.begin(), x.end());
+  int n = x.size();
+  std::vector<double> qs(probs.size(), 0.0);
+  for (int k=0; k < probs.size(); k++) {
+    // double h = 1.0 + (n - 1.0) * probs[k];
+    double nppm = 1.0 + probs[k] * (n - 1); //
+    int j = std::floor(nppm);
+    double h = nppm - j;
+    qs[k] = (1.0 - h) * x[j + 1] + h * x[j + 2];
+  }
+  return qs;
+}
+
+
+
 

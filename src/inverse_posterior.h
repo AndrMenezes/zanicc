@@ -54,17 +54,15 @@ public:
 
 
   // Implementation of adaptive Population Monte Carlo method
-  double ess;
   double ComputeEfSS(std::vector<double> &x);
   void WeightedMeanVar(double &mu, double &s2, std::vector<double> &x,
                        std::vector<double> &probs);
-  void OnlineBatchVar(double &mu, double &m2,
-                      int nt, double mu_batch, double s2_batch);
   void PopulationMC(std::vector<int> y,
                     int ndpost, int n_particles_x,
                     arma::mat B,
                     std::vector<double> range_prior,
-                    double scale_prop);
+                    double scale_prop,
+                    double prob_level, double ep);
 
   // std::vector<double> theta_posterior, zeta_posterior;
 
@@ -95,27 +93,46 @@ public:
   // Internal function to set-up variables
   // void Set();
 
+
+
   // Common fields for the ESS
   std::vector<double> chol_S_prior, mu_prior;
 
 
-  // Update ESS using the multinomial likelihood
-  std::vector<double> UpdateESSZANIMLNBART(
-      std::vector<double> &x_cur,
-      std::vector<int> &y,
-      std::vector<double> &chol_Sigma_V,
-      std::vector<double> &B,
-      std::vector<double> &theta, std::vector<double> &zeta,
-      const std::vector<std::vector<Node*>> &forest_theta,
-      const std::vector<std::vector<Node*>> &forest_zeta,
-      int mc);
-
+  // pseudo-marginal ESS
+  std::vector<double> UpdateESSZANIMLNBART(std::vector<double> &x_cur,
+                                           std::vector<int> &y,
+                                           std::vector<double> &chol_Sigma_V,
+                                           std::vector<double> &B,
+                                           std::vector<double> &theta,
+                                           std::vector<double> &zeta,
+                                           const std::vector<std::vector<Node*>> &forest_theta,
+                                           const std::vector<std::vector<Node*>> &forest_zeta,
+                                           int n_particles);
   std::vector<double> ESSZANIMLNBART(arma::umat Y, arma::mat X_ini,
-                                     int ndpost, int nburnin,
+                                     int ndpost, int nburnin, int n_particles,
                                      std::vector<double> mean_prior,
                                      arma::mat S_prior,
-                                     arma::mat B, int n_particles);
+                                     arma::mat B);
 
+  // pseudo-marginal constrained ESS
+  std::vector<double> UpdateCESSZANIMLNBART(std::vector<double> &x_cur,
+                                            std::vector<int> &y,
+                                            std::vector<double> &chol_Sigma_V,
+                                            std::vector<double> &B,
+                                            std::vector<double> &Amat,
+                                            std::vector<double> &bvec, double &eta,
+                                            std::vector<double> &theta,
+                                            std::vector<double> &zeta,
+                                            const std::vector<std::vector<Node*>> &forest_theta,
+                                            const std::vector<std::vector<Node*>> &forest_zeta,
+                                            int n_particles);
+
+  std::vector<double> CESSZANIMLNBART(arma::umat Y, arma::mat X_ini, int ndpost,
+                                      int nburnin, int n_particles,
+                                      std::vector<double> mean_prior,
+                                      arma::mat S_prior, arma::mat B, arma::mat A,
+                                      std::vector<double> bvec, double eta);
 
   // Get BART predictions
   void GetTreesPredictionsZANIMBART(std::vector<double> &x,
@@ -136,7 +153,7 @@ public:
       const std::vector<std::vector<Node*>> &forest_theta,
       const std::vector<std::vector<Node*>> &forest_zeta);
 
-  // Run ESS
+  // ESS2
   std::vector<double> ESSZANIMLNBART2(arma::umat Y, arma::mat X_ini,
                                      int ndpost, int nburnin,
                                      std::vector<double> mean_prior,
