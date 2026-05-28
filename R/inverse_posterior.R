@@ -44,8 +44,7 @@ rconvexhull <- function(n, X) {
 inverse_posterior_zanimlnbart <- function(object, Y, dir_posterior_fx = NULL,
                                           x_proposal = NULL,
                                           method = c("sir", "abc_sir",
-                                                     "ess", "ess2", "c_ess",
-                                                     "pmc"),
+                                                     "ess", "cess", "pmc"),
                                           ndpost = object$ndpost, nburnin = 10L,
                                           mean_prior = NULL, S_prior = NULL,
                                           X_ini = NULL, Amat = NULL, bvec = NULL,
@@ -56,23 +55,23 @@ inverse_posterior_zanimlnbart <- function(object, Y, dir_posterior_fx = NULL,
                                           mixture = FALSE,
                                           range_prior = NULL, scale_prop = 0.6) {
 
-  if (is.null(n_particles)) {
-    if (method == "pmc") n_particles <- 1000L
-    if (method == "ess") n_particles <- 100L
-    if (method %in% c("sir", "abc_sir")) n_particles <- 10L
-  }
-
   # Some checks
   method <- match.arg(method)
   kernel <- match.arg(kernel)
+
+  if (is.null(n_particles)) {
+    if (method == "pmc") n_particles <- 1000L
+    if (method %in% c("ess", "cess")) n_particles <- 100L
+    if (method %in% c("sir", "abc_sir")) n_particles <- 10L
+  }
+
   kernel <- if (kernel == "gauss") 0L else 1L
   if (object$d != ncol(Y)) stop("Dimension of Y does not match with forward model")
   if (ndpost > object$ndpost) {
     warning("{ndpost} should be at least {object$ndpost}. Setting {ndpost} to  {object$ndpost}")
     ndpost <- object$ndpost
   }
-  if (method == "sir" && is.null(x_proposal))
-    stop("You should given the {x_proposal} for sir!")
+  if (method == "sir" && is.null(x_proposal)) stop("You should give the {x_proposal} for sir!")
 
   # Some common arguments
   B <- t(object$Bt)
@@ -129,7 +128,7 @@ inverse_posterior_zanimlnbart <- function(object, Y, dir_posterior_fx = NULL,
     }
     res <- simplify2array(res)
     if (do_predict) attr(res, "elapsed_time_predict") <- end_predict
-  } else if (method %in% c("ess", "ess2", "c_ess")) {
+  } else if (method %in% c("ess", "cess")) {
     if (is.null(mean_prior)) mean_prior <- rep(0.0, object$p_theta)
     if (is.null(S_prior)) S_prior <- diag(1.0, object$p_theta, object$p_theta)
 
@@ -141,13 +140,12 @@ inverse_posterior_zanimlnbart <- function(object, Y, dir_posterior_fx = NULL,
     }
     ini <- proc.time()
     xx <- switch(method,
-      "ess" = cpp_obj$ESSZANIMLNBART(Y, X_ini, ndpost, nburnin, mean_prior,
-                                      S_prior, B, n_particles),
-      "ess2" =  cpp_obj$ESSZANIMLNBART2(Y, X_ini, ndpost, nburnin, mean_prior,
-                                       S_prior, B),
-      "c_ess" = cpp_obj$SamplerZANIMLNBARTceSS(Y, X_ini, ndpost, nburnin,
-                                               mean_prior, S_prior, B, Amat,
-                                               bvec, eta)
+      "ess" = cpp_obj$ESSZANIMLNBART(Y, X_ini, ndpost, nburnin, n_particles,
+                                     mean_prior, S_prior, B),
+      # "ess2" =  cpp_obj$ESSZANIMLNBART2(Y, X_ini, ndpost, nburnin, mean_prior,
+      #                                  S_prior, B),
+      "cess" = cpp_obj$CESSZANIMLNBART(Y, X_ini, ndpost, nburnin, n_particles,
+                                        mean_prior, S_prior, B, Amat, bvec, eta)
     )
     elapsed <- proc.time() - ini
     res <- array(xx, dim = c(ndpost, p, n))

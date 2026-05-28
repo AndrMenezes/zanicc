@@ -245,7 +245,7 @@ compute_prediction_metrics <- function(x, draws) {
 }
 
 #' Compute various prediction metrics
-#' @param x vector
+#' @param x vector with true values.
 #' @param draws a list with the draws.
 #' @export
 compute_prediction_metrics_list <- function(x, draws) {
