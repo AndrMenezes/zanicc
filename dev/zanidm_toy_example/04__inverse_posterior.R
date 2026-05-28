@@ -33,7 +33,7 @@ x_truth_posterior <- readRDS(file = file.path(path_data, "ground_truth_posterior
 # Test with the inverse posterior ----------------------------------------------
 chosen_obs <- c(1L, 2L, 10L, 12) # N-inflation, only one zero, no-zeros and 2-zeros.
 
-i <- 10L #2L #1L
+i <- 12L #2L #1L
 y_new <- Y_test[i, ]
 x_true <- X_test[i, ]
 
@@ -64,53 +64,55 @@ mu_prior <- mean(list_data$X)
 S_prior <- as.matrix(var(list_data$X))
 x_ess1 <- cpp_obj$ESSZANIMLNBART(matrix(y_new, nrow = 1), as.matrix(x_true), ndpost, 1L,
                                 mu_prior, S_prior, B, 1L)
-x_ess10 <- cpp_obj$ESSZANIMLNBART(matrix(y_new, nrow = 1), as.matrix(x_true), ndpost, 1L,
+x_ess10 <- cpp_obj$ESSZANIMLNBART(matrix(y_new, nrow = 1), as.matrix(x_true), ndpost, 10L,
                                 mu_prior, S_prior, B, 10L)
-x_ess100 <- cpp_obj$ESSZANIMLNBART(matrix(y_new, nrow = 1), as.matrix(x_true), ndpost, 1L,
+x_ess100 <- cpp_obj$ESSZANIMLNBART(matrix(y_new, nrow = 1), as.matrix(x_true), ndpost, 10L,
                                 mu_prior, S_prior, B, 100L)
-x_ess500 <- cpp_obj$ESSZANIMLNBART(matrix(y_new, nrow = 1), as.matrix(x_true), ndpost, 100L,
-                                mu_prior, S_prior, B, 500L)
+# x_ess500 <- cpp_obj$ESSZANIMLNBART(matrix(y_new, nrow = 1), as.matrix(x_true), ndpost, 10L,
+#                                 mu_prior, S_prior, B, 500L)
 x_ess1000 <- cpp_obj$ESSZANIMLNBART(matrix(y_new, nrow = 1), as.matrix(x_true), ndpost, 1L,
                                 mu_prior, S_prior, B, 1000L)
-x_ess100100 <- cpp_obj$ESSZANIMLNBART(matrix(y_new, nrow = 1), as.matrix(x_true), ndpost, 100L,
-                                mu_prior, S_prior, B, 100L)
+# x_ess100100 <- cpp_obj$ESSZANIMLNBART(matrix(y_new, nrow = 1), as.matrix(x_true), ndpost, 100L,
+#                                 mu_prior, S_prior, B, 100L)
 
 # Compare only ESS versions with different n_particles
 d_true <- density(x_truth_posterior[, i])
 d_ess1 <- density(x_ess1)
 d_ess10 <- density(x_ess10)
 d_ess100 <- density(x_ess100)
-d_ess500 <- density(x_ess500)
+# d_ess500 <- density(x_ess500)
 d_ess1000 <- density(x_ess1000)
-d_ess100100 <- density(x_ess100100)
-plot(d_true, ylim = range(d_true$y, d_ess10$y, d_ess100$y, d_ess500$y,  d_ess1000$y)
-     , xlim = range(d_true$x, d_ess10$x, d_ess100$x, d_ess500$x, d_ess1000$x))
-# lines(d_ess1, col = "brown")
- # lines(d_ess10, col = "red")
-# lines(d_ess100, col = "red")
+# d_ess100100 <- density(x_ess100100)
+plot(d_ess1, ylim = range(d_true$y, d_ess10$y, d_ess100$y,  d_ess1000$y)
+     , xlim = range(d_true$x, d_ess10$x, d_ess100$x, d_ess1000$x),
+     main = "eSS with different values of {n_particles}")
+lines(d_ess1, col = "blue")
+lines(d_ess10, col = "green")
+lines(d_ess100, col = "red")
 # lines(d_ess500, col = "green")
 lines(d_ess1000, col = "gold")
-lines(d_ess100100, col = "blue")
+# lines(d_ess100100, col = "blue")
 points(x_true, min(d_true$y), col = "blue", cex = 2, pch = 19)
-
+legend(x = "topright", legend = c(1, 10, 100, 1000), col = c("blue", "green", "red", "gold"),
+       lwd = 1)
 
 # SIR --------------------------------------------------------------------------
 idx_sir1 <- cpp_obj$SIRZANIMLNBART(y_new, n_proposal, ndpost, B,
                                     path_results, 1, 0L)
-effsize_sir1 <- 1.0 / cpp_obj$ess_sir
+effsize_sir1 <- cpp_obj$ess_sir
 
 idx_sir10 <- cpp_obj$SIRZANIMLNBART(y_new, n_proposal, ndpost, B,
                                     path_results, 10, 0L)
-effsize_sir10 <- 1.0 / cpp_obj$ess_sir
+effsize_sir10 <- cpp_obj$ess_sir
 
 # Using the mixture likelihood
 idx_sir1_mix <- cpp_obj$SIRZANIMLNBART(y_new, n_proposal, ndpost, B,
                                     path_results, 1L, 1L)
-effsize_sir1_mix <- 1.0 / cpp_obj$ess_sir
+effsize_sir1_mix <- cpp_obj$ess_sir
 
 idx_sir10_mix <- cpp_obj$SIRZANIMLNBART(y_new, n_proposal, ndpost, B,
                                     path_results, 10, 1L)
-effsize_sir10_mix <- 1.0 / cpp_obj$ess_sir
+effsize_sir10_mix <- cpp_obj$ess_sir
 
 
 # idx_sir100 <- cpp_obj$SIRZANIMLNBART(y_new, n_proposal, ndpost, B,
@@ -187,25 +189,36 @@ devtools::load_all()
 ml <- Rcpp::Module(module = "inverse_posterior", PACKAGE = "zanicc")
 cpp_obj <- new(ml$InversePosterior, zanim_ln_bart$d, zanim_ln_bart$ntrees_theta,
                zanim_ln_bart$ntrees_zeta, zanim_ln_bart$forests_dir)
-
-i <- 12L #2L #1L
+# 67 75
+i <- 10L #2L #1L
 y_new <- Y_test[i, ]
 x_true <- X_test[i, ]
-
 scale_prop <- 0.5
-ndpost <- 1000L
+ep <- 0.01
+prob_level <- 0.01
+ndpost <- 100L
 n_particles_x <- 1000L
 range_prior <- range(list_data$X)
-cpp_obj$PopulationMC(y_new, ndpost, n_particles_x, B, range_prior, scale_prop)
+B <- t(zanim_ln_bart$Bt)
+cpp_obj$PopulationMC(y_new, ndpost, n_particles_x, B, range_prior, scale_prop,
+                     prob_level, ep)
+
 ess_pmc <- cpp_obj$ess_sir
 x_pmc <- cpp_obj$x_posterior
+# any(is.na(x_pmc))
 
-x_pmc_mat <- matrix(x_pmc, nrow = n_particles_x)
 plot(density(x_pmc), col = "blue")
-# lines(density(colMeans(x_pmc_mat)))
-lines(density(x_pmc_mat[1L, ]))
-lines(density(x_pmc_mat[2L, ]))
 abline(v = x_true)
+
+pmc <- inverse_posterior_zanimlnbart(object = zanim_ln_bart, Y = Y_test[c(67,75), ],
+                                     method = "pmc", n_particles = 1000L,
+                                     scale_prop = 0.5,
+                                     range_prior = range_prior
+                                     , ndpost = 1000)
+lapply(pmc, function(x) any(is.na(x)))
+plot(density(pmc[[1]]), col = "blue")
+plot(density(pmc[[2]]), col = "blue")
+
 
 # Check ESS
 idx_sir1 <- cpp_obj$SIRZANIMLNBART(y_new, n_proposal, ndpost, B,

@@ -388,11 +388,19 @@ test_that("ZANIM-LN-BART two-dimension", {
                                        x_proposal = x_proposal,
                                        dir_posterior_fx = path_results,
                                        method = "sir")
-  S <- 2*cov(X_train)
-  ess <- inverse_posterior_zanimlnbart(object = zanim_ln_bart, Y = Y_test[1, , drop = FALSE],
+
+  # devtools::load_all()
+  S_prior <- 2*cov(X_train)
+  mean_prior <- colMeans(X_train)
+  ess <- inverse_posterior_zanimlnbart(object = zanim_ln_bart,
+                                       Y = Y_test[1:3, , drop = FALSE],
                                        x_proposal = x_proposal,
                                        dir_posterior_fx = path_results,
-                                       method = "ess", nburnin = 1000L, S_prior = S)
+                                       method = "ess", S_prior = S_prior,
+                                       mean_prior = mean_prior,
+                                       n_particles = 500L)
+
+
   # smooth-ess
   # Get the H-representation of convex-hull
   # Extract matrix and vector for the H-representation of convex-hull
@@ -400,18 +408,17 @@ test_that("ZANIM-LN-BART two-dimension", {
   normals <- hull$normals
   A <- -normals[, -ncol(normals), drop = FALSE]
   b <- -normals[, ncol(normals)]
-  m <- colMeans(X_train)#centroid_convexhull(data = X_train, hull = hull)
   plot(hull)
-  points(m[1], m[2], col = "blue", pch = 19)
-  S <- diag(1, 2)#2*cov(X_train)
+  points(mean_prior[1], mean_prior[2], col = "blue", pch = 19)
   c_ess <- inverse_posterior_zanimlnbart(object = zanim_ln_bart,
-                                         Y = Y_test[1:10, , drop = FALSE],
+                                         Y = Y_test[1:3, , drop = FALSE],
                                          x_proposal = x_proposal,
                                          dir_posterior_fx = path_results,
-                                         method = "c_ess", nburnin = 100L,
-                                         S_prior = S,
-                                         mean_prior = m,
-                                         Amat = A, bvec = b, eta = 10000)
+                                         method = "cess", nburnin = 1L,
+                                         S_prior = S_prior,
+                                         mean_prior = mean_prior,
+                                         Amat = A, bvec = b, eta = 50000,
+                                         n_particles = 100L)
   apply(c_ess, c(2, 3), mean)
   attr(sir, "elapsed_time")
   attr(ess, "elapsed_time")
@@ -426,20 +433,22 @@ test_that("ZANIM-LN-BART two-dimension", {
   x2range <- range(x_proposal[, 2])
 
   # Plotting only c-eSS
-  pdf(file.path(path_results, "inverse_posterior_cess.pdf"), width = 6, height = 3)
+  pdf(file.path(path_results, "inverse_posterior_cess_new2.pdf"), width = 6, height = 3)
   for (i in seq_len(dim(c_ess)[3])) {
     x_true <- X_test[i, ]
     cat(i, "\n")
     dens <- MASS::kde2d(c_ess[, 1, i], c_ess[, 2, i], n = 100)
     # Plotting
     par(mfrow = c(1, 3), mar = c(4, 4, 1, 1))
-    # SIR
+    # Prior
+    # plot(c_ess[, 1, i], c_ess[, 2, i],
+    #      xlim = range(c(x1range, range(dens$x))),
+    #      ylim = range(c(x2range, range(dens$y))))
     contour(dens_prior$x, dens_prior$y, dens_prior$z,
             col = scales::alpha("brown", 0.4), main = "(x1,x2)",
             xlim = range(c(x1range, range(dens$x))),
             ylim = range(c(x2range, range(dens$y)))
             )
-    # points(sir[[i]][, 1], sir[[i]][, 2])
     contour(dens$x, dens$y, dens$z, add = TRUE)
     points(x_true[1], x_true[2], col = "blue", pch = 4, cex = 2)
     abline(v = x_true[1], h = x_true[2])
@@ -475,11 +484,11 @@ test_that("ZANIM-LN-BART two-dimension", {
   graphics.off()
 
   # SIR and eSS
-  pdf(file.path(path_results, "inverse_posterior_comparison.pdf"), width = 6, height = 3)
-  for (i in seq_len(length(sir))) {
+  pdf(file.path(path_results, "inverse_posterior_comparison_new.pdf"), width = 6, height = 3)
+  for (i in seq_len(dim(sir)[3])) {
     x_true <- X_test[i, ]
     cat(i, "\n")
-    dens_sir <- MASS::kde2d(sir[[i]][, 1], sir[[i]][, 2], n = 100)
+    dens_sir <- MASS::kde2d(sir[, 1, i], sir[, 2, i], n = 100)
     dens_ess <- MASS::kde2d(ess[, 1, i], ess[, 2, i], n = 100)
     dens_cess <- MASS::kde2d(c_ess[, 1, i], c_ess[, 2, i], n = 100)
     # Plotting
@@ -487,6 +496,7 @@ test_that("ZANIM-LN-BART two-dimension", {
     # SIR
     contour(dens_prior$x, dens_prior$y, dens_prior$z,
             col = scales::alpha("brown", 0.4), main = "(x1,x2)")
+    points(sir[, 1, i], sir[, 2, i], cex = 0.2, pch = 4)
     contour(dens_sir$x, dens_sir$y, dens_sir$z, add = TRUE)
     points(x_true[1], x_true[2], col = "blue", pch = 4, cex = 2)
     abline(v = x_true[1], h = x_true[2])
@@ -496,6 +506,7 @@ test_that("ZANIM-LN-BART two-dimension", {
             xlim = range(c(range(dens_prior$x), range(dens_ess$x))),
             ylim = range(c(range(dens_prior$y), range(dens_ess$y)))
             )
+    points(ess[, 1, i], ess[, 2, i], cex = 0.2, pch = 4)
     contour(dens_ess$x, dens_ess$y, dens_ess$z, add = TRUE)
     points(x_true[1], x_true[2], col = "blue", pch = 4, cex = 2)
     abline(v = x_true[1], h = x_true[2])
