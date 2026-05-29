@@ -230,7 +230,7 @@ compute_prediction_metrics <- function(x, draws) {
   n <- nrow(x)
   stopifnot(n == dim(draws)[3L])
   l <- lapply(seq_len(n), function(i) {
-    post <- as.matrix(draws[,,i, drop = FALSE])
+    post <- as.matrix(draws[,,i])
     mu <- colMeans(post)
     md <- apply(post, 2, median)
     mo <- get_mode(post)
