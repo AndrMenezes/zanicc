@@ -378,11 +378,12 @@ sim_data_zanicc_2d <- function(n_grid = 20, n_sample = n_grid^2, d, n_trials,
 
 }
 
-#' @export
+#' Simulate data under ZANIM-(LN) with four categories and one covariate
 #' @description
 #' Simulate data following the scenario 1 of the main paper, which
 #' corresponds to d=4 with cosine, sine, and polynomial predictors as defined in
 #' main paper.
+#' @export
 sim_zanim_ln_s1 <- function(n_sample, random_effects = TRUE, structural_zero = TRUE,
                             seed = 1212) {
 

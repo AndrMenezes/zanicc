@@ -1,5 +1,4 @@
 if (getRversion() >= "2.15.1")  utils::globalVariables(c("self", "private"))
-#' @docType package
 #' @name zanicc-package
 #' @aliases zanicc-package
 #'
