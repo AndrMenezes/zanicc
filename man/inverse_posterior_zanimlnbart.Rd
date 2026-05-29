@@ -9,7 +9,7 @@ inverse_posterior_zanimlnbart(
   Y,
   dir_posterior_fx = NULL,
   x_proposal = NULL,
-  method = c("sir", "abc_sir", "ess", "ess2", "c_ess", "pmc"),
+  method = c("sir", "abc_sir", "ess", "cess", "pmc"),
   ndpost = object$ndpost,
   nburnin = 10L,
   mean_prior = NULL,
