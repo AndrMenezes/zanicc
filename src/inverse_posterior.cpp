@@ -1481,9 +1481,8 @@ std::vector<double> InversePosterior::UpdateESSZANIMLNBART(
   double lr, nu_angle, nu_max, nu_min;
 
   // Log-likelihood threshold
-  double ll_cur = log_pmf_zanim_ln(n_particles, y, theta, zeta, chol_Sigma_V, B);
-  lr = log(R::unif_rand()) + ll_cur;
-  // lr = log(R::unif_rand()) + log_pmf_zanim_ln_conditional(y, theta, zeta, chol_Sigma_V, B);
+  // double ll_cur = log_pmf_zanim_ln(n_particles, y, theta, zeta, chol_Sigma_V, B);
+  lr = log(R::unif_rand()) + log_pmf_zanim_ln(n_particles, y, theta, zeta, chol_Sigma_V, B);
 
   // Draw the angle
   rmvnorm_chol2(nu, chol_S_prior, p);
@@ -1496,18 +1495,14 @@ std::vector<double> InversePosterior::UpdateESSZANIMLNBART(
   // Correct for the prior mean
   for (int k=0; k < p; k++) x_tilde[k] = x_proposal[k] + mu_prior[k];
   // Compute the forests predictions for initial proposal
-  std::fill(theta.begin(), theta.end(), 0.0);
-  std::fill(zeta.begin(), zeta.end(), 0.0);
   GetPredictionZANIMBART(x_tilde, theta, zeta, forest_theta, forest_zeta);
   // Start slice
   do {
-    double ll_prop = log_pmf_zanim_ln(n_particles, y, theta, zeta, chol_Sigma_V, B);
+    // double ll_prop = log_pmf_zanim_ln(n_particles, y, theta, zeta, chol_Sigma_V, B);
     // std::cout << " ll_cur=" << ll_cur << " ll_prop=" << ll_prop << "\n";
     // std::cout << " theta1=" << theta[0] << " theta2=" << theta[1] << " theta3=" << theta[2]<< " theta4=" << theta[3]
     //           << " zeta1=" << zeta[0] << " zeta2=" << zeta[1] << " zeta3=" << zeta[2]<< " zeta4=" << zeta[3] <<"\n";
-
-    if (ll_prop > lr) break;
-    // if (log_pmf_zanim_ln_conditional(y, theta, zeta, chol_Sigma_V, B) > lr) break;
+    if (log_pmf_zanim_ln(n_particles, y, theta, zeta, chol_Sigma_V, B) > lr) break;
     // Update the angle
     if (nu_angle < 0) nu_min = nu_angle;
     else nu_max = nu_angle;
@@ -1517,9 +1512,7 @@ std::vector<double> InversePosterior::UpdateESSZANIMLNBART(
     // Correct for the prior mean
     for (int k=0; k < p; k++) x_tilde[k] = x_proposal[k] + mu_prior[k];
     // Compute BART predictions for the new proposal
-    std::fill(theta.begin(), theta.end(), 0.0);
-    std::fill(zeta.begin(), zeta.end(), 0.0);
-    GetTreesPredictionsZANIMBART(x_tilde, theta, zeta, forest_theta, forest_zeta);
+    GetPredictionZANIMBART(x_tilde, theta, zeta, forest_theta, forest_zeta);
   } while (true);
   return x_proposal;
 }
@@ -1655,8 +1648,8 @@ std::vector<double> InversePosterior::UpdateCESSZANIMLNBART(
   double lr, nu_angle, nu_max, nu_min;
 
   // Log-likelihood threshold
-  double ll_cur = log_pmf_zanim_ln(n_particles, y, theta, zeta, chol_Sigma_V, B);
-  lr = log(R::unif_rand()) + ll_cur;
+  // double ll_cur = log_pmf_zanim_ln(n_particles, y, theta, zeta, chol_Sigma_V, B);
+  lr = log(R::unif_rand()) + log_pmf_zanim_ln(n_particles, y, theta, zeta, chol_Sigma_V, B);
   lr += log_I_lc(x_cur, mu_prior, Amat, bvec, eta);
   // lr = log(R::unif_rand()) + log_pmf_zanim_ln_conditional(y, theta, zeta, chol_Sigma_V, B);
 
@@ -1671,16 +1664,11 @@ std::vector<double> InversePosterior::UpdateCESSZANIMLNBART(
   // Correct for the prior mean
   for (int k=0; k < p; k++) x_tilde[k] = x_proposal[k] + mu_prior[k];
   // Compute the forests predictions for initial proposal
-  std::fill(theta.begin(), theta.end(), 0.0);
-  std::fill(zeta.begin(), zeta.end(), 0.0);
   GetPredictionZANIMBART(x_tilde, theta, zeta, forest_theta, forest_zeta);
   // Start slice
   do {
     double ll_prop = log_pmf_zanim_ln(n_particles, y, theta, zeta, chol_Sigma_V, B);
     ll_prop += log_I_lc(x_proposal, mu_prior, Amat, bvec, eta);
-    // std::cout << " ll_cur=" << ll_cur << " ll_prop=" << ll_prop << "\n";
-    // std::cout << " theta1=" << theta[0] << " theta2=" << theta[1] << " theta3=" << theta[2]<< " theta4=" << theta[3]
-    //           << " zeta1=" << zeta[0] << " zeta2=" << zeta[1] << " zeta3=" << zeta[2]<< " zeta4=" << zeta[3] <<"\n";
     if (ll_prop > lr) break;
     // Update the angle
     if (nu_angle < 0) nu_min = nu_angle;
@@ -1691,9 +1679,7 @@ std::vector<double> InversePosterior::UpdateCESSZANIMLNBART(
     // Correct for the prior mean
     for (int k=0; k < p; k++) x_tilde[k] = x_proposal[k] + mu_prior[k];
     // Compute BART predictions for the new proposal
-    std::fill(theta.begin(), theta.end(), 0.0);
-    std::fill(zeta.begin(), zeta.end(), 0.0);
-    GetTreesPredictionsZANIMBART(x_tilde, theta, zeta, forest_theta, forest_zeta);
+    GetPredictionZANIMBART(x_tilde, theta, zeta, forest_theta, forest_zeta);
   } while (true);
   return x_proposal;
 }
