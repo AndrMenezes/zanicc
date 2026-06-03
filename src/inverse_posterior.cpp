@@ -849,8 +849,6 @@ std::vector<int> InversePosterior::SIRZANIMLNBART(std::vector<int> y,
         zeta_cur[j] = zeta[j*n_proposal + i];
       }
 
-
-
       // Iterate over the particles
       for (int t=0; t < n_particles; t++) {
         if (mixture) {
@@ -1496,6 +1494,7 @@ std::vector<double> InversePosterior::UpdateESSZANIMLNBART(
   for (int k=0; k < p; k++) x_tilde[k] = x_proposal[k] + mu_prior[k];
   // Compute the forests predictions for initial proposal
   GetPredictionZANIMBART(x_tilde, theta, zeta, forest_theta, forest_zeta);
+  int counter = 0;
   // Start slice
   do {
     // double ll_prop = log_pmf_zanim_ln(n_particles, y, theta, zeta, chol_Sigma_V, B);
@@ -1503,6 +1502,7 @@ std::vector<double> InversePosterior::UpdateESSZANIMLNBART(
     // std::cout << " theta1=" << theta[0] << " theta2=" << theta[1] << " theta3=" << theta[2]<< " theta4=" << theta[3]
     //           << " zeta1=" << zeta[0] << " zeta2=" << zeta[1] << " zeta3=" << zeta[2]<< " zeta4=" << zeta[3] <<"\n";
     if (log_pmf_zanim_ln(n_particles, y, theta, zeta, chol_Sigma_V, B) > lr) break;
+    if (counter > 500) break;
     // Update the angle
     if (nu_angle < 0) nu_min = nu_angle;
     else nu_max = nu_angle;
@@ -1513,6 +1513,7 @@ std::vector<double> InversePosterior::UpdateESSZANIMLNBART(
     for (int k=0; k < p; k++) x_tilde[k] = x_proposal[k] + mu_prior[k];
     // Compute BART predictions for the new proposal
     GetPredictionZANIMBART(x_tilde, theta, zeta, forest_theta, forest_zeta);
+    counter++;
   } while (true);
   return x_proposal;
 }
@@ -1604,8 +1605,6 @@ std::vector<double> InversePosterior::ESSZANIMLNBART(arma::umat Y,
       // Compute the forests predictions for given observation.
       // Don't need to re-compute this inside the burn-in loop, because I am
       // passing by reference, so this {theta} and {zeta} are both already updated
-      std::fill(theta.begin(), theta.end(), 0.0);
-      std::fill(zeta.begin(), zeta.end(), 0.0);
       GetPredictionZANIMBART(x_tilde, theta, zeta, forest_theta, forest_zeta);
 
       // Start inverse-sampling using ESS
@@ -1613,12 +1612,11 @@ std::vector<double> InversePosterior::ESSZANIMLNBART(arma::umat Y,
         x_cur = UpdateESSZANIMLNBART(x_cur, y, chol_Sigma_V, Brm, theta, zeta,
                                      forest_theta, forest_zeta, n_particles);
       }
-      // Update the "initial" value of x for the next iteration
+      // Update the "initial" value of x for the next iteration and save
       for (int k = 0; k < p; k++) {
         Xrm[i * p + k] = x_cur[k];
+        x_posterior[base_i + t * p + k] = x_cur[k] + mean_prior[k];
       }
-      // Save the posterior draw
-      for (int k = 0; k < p; k++) x_posterior[base_i + t * p + k] = x_cur[k] + mean_prior[k];
     }
     // Delete the trees (to free the memory usage)
     for (int j = 0; j < d; ++j){
@@ -1665,11 +1663,13 @@ std::vector<double> InversePosterior::UpdateCESSZANIMLNBART(
   for (int k=0; k < p; k++) x_tilde[k] = x_proposal[k] + mu_prior[k];
   // Compute the forests predictions for initial proposal
   GetPredictionZANIMBART(x_tilde, theta, zeta, forest_theta, forest_zeta);
+  int counter = 0;
   // Start slice
   do {
     double ll_prop = log_pmf_zanim_ln(n_particles, y, theta, zeta, chol_Sigma_V, B);
     ll_prop += log_I_lc(x_proposal, mu_prior, Amat, bvec, eta);
     if (ll_prop > lr) break;
+    if (counter > 500) break;
     // Update the angle
     if (nu_angle < 0) nu_min = nu_angle;
     else nu_max = nu_angle;
@@ -1680,6 +1680,7 @@ std::vector<double> InversePosterior::UpdateCESSZANIMLNBART(
     for (int k=0; k < p; k++) x_tilde[k] = x_proposal[k] + mu_prior[k];
     // Compute BART predictions for the new proposal
     GetPredictionZANIMBART(x_tilde, theta, zeta, forest_theta, forest_zeta);
+    counter++;
   } while (true);
   return x_proposal;
 }
