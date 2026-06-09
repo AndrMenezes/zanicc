@@ -52,7 +52,6 @@ inverse_posterior_zanimlnbart <- function(object, Y, dir_posterior_fx = NULL,
                                           eta = 50.0,
                                           kernel = c("gauss", "exp"),
                                           h = 0.01,
-                                          mixture = FALSE,
                                           range_prior = NULL, scale_prop = 0.6) {
 
   # Some checks
@@ -105,14 +104,18 @@ inverse_posterior_zanimlnbart <- function(object, Y, dir_posterior_fx = NULL,
     # For each posterior draw of f's run SIR
     if (method == "sir") {
       ini <- proc.time()
-      res <- lapply(seq_len(n), function(i) {
-        cat("Observation: ", i, "of", n, "\n")
-        indices <- cpp_obj$SIRZANIMLNBART(Y[i, ], n_proposal, ndpost, B,
-                                          dir_posterior_fx, n_particles,
-                                          as.integer(mixture))
-        x_proposal[indices + 1L, , drop = FALSE] # C++ indices starts at 0
-      })
+      cpp_obj$SIR(Y, n_proposal, ndpost, B, dir_posterior_fx)
       elapsed <- proc.time() - ini
+      # Copy posterior into array
+      idx_sir <- cpp_obj$indices_sir + 1L
+      res <- array(dim = c(ndpost, p, n))
+      for (i in seq_len(n)) {
+        indices <- idx_sir[(1 + ndpost*(i - 1L)):(ndpost*i)]
+        res[,,i] <- x_proposal[indices, ]
+      }
+      # Effective sample size
+      # effsize_sir <- matrix(cpp_obj$ess_sir, nrow = ndpost)
+      # colMeans(effsize_sir)
     } else if (method == "abc_sir") {
       ini <- proc.time()
       res <- lapply(seq_len(n), function(i) {
@@ -142,8 +145,6 @@ inverse_posterior_zanimlnbart <- function(object, Y, dir_posterior_fx = NULL,
     xx <- switch(method,
       "ess" = cpp_obj$ESSZANIMLNBART(Y, X_ini, ndpost, nburnin, n_particles,
                                      mean_prior, S_prior, B),
-      # "ess2" =  cpp_obj$ESSZANIMLNBART2(Y, X_ini, ndpost, nburnin, mean_prior,
-      #                                  S_prior, B),
       "cess" = cpp_obj$CESSZANIMLNBART(Y, X_ini, ndpost, nburnin, n_particles,
                                         mean_prior, S_prior, B, Amat, bvec, eta)
     )

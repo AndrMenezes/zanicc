@@ -13,12 +13,74 @@ public:
 
   // Path with the posterior draws of the latent field (BART)
   std::string forests_dir;
-  // Which forward model to use
-  std::string forward_model;
+  // Field to keep the effective sample size of SIR
+  std::vector<double> ess_sir;
+  // Row-major vector with the indices of proposal values of SIR
+  std::vector<int> indices_sir;
 
-  // Inverse posterior sampler using elliptical slice sampling
+  // Mean and Cholesky decomposition of prior covariance matrix used in the (c)ESS
+  std::vector<double> mu_prior, chol_S_prior;
+
+
+  //////////////////////////////////////////////////////////////////////////////////
+  // Implemented and stable methods for the ZANIM-LN-BART
+
+  // Get the tree-specific prediction by traversing the tree
+  double GetMu(Node *tree, std::vector<double> &x);
+
+  // Compute the ZANIM-(LN)-BART predictions for a given x
+  void GetBARTPredictions(std::vector<double> &x, std::vector<double> &theta,
+                          std::vector<double> &zeta,
+                          const std::vector<std::vector<Node*>> &forest_theta,
+                          const std::vector<std::vector<Node*>> &forest_zeta);
+
+  // Sampling importance resampling with multiple imputation
+  void SIR(arma::umat Y, int n_proposal, int ndpost, arma::mat B,
+           std::string draws_dir);
+  // pseudo-marginal ESS
+  std::vector<double> UpdateESS(std::vector<double> &x_cur,
+                                std::vector<int> &y,
+                                std::vector<double> &chol_Sigma_V,
+                                std::vector<double> &B,
+                                std::vector<double> &theta,
+                                std::vector<double> &zeta,
+                                const std::vector<std::vector<Node*>> &forest_theta,
+                                const std::vector<std::vector<Node*>> &forest_zeta,
+                                int n_particles);
+  std::vector<double> ESS(arma::umat Y, arma::mat X_ini,
+                          int ndpost, int nburnin, int n_particles,
+                          std::vector<double> mean_prior,
+                          arma::mat S_prior,
+                          arma::mat B);
+
+  // pseudo-marginal constrained ESS
+  std::vector<double> UpdateCESS(std::vector<double> &x_cur,
+                                 std::vector<int> &y,
+                                 std::vector<double> &chol_Sigma_V,
+                                 std::vector<double> &B,
+                                 std::vector<double> &Amat,
+                                 std::vector<double> &bvec, double &eta,
+                                 std::vector<double> &theta,
+                                 std::vector<double> &zeta,
+                                 const std::vector<std::vector<Node*>> &forest_theta,
+                                 const std::vector<std::vector<Node*>> &forest_zeta,
+                                 int n_particles);
+
+  std::vector<double> CESS(arma::umat Y, arma::mat X_ini, int ndpost,
+                           int nburnin, int n_particles,
+                           std::vector<double> mean_prior,
+                           arma::mat S_prior, arma::mat B, arma::mat A,
+                           std::vector<double> bvec, double eta);
+
+
+  //////////////////////////////////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////////////////
+  // Experimental methods for other models or different samplers
+
+  // Elliptical slice sampling for ML-BART and ZANIM-BART models
   std::vector<double> SamplerMLBARTeSS(arma::umat Y, arma::mat X_ini, int ndpost,
-                                       std::vector<double> mean_prior, arma::mat S_prior,
+                                       std::vector<double> mean_prior,
+                                       arma::mat S_prior,
                                        int n_rep);
 
   std::vector<double> SamplerZANIMBARTeSS(arma::umat Y, arma::mat X_ini, int ndpost,
@@ -26,12 +88,6 @@ public:
                                           arma::mat S_prior, int nburnin,
                                           int conditional);
 
-  std::vector<double> SamplerZANIMLNBARTceSS(arma::umat Y, arma::mat X_ini,
-                                             int ndpost, int nburnin,
-                                             std::vector<double> mean_prior,
-                                             arma::mat S_prior, arma::mat A,
-                                             arma::mat B, std::vector<double> bvec,
-                                             double eta);
   // SIR
   std::vector<int> SIRZANIMLNBART(std::vector<int> y, int n_proposal,
                                   int ndpost, arma::mat B,
@@ -40,7 +96,6 @@ public:
                              int ndpost, std::string draws_dir);
   std::vector<int> SIRZANIMBART(std::vector<int> y, int n_proposal, int ndpost,
                                 std::string draws_dir, int conditional);
-
   std::vector<int> ABCSIRZANIMLNBART(std::vector<int> y, int n_proposal,
                                      int ndpost, arma::mat B,
                                      std::string draws_dir,
@@ -48,10 +103,8 @@ public:
                                      double h,
                                      int n_particles);
 
-  // Field to keep the effective sample size of SIR
-  std::vector<double> ess_sir, x_posterior, x_probs;
-  // std::vector<int> sir_indices;
-
+  // Posterior draws and the probabilities of Population MC scheme
+  std::vector<double> x_posterior, x_probs;
 
   // Implementation of adaptive Population Monte Carlo method
   double ComputeEfSS(std::vector<double> &x);
@@ -64,20 +117,11 @@ public:
                     double scale_prop,
                     double prob_level, double ep);
 
-  // std::vector<double> theta_posterior, zeta_posterior;
-
-  // Get the tree-specific prediction by traversing the tree
-  double GetMu(Node *tree, std::vector<double> &x);
-
   // Get the ML-BART predictions for a given x
   void GetPredictionMLBART(std::vector<double> &x, std::vector<double> &theta,
                            const std::vector<std::vector<Node*>> &forest_theta);
-  // Get the ZANIM-BART predictions for a given x
-  void GetPredictionZANIMBART(std::vector<double> &x, std::vector<double> &theta,
-                              std::vector<double> &zeta,
-                              const std::vector<std::vector<Node*>> &forest_theta,
-                              const std::vector<std::vector<Node*>> &forest_zeta);
-  // Log-likelihoods
+
+  // Test different implementations of the marginal log-likelihood for the ZANIM-LN
   double LogLikelihoodZANIMLN(std::vector<int> &y,
                               std::vector<double> &x,
                               int ndpost,
@@ -85,56 +129,9 @@ public:
   std::vector<double> LogLikelihoodZANIMLN_2(std::vector<int> &y,
                                              std::vector<double> &x, int ndpost,
                                              arma::mat B);
-
   double lmlZANIM(std::vector<int> &y, std::vector<double> &x, int n_particles);
 
-  //----- New implementations
-
-  // Internal function to set-up variables
-  // void Set();
-
-
-
-  // Common fields for the ESS
-  std::vector<double> chol_S_prior, mu_prior;
-
-
-  // pseudo-marginal ESS
-  std::vector<double> UpdateESSZANIMLNBART(std::vector<double> &x_cur,
-                                           std::vector<int> &y,
-                                           std::vector<double> &chol_Sigma_V,
-                                           std::vector<double> &B,
-                                           std::vector<double> &theta,
-                                           std::vector<double> &zeta,
-                                           const std::vector<std::vector<Node*>> &forest_theta,
-                                           const std::vector<std::vector<Node*>> &forest_zeta,
-                                           int n_particles);
-  std::vector<double> ESSZANIMLNBART(arma::umat Y, arma::mat X_ini,
-                                     int ndpost, int nburnin, int n_particles,
-                                     std::vector<double> mean_prior,
-                                     arma::mat S_prior,
-                                     arma::mat B);
-
-  // pseudo-marginal constrained ESS
-  std::vector<double> UpdateCESSZANIMLNBART(std::vector<double> &x_cur,
-                                            std::vector<int> &y,
-                                            std::vector<double> &chol_Sigma_V,
-                                            std::vector<double> &B,
-                                            std::vector<double> &Amat,
-                                            std::vector<double> &bvec, double &eta,
-                                            std::vector<double> &theta,
-                                            std::vector<double> &zeta,
-                                            const std::vector<std::vector<Node*>> &forest_theta,
-                                            const std::vector<std::vector<Node*>> &forest_zeta,
-                                            int n_particles);
-
-  std::vector<double> CESSZANIMLNBART(arma::umat Y, arma::mat X_ini, int ndpost,
-                                      int nburnin, int n_particles,
-                                      std::vector<double> mean_prior,
-                                      arma::mat S_prior, arma::mat B, arma::mat A,
-                                      std::vector<double> bvec, double eta);
-
-  // Get BART predictions
+  // Get BART predictions without normalise the composition probabilities
   void GetTreesPredictionsZANIMBART(std::vector<double> &x,
                                     std::vector<double> &lambda,
                                     std::vector<double> &zeta,
@@ -144,8 +141,6 @@ public:
   // Run one update of ESS using the Poisson-type likelihood
   std::vector<double> UpdateESSZANIMLNBART2(
       std::vector<double> &x_cur,
-      // std::vector<double> &mean_prior,
-      // std::vector<double> &chol_S_prior,
       std::vector<int> &y,
       std::vector<double> &z, std::vector<double> &u,
       double &phi,
@@ -170,7 +165,8 @@ public:
                        std::vector<double> &B,
                        std::vector<int> &y, std::vector<double> &z,
                        std::vector<double> &lambda);
-
+  //////////////////////////////////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////////////////
 
 };
 #endif
