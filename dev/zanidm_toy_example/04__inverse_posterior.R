@@ -51,12 +51,30 @@ ml <- Rcpp::Module(module = "inverse_posterior", PACKAGE = "zanicc")
 cpp_obj <- new(ml$InversePosterior, zanim_ln_bart$d, zanim_ln_bart$ntrees_theta,
                zanim_ln_bart$ntrees_zeta, zanim_ln_bart$forests_dir)
 
-# ndpost <- 10L
-# n_particles_x <- 10L
-# n_particles_l <- 1L
-# range_prior <- range(list_data$X)
-# cpp_obj$PopulationMC(y_new, ndpost, n_particles_x, n_particles_l, B, range_prior)
+# SIR --------------------------------------------------------------------------
+ini <- proc.time()
+cpp_obj$SIR(Y_test, n_proposal, ndpost, B, path_results)
+end <- proc.time() - ini
 
+idx_sir <- cpp_obj$indices_sir + 1L
+effsize_sir <- matrix(cpp_obj$ess_sir, nrow = ndpost)
+n_samples <- length(chosen_obs)
+
+colMeans(effsize_sir)
+
+# Copy the posterior into an array
+x_posterior <- array(dim = c(ndpost, 1, n_samples))
+for (i in seq_len(n_samples)) {
+   indices <- idx_sir[(1 + ndpost*(i - 1L)):(ndpost*i)]
+   x_posterior[,,i] <- x_proposal[indices,]
+}
+dim(x_posterior)
+# Plotting
+par(mfrow = c(2, 2))
+for (i in chosen_obs) {
+   plot(density(x_posterior[,,i]))
+   points(X_test[i, ], 0.0001, col = "blue", cex = 2, pch = 19)
+}
 
 # ESS --------------------------------------------------------------------------
 
@@ -96,59 +114,6 @@ points(x_true, min(d_true$y), col = "blue", cex = 2, pch = 19)
 legend(x = "topright", legend = c(1, 10, 100, 1000), col = c("blue", "green", "red", "gold"),
        lwd = 1)
 
-# SIR --------------------------------------------------------------------------
-idx_sir1 <- cpp_obj$SIRZANIMLNBART(y_new, n_proposal, ndpost, B,
-                                    path_results, 1, 0L)
-effsize_sir1 <- cpp_obj$ess_sir
-
-idx_sir10 <- cpp_obj$SIRZANIMLNBART(y_new, n_proposal, ndpost, B,
-                                    path_results, 10, 0L)
-effsize_sir10 <- cpp_obj$ess_sir
-
-# Using the mixture likelihood
-idx_sir1_mix <- cpp_obj$SIRZANIMLNBART(y_new, n_proposal, ndpost, B,
-                                    path_results, 1L, 1L)
-effsize_sir1_mix <- cpp_obj$ess_sir
-
-idx_sir10_mix <- cpp_obj$SIRZANIMLNBART(y_new, n_proposal, ndpost, B,
-                                    path_results, 10, 1L)
-effsize_sir10_mix <- cpp_obj$ess_sir
-
-
-# idx_sir100 <- cpp_obj$SIRZANIMLNBART(y_new, n_proposal, ndpost, B,
-#                                      path_results, 100)
-# effsize_sir100 <- 1.0 / cpp_obj$ess_sir
-
-
-x_sir1 <- x_proposal[idx_sir1 + 1L, ]
-x_sir10 <- x_proposal[idx_sir10 + 1L, ]
-x_sir1_mix <- x_proposal[idx_sir1_mix + 1L, ]
-x_sir10_mix <- x_proposal[idx_sir10_mix + 1L, ]
-
-
-# ESS according number of particles
-cbind(
-   np1 = quantile(effsize_sir1),
-   np10 = quantile(effsize_sir10),
-   np1_mix = quantile(effsize_sir1_mix),
-   np10_mix = quantile(effsize_sir10_mix)
-      # ,np100 = quantile(effsize_sir100)
-      )
-
-# Comparison
-d_true <- density(x_truth_posterior[, i])
-d_sir1 <- density(x_sir1)
-d_sir10 <- density(x_sir10)
-d_sir1_mix <- density(x_sir1_mix)
-d_sir10_mix <- density(x_sir10_mix)
-# d_sir100 <- density(x_sir100)
-plot(d_true, ylim = range(d_true$y, d_sir10$y)
-     , xlim = range(d_true$x, d_sir10$x))
-lines(d_sir1, col = "red")
-lines(d_sir10, col = "blue")
-lines(d_sir1_mix, col = "gold")
-lines(d_sir10_mix, col = "darkgreen")
-points(x_true, min(d_true$y), col = "blue", cex = 2, pch = 19)
 
 # ABC-SIR ----------------------------------------------------------------------
 idx_abc1 <- cpp_obj$ABCSIRZANIMLNBART(y_new, n_proposal, 1000, B,
