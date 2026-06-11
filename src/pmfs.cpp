@@ -449,9 +449,30 @@ double log_I_lc(std::vector<double> &x,
   }
   return -out;
 }
+double log_I_lc2(std::vector<double> &x, std::vector<double> &A,
+                 std::vector<double> &b, double eta) {
+  int p = x.size();
+  int n = b.size();
+
+  double out = 0.0, u;
+  // Compute Ax + b (recall row-major order!)
+  for (int i=0; i < n; i++) {
+    u = b[i];
+    for (int j=0; j < p; j++) {
+      u += x[j] * A[i*p + j];
+    }
+    out += std::log1p(exp(-eta *u));
+  }
+  return -out;
+}
+
+// Smooth/logistic approximation of log I(a <= x <= b)
+// I_c(x) \approx 1 / (1 + exp(-eta (x - a))) \times 1 / (1 + exp(-eta (b - x))) with x* = x + mu
+double log_I_ab(double x, double a, double b, double eta) {
+  return -std::log1p(exp(-eta * (x - a)) + exp(-eta * (b - x)) + exp(-eta * (b - a)) );
+}
 
 double ldtrucnorm(double &x, double &mean, double &sd, double &a, double &b) {
-
   double lpdf = R::dnorm4(x, mean, sd, 1);
   return lpdf - std::log(R::pnorm5(b, mean, sd, 1, 0) - R::pnorm5(a, mean, sd, 1, 0));
 }

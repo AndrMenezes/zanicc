@@ -76,22 +76,22 @@ for (i in chosen_obs) {
    points(X_test[i, ], 0.0001, col = "blue", cex = 2, pch = 19)
 }
 
+
+
 # ESS --------------------------------------------------------------------------
 
 mu_prior <- mean(list_data$X)
 S_prior <- as.matrix(var(list_data$X))
-x_ess1 <- cpp_obj$ESSZANIMLNBART(matrix(y_new, nrow = 1), as.matrix(x_true), ndpost, 1L,
-                                mu_prior, S_prior, B, 1L)
-x_ess10 <- cpp_obj$ESSZANIMLNBART(matrix(y_new, nrow = 1), as.matrix(x_true), ndpost, 10L,
-                                mu_prior, S_prior, B, 10L)
-x_ess100 <- cpp_obj$ESSZANIMLNBART(matrix(y_new, nrow = 1), as.matrix(x_true), ndpost, 10L,
-                                mu_prior, S_prior, B, 100L)
-# x_ess500 <- cpp_obj$ESSZANIMLNBART(matrix(y_new, nrow = 1), as.matrix(x_true), ndpost, 10L,
-#                                 mu_prior, S_prior, B, 500L)
-x_ess1000 <- cpp_obj$ESSZANIMLNBART(matrix(y_new, nrow = 1), as.matrix(x_true), ndpost, 1L,
-                                mu_prior, S_prior, B, 1000L)
-# x_ess100100 <- cpp_obj$ESSZANIMLNBART(matrix(y_new, nrow = 1), as.matrix(x_true), ndpost, 100L,
-#                                 mu_prior, S_prior, B, 100L)
+x_ess1 <- cpp_obj$ESS(matrix(y_new, nrow = 1), as.matrix(x_true), ndpost, 1L,
+                      1L, mu_prior, S_prior, B)
+x_ess10 <- cpp_obj$ESS(matrix(y_new, nrow = 1), as.matrix(x_true), ndpost, 1L,
+                       10L, mu_prior, S_prior, B)
+x_ess100 <- cpp_obj$ESS(matrix(y_new, nrow = 1), as.matrix(x_true), ndpost, 1L,
+                        100L, mu_prior, S_prior, B)
+x_ess500 <- cpp_obj$ESS(matrix(y_new, nrow = 1), as.matrix(x_true), ndpost, 1L, 500L,
+                        mu_prior, S_prior, B)
+x_ess1000 <- cpp_obj$ESS(matrix(y_new, nrow = 1), as.matrix(x_true), ndpost, 1L, 1000L,
+                                mu_prior, S_prior, B)
 
 # Compare only ESS versions with different n_particles
 d_true <- density(x_truth_posterior[, i])
@@ -100,7 +100,7 @@ d_ess10 <- density(x_ess10)
 d_ess100 <- density(x_ess100)
 # d_ess500 <- density(x_ess500)
 d_ess1000 <- density(x_ess1000)
-# d_ess100100 <- density(x_ess100100)
+par(mfrow = c(1, 2))
 plot(d_ess1, ylim = range(d_true$y, d_ess10$y, d_ess100$y,  d_ess1000$y)
      , xlim = range(d_true$x, d_ess10$x, d_ess100$x, d_ess1000$x),
      main = "eSS with different values of {n_particles}")
@@ -113,6 +113,44 @@ lines(d_ess1000, col = "gold")
 points(x_true, min(d_true$y), col = "blue", cex = 2, pch = 19)
 legend(x = "topright", legend = c(1, 10, 100, 1000), col = c("blue", "green", "red", "gold"),
        lwd = 1)
+
+
+
+# cESS -------------------------------------------------------------------------
+
+mu_prior <- mean(list_data$X)
+sd_prior <- sd(list_data$X)
+lower <- min(list_data$X)
+upper <- max(list_data$X)
+eta <- 50L
+x_cess1 <- cpp_obj$CESS1p(matrix(y_new, nrow = 1), as.matrix(x_true), ndpost, 1L,
+                          1L, mu_prior, sd_prior, B, lower, upper, eta)
+x_cess10 <- cpp_obj$CESS1p(matrix(y_new, nrow = 1), as.matrix(x_true), ndpost, 1L,
+                           10L, mu_prior, sd_prior, B, lower, upper, eta)
+x_cess100 <- cpp_obj$CESS1p(matrix(y_new, nrow = 1), as.matrix(x_true), ndpost, 1L,
+                            100L, mu_prior, sd_prior, B, lower, upper, eta)
+x_cess500 <- cpp_obj$CESS1p(matrix(y_new, nrow = 1), as.matrix(x_true), ndpost, 1L,
+                            500L, mu_prior, sd_prior, B, lower, upper, eta)
+x_cess1000 <- cpp_obj$CESS1p(matrix(y_new, nrow = 1), as.matrix(x_true), ndpost, 1L,
+                             500L, mu_prior, sd_prior, B, lower, upper, eta)
+
+d_cess1 <- density(x_cess1)
+d_cess10 <- density(x_cess10)
+d_cess100 <- density(x_cess100)
+d_cess500 <- density(x_cess500)
+d_cess1000 <- density(x_cess1000)
+plot(d_ess1, ylim = range(d_true$y, d_cess10$y, d_cess100$y,  d_cess1000$y)
+     , xlim = range(d_true$x, d_cess10$x, d_cess100$x, d_cess1000$x),
+     main = "ceSS with different values of {n_particles}")
+lines(d_cess1, col = "blue")
+lines(d_cess10, col = "green")
+lines(d_cess100, col = "red")
+lines(d_cess500, col = "green")
+lines(d_cess1000, col = "gold")
+points(x_true, min(d_true$y), col = "blue", cex = 2, pch = 19)
+legend(x = "topright", legend = c(1, 10, 100, 1000), col = c("blue", "green", "red", "gold"),
+       lwd = 1)
+
 
 
 # ABC-SIR ----------------------------------------------------------------------

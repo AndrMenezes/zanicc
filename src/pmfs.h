@@ -33,6 +33,9 @@ double log_pmf_zanim_ln_augmented(std::vector<int> &lamx,
 double log_I_lc(std::vector<double> &x, std::vector<double> &mu,
                 std::vector<double> &A, std::vector<double> &b,
                 double eta);
+double log_I_lc2(std::vector<double> &x, std::vector<double> &A,
+                 std::vector<double> &b, double eta);
+double log_I_ab(double x, double a, double b, double eta);
 double ldtrucnorm(double &x, double &mean, double &sd, double &a, double &b);
 #endif
 

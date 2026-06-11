@@ -45,9 +45,12 @@ inverse_posterior_zanimlnbart <- function(object, Y, dir_posterior_fx = NULL,
                                           x_proposal = NULL,
                                           method = c("sir", "abc_sir",
                                                      "ess", "cess", "pmc"),
-                                          ndpost = object$ndpost, nburnin = 10L,
-                                          mean_prior = NULL, S_prior = NULL,
-                                          X_ini = NULL, Amat = NULL, bvec = NULL,
+                                          ndpost = object$ndpost, nburnin = 1L,
+                                          mean_prior = NULL,
+                                          S_prior = NULL,
+                                          X_ini = NULL,
+                                          Amat = NULL, bvec = NULL,
+                                          lower = NULL, upper = NULL,
                                           n_particles = NULL,
                                           eta = 50.0,
                                           kernel = c("gauss", "exp"),
@@ -100,8 +103,7 @@ inverse_posterior_zanimlnbart <- function(object, Y, dir_posterior_fx = NULL,
               type = "zeta")
       end_predict <- proc.time() - ini
     }
-
-    # For each posterior draw of f's run SIR
+    # Run SIR
     if (method == "sir") {
       ini <- proc.time()
       cpp_obj$SIR(Y, n_proposal, ndpost, B, dir_posterior_fx)
@@ -132,23 +134,36 @@ inverse_posterior_zanimlnbart <- function(object, Y, dir_posterior_fx = NULL,
     res <- simplify2array(res)
     if (do_predict) attr(res, "elapsed_time_predict") <- end_predict
   } else if (method %in% c("ess", "cess")) {
+
     if (is.null(mean_prior)) mean_prior <- rep(0.0, object$p_theta)
     if (is.null(S_prior)) S_prior <- diag(1.0, object$p_theta, object$p_theta)
 
-    # If there is no initial value sample from the prior
-    if (is.null(X_ini)) {
-      X_ini <- matrix(nrow = n, ncol = p)
-      cS <- chol(S_prior)
-      for (i in seq_len(n)) X_ini[i, ] <- drop(stats::rnorm(p) %*% cS + mean_prior)
+    if (p == 1 & method == "cess") {
+      X_ini <- truncnorm::rtruncnorm(n = n, a = lower, b = upper, mean = mean_prior,
+                                     sd = S_prior)
+      ini <- proc.time()
+      xx <- cpp_obj$CESS1p(Y, X_ini, ndpost, nburnin, n_particles,
+                           mean_prior, S_prior, B, lower, upper, eta)
+      elapsed <- proc.time() - ini
     }
-    ini <- proc.time()
-    xx <- switch(method,
-      "ess" = cpp_obj$ESSZANIMLNBART(Y, X_ini, ndpost, nburnin, n_particles,
-                                     mean_prior, S_prior, B),
-      "cess" = cpp_obj$CESSZANIMLNBART(Y, X_ini, ndpost, nburnin, n_particles,
-                                        mean_prior, S_prior, B, Amat, bvec, eta)
-    )
-    elapsed <- proc.time() - ini
+    else {
+      # If there is no initial value sample from the prior
+      if (is.null(X_ini)) {
+        X_ini <- matrix(nrow = n, ncol = p)
+        cS <- chol(S_prior)
+        for (i in seq_len(n)) X_ini[i, ] <- drop(stats::rnorm(p) %*% cS + mean_prior)
+      }
+
+      ini <- proc.time()
+      xx <- switch(method,
+        "ess" = cpp_obj$ESS(Y, X_ini, ndpost, nburnin, n_particles,
+                            mean_prior, S_prior, B),
+        "cess" = cpp_obj$CESS(Y, X_ini, ndpost, nburnin, n_particles,
+                              mean_prior, S_prior, B, Amat, bvec, eta)
+      )
+      elapsed <- proc.time() - ini
+    }
+    # Appending into an array for consistency
     res <- array(xx, dim = c(ndpost, p, n))
   } else if (method == "pmc") {
     ini <- proc.time()

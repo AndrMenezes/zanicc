@@ -218,23 +218,27 @@ test_that("ZANIM-LN-BART one-dimension", {
     # Save results
     saveRDS(object = ess, file = ff_ess)
   }
-  ff_ess2 <- file.path(path_results, "ess2.rds")
-  if (file.exists(ff_ess2)) {
-    ess2 <- readRDS(file = ff_ess2)
+
+  ff_cess <- file.path(path_results, "cess.rds")
+  if (file.exists(ff_cess)) {
+    cess <- readRDS(file = ff_cess)
   } else {
-    ess2 <- inverse_posterior_zanimlnbart(object = zanim_ln_bart, Y = Y_test,
+    cess <- inverse_posterior_zanimlnbart(object = zanim_ln_bart, Y = Y_test[1:4, ],
                                           X_ini = X_test,
-                                          dir_posterior_fx = path_results,
-                                          method = "ess2",
+                                          method = "cess",
                                           mean_prior = mean(X_train),
-                                          S_prior = diag(var(X_train[, 1]), nrow = 1),
-                                          nburnin = 500L)
+                                          S_prior = sd(X_train),
+                                          lower = min(X_train), upper = max(X_train),
+                                          eta = 500L, n_particles = 100L)
     # Save results
-    saveRDS(object = ess2, file = ff_ess2)
+    saveRDS(object = cess, file = ff_cess)
   }
+
+
+
   attr(sir, "elapsed_time")
   attr(ess, "elapsed_time")
-  attr(ess2, "elapsed_time")
+  attr(cess, "elapsed_time")
 
   sd(X_test)
   sir_metrics <- compute_prediction_metrics(x = X_test, draws = sir)
@@ -252,9 +256,10 @@ test_that("ZANIM-LN-BART one-dimension", {
                                        method = "ess", nburnin = 1L,
                                        mean_prior = mean_prior,
                                        S_prior = S_prior)
-  plot(density(ess[,1,1]))
-  rug(ess[,1,1])
-  points(X_test[i, ], 0.001, pch = 19, cex = 2, col = "blue")
+  plot(density(cess[,1,1]))
+  lines(density(ess[,1,1]), col = "red")
+  rug(cess[,1,1])
+  points(X_test[1, ], 0.001, pch = 19, cex = 2, col = "blue")
 
   apply(ess, c(2,3), mean)
   X_test[1:2, ]

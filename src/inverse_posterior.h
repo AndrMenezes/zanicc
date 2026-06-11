@@ -20,7 +20,8 @@ public:
 
   // Mean and Cholesky decomposition of prior covariance matrix used in the (c)ESS
   std::vector<double> mu_prior, chol_S_prior;
-
+  // Mean and sd used in univariate cESS
+  double mu_prior_1, sd_prior;
 
   //////////////////////////////////////////////////////////////////////////////////
   // Implemented and stable methods for the ZANIM-LN-BART
@@ -71,6 +72,25 @@ public:
                            std::vector<double> mean_prior,
                            arma::mat S_prior, arma::mat B, arma::mat A,
                            std::vector<double> bvec, double eta);
+  // Similar as above, but specific for univariate target
+  double UpdateCESS1p(double &x_cur,
+                      std::vector<int> &y,
+                      std::vector<double> &chol_Sigma_V,
+                      std::vector<double> &B,
+                      double &lower,
+                      double &upper,
+                      double &eta,
+                      std::vector<double> &theta,
+                      std::vector<double> &zeta,
+                      const std::vector<std::vector<Node*>> &forest_theta,
+                      const std::vector<std::vector<Node*>> &forest_zeta,
+                      int n_particles);
+
+  std::vector<double> CESS1p(arma::umat Y, std::vector<double> X_ini, int ndpost,
+                             int nburnin, int n_particles,
+                             double mean_prior, double sd_prior,
+                             arma::mat B,
+                             double lower, double upper, double eta);
 
 
   //////////////////////////////////////////////////////////////////////////////////
