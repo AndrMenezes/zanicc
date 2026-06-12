@@ -64,7 +64,6 @@ void InversePosterior::SIR(arma::umat Y, int n_proposal, int ndpost,
   // Dimension
   int n_samples = Y.n_rows, d = Y.n_cols, dm1 = d - 1;
 
-
   // Transform data into row-major vectors
   std::vector<double> Brm = mat_to_double_rowmajor(B);
 
@@ -460,6 +459,176 @@ std::vector<double> InversePosterior::CESS(arma::umat Y, arma::mat X_ini,
 }
 
 
+// Run one update of ESS for ZANIM-LN-BART for p=1
+double InversePosterior::UpdateESS1p(double &x_cur,
+                                     std::vector<int> &y,
+                                     double &mu_prior,
+                                     double &sd_prior,
+                                     std::vector<double> &chol_Sigma_V,
+                                     std::vector<double> &B,
+                                     std::vector<double> &theta,
+                                     std::vector<double> &zeta,
+                                     const std::vector<std::vector<Node*>> &forest_theta,
+                                     const std::vector<std::vector<Node*>> &forest_zeta,
+                                     int n_particles) {
+
+  // Define objects
+  // std::vector<double> nu(p, 0.0), x_proposal(p, 0.0), x_tilde(p, 0.0);
+  std::vector<double> x_tilde(1, 0.0);
+  double nu, x_proposal, lr, nu_angle, nu_max, nu_min;
+
+  // Log-likelihood threshold
+  lr = log(R::unif_rand()) + log_pmf_zanim_ln(n_particles, y, theta, zeta, chol_Sigma_V, B);
+
+  // Draw the angle
+  nu = R::norm_rand()*sd_prior + mu_prior;
+
+  nu_angle = R::unif_rand() * PI_2;
+  nu_max = nu_angle;
+  nu_min = nu_angle - PI_2;
+  // Draw an proposal
+  x_proposal = x_cur * cos(nu_angle) + nu * sin(nu_angle);
+  x_tilde[0] = x_proposal + mu_prior;
+  // Compute the forests predictions for initial proposal
+  GetBARTPredictions(x_tilde, theta, zeta, forest_theta, forest_zeta);
+  int counter = 0;
+  // Start slice
+  do {
+    if (log_pmf_zanim_ln(n_particles, y, theta, zeta, chol_Sigma_V, B) > lr) break;
+    if (counter > 1000) break;
+    // Update the angle
+    if (nu_angle < 0) nu_min = nu_angle;
+    else nu_max = nu_angle;
+    nu_angle = nu_min + (nu_max - nu_min) * R::unif_rand();
+    // Draw new proposal
+    x_proposal = x_cur * cos(nu_angle) + nu * sin(nu_angle);
+    x_tilde[0] = x_proposal + mu_prior;
+    // Compute BART predictions for the new proposal
+    GetBARTPredictions(x_tilde, theta, zeta, forest_theta, forest_zeta);
+    counter++;
+  } while (true);
+  return x_proposal;
+}
+
+
+
+// Constrained elliptical slice sampling for ZANIM-LN-BART for p>=2
+std::vector<double> InversePosterior::ESS1p(arma::umat Y, std::vector<double> X_ini,
+                                            int ndpost, int nadapt,
+                                            int nburnin, int n_particles,
+                                            double mean_prior, double s_prior,
+                                            arma::mat B) {
+  // To read the trees
+  int np = 1;
+
+  // Settings
+  n_samples = Y.n_rows;
+  // mu_prior_1 = mean_prior;
+  // sd_prior = s_prior;
+
+  // Define sample-specific mean and sd priors
+  std::vector<double> m_prior(n_samples, mean_prior), sd_prior(n_samples, s_prior);
+  std::vector<double> m_adapt(n_samples, 0.0), s2_adapt(n_samples, 0.0), sd_adapt(n_samples, 0.0);
+
+
+  // Transform data and B matrix into row-major vectors
+  std::vector<int> Yrm = umat_to_int_rowmajor(Y);
+  std::vector<double> Brm = mat_to_double_rowmajor(B);
+
+  // Open files to read the forests
+  std::vector<std::ifstream> files_theta, files_zeta;
+  for (int j=0; j < d; j++) {
+    std::string ff1 = forests_dir + "/forests_theta_" + std::to_string(j) + ".bin";
+    std::string ff2 = forests_dir + "/forests_zeta_" + std::to_string(j) + ".bin";
+    files_theta.emplace_back(ff1, std::ios::binary);
+    files_zeta.emplace_back(ff2, std::ios::binary);
+  }
+  // Open file for the the posterior draws of chol(Sigma_V)
+  std::ifstream ff_Sigma_V(forests_dir + "/chol_Sigma_V.bin", std::ios::binary);
+  // Create placeholder vector for dynamic read the posterior draws
+  std::vector<double> chol_Sigma_V(dm1*dm1, 0.0);
+
+  // Vector to keep the posterior draws
+  std::vector<double> draws(ndpost*n_samples, 0.0);
+  // Vectors for the proposal and the BART predictions
+  std::vector<double> x_tilde(1, 0.0), theta(d, 0.0), zeta(d, 0.0);
+  double x_cur;
+
+  // Vector to allocate the counts for a given observation i
+  std::vector<int> y(d, 0);
+  double progress = 0.0;
+
+  // Iterate over posterior draws of forward model
+  for (int t=0; t < ndpost; t++) {
+    // std::cout << t << "\n";
+    progress = (double) 100 * t / ndpost;
+    Rprintf("%3.2f%% Sampling completed", progress);
+    Rprintf("\r");
+
+    // Load regression trees parameters
+    std::vector<std::vector<Node*>> forest_theta(d);
+    std::vector<std::vector<Node*>> forest_zeta(d);
+    for (int j = 0; j < d; j++) {
+      for (int h = 0; h < ntrees_theta; h++) {
+        forest_theta[j].push_back(deserialise_tree(files_theta[j], np));
+      }
+      for (int h = 0; h < ntrees_zeta; h++) {
+        forest_zeta[j].push_back(deserialise_tree(files_zeta[j], np));
+      }
+    }
+    // Load current posterior draw of chol_Sigma_V
+    ff_Sigma_V.read(reinterpret_cast<char*>(chol_Sigma_V.data()),
+                    sizeof(double) * dm1 * dm1);
+
+    // Loop over the observations
+    for (int i=0; i < n_samples; i++) {
+      // Get current values of Y_i and x_i
+      for (int j = 0; j < d; j++) y[j] = Yrm[i * d + j];
+      // Current observation
+      x_cur = X_ini[i];
+      x_tilde[0] = x_cur + m_prior[i];
+      // Compute the forests predictions for given observation.
+      GetBARTPredictions(x_tilde, theta, zeta, forest_theta, forest_zeta);
+      // Start inverse-sampling using ESS
+      for (int k = 0; k < nburnin; k++) {
+        x_cur = UpdateESS1p(x_cur, y, m_prior[i], sd_prior[i], chol_Sigma_V, Brm,
+                            theta, zeta, forest_theta, forest_zeta, n_particles);
+      }
+      // Update the "initial" value of x for the next iteration
+      X_ini[i] = x_cur;
+      draws[i * ndpost + t] = x_cur + m_prior[i];
+
+      // if (nadapt>1){
+      //   // Adapt the mean and sd of observation "i"
+      //   double x_t, mu_t_1;
+      //   if (t < nadapt) {
+      //     x_t = x_cur + m_prior[i];
+      //     mu_t_1 = m_adapt[i];
+      //     m_adapt[i] += (x_t - mu_t_1)/(t+1);
+      //     s2_adapt[i] += (x_t - mu_t_1) * (x_t - m_adapt[i]);
+      //     // std::cout << m_adapt[i]  << "\n";
+      //   }
+      //   if (t == nadapt) {
+      //     m_prior[i] = m_adapt[i] ;
+      //     sd_prior[i] = std::sqrt(s2_adapt[i] / (nadapt - 1));
+      //     // std::cout << "\n\n" << m_adapt[i] << " " << std::sqrt(s2_adapt[i] / (nadapt - 1)) << "\n";
+      //   }
+      // }
+
+    }
+    // Delete the trees (to free the memory usage)
+    for (int j = 0; j < d; ++j){
+      for (auto *tree : forest_theta[j]) delete tree;
+      for (auto *tree : forest_zeta[j]) delete tree;
+    }
+
+
+
+  }
+  return draws;
+}
+
+
 // Run one update of constrained ESS for ZANIM-LN-BART for p=1
 double InversePosterior::UpdateCESS1p(double &x_cur,
                                       std::vector<int> &y,
@@ -481,10 +650,11 @@ double InversePosterior::UpdateCESS1p(double &x_cur,
 
   // Log-likelihood threshold
   lr = log(R::unif_rand()) + log_pmf_zanim_ln(n_particles, y, theta, zeta, chol_Sigma_V, B);
-  lr += log_I_ab(x_cur, lower, upper, eta);
+  x_tilde[0] = x_cur + mu_prior_1;
+  lr += log_I_ab(x_tilde[0], lower, upper, eta);
 
   // Draw the angle
-  nu = R::norm_rand()*sd_prior + mu_prior_1;
+  nu = R::norm_rand()*sd_prior_1 + mu_prior_1;
 
   nu_angle = R::unif_rand() * PI_2;
   nu_max = nu_angle;
@@ -498,7 +668,7 @@ double InversePosterior::UpdateCESS1p(double &x_cur,
   // Start slice
   do {
     double ll_prop = log_pmf_zanim_ln(n_particles, y, theta, zeta, chol_Sigma_V, B);
-    ll_prop += log_I_ab(x_proposal, lower, upper, eta);
+    ll_prop += log_I_ab(x_tilde[0], lower, upper, eta);
     if (ll_prop > lr) break;
     if (counter > 1000) break;
     // Update the angle
@@ -529,7 +699,7 @@ std::vector<double> InversePosterior::CESS1p(arma::umat Y, std::vector<double> X
   // Settings
   n_samples = Y.n_rows;
   mu_prior_1 = mean_prior;
-  sd_prior = s_prior;
+  sd_prior_1 = s_prior;
 
   // Transform data and B matrix into row-major vectors
   std::vector<int> Yrm = umat_to_int_rowmajor(Y);
@@ -1961,6 +2131,7 @@ RCPP_MODULE(inverse_posterior) {
   // Methods for the ZANIM-LN-BART
   .method("SIR", &InversePosterior::SIR)
   .method("ESS", &InversePosterior::ESS)
+  .method("ESS1p", &InversePosterior::ESS1p)
   .method("CESS", &InversePosterior::CESS)
   .method("CESS1p", &InversePosterior::CESS1p)
 

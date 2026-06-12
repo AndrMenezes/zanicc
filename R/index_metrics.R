@@ -237,6 +237,7 @@ compute_prediction_metrics <- function(x, draws) {
     c(mae = sum(abs(x[i, ] - md)),
       msep = sum((x[i, ] - mu)^2),
       dmode = sum((x[i, ] - mo)^2),
+      crps = scoringRules::crps_sample(y = x[i, ], dat = t(post)),
       coverage_95 = is_inside(coda::HPDinterval(coda::as.mcmc(post), prob = 0.95), x[i, ]),
       coverage_50 = is_inside(coda::HPDinterval(coda::as.mcmc(post), prob = 0.50), x[i, ])
     )

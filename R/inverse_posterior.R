@@ -52,6 +52,7 @@ inverse_posterior_zanimlnbart <- function(object, Y, dir_posterior_fx = NULL,
                                           Amat = NULL, bvec = NULL,
                                           lower = NULL, upper = NULL,
                                           n_particles = NULL,
+                                          nadapt = floor(object$ndpost / 2),
                                           eta = 50.0,
                                           kernel = c("gauss", "exp"),
                                           h = 0.01,
@@ -138,12 +139,22 @@ inverse_posterior_zanimlnbart <- function(object, Y, dir_posterior_fx = NULL,
     if (is.null(mean_prior)) mean_prior <- rep(0.0, object$p_theta)
     if (is.null(S_prior)) S_prior <- diag(1.0, object$p_theta, object$p_theta)
 
-    if (p == 1 & method == "cess") {
-      X_ini <- truncnorm::rtruncnorm(n = n, a = lower, b = upper, mean = mean_prior,
-                                     sd = S_prior)
+    if (p == 1) {
       ini <- proc.time()
-      xx <- cpp_obj$CESS1p(Y, X_ini, ndpost, nburnin, n_particles,
-                           mean_prior, S_prior, B, lower, upper, eta)
+      xx <- switch(method,
+                   "ess" = {
+                     if (is.null(X_ini)) X_ini <- stats::rnorm(n = n, mean = mean_prior, sd = S_prior)
+                     cpp_obj$ESS1p(Y, X_ini, ndpost, nadapt, nburnin, n_particles,
+                                   mean_prior, S_prior, B)
+                   },
+                   "cess" = {
+                     if (is.null(X_ini)) X_ini <- stats::rnorm(n = n, mean = mean_prior, sd = S_prior)
+                     X_ini <- truncnorm::rtruncnorm(n = n, a = lower, b = upper,
+                                                    mean = mean_prior, sd = S_prior)
+                     cpp_obj$CESS1p(Y, X_ini, ndpost, nburnin, n_particles,
+                                             mean_prior, S_prior, B, lower, upper, eta)
+                   }
+      )
       elapsed <- proc.time() - ini
     }
     else {

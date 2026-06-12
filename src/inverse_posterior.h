@@ -21,10 +21,10 @@ public:
   // Mean and Cholesky decomposition of prior covariance matrix used in the (c)ESS
   std::vector<double> mu_prior, chol_S_prior;
   // Mean and sd used in univariate cESS
-  double mu_prior_1, sd_prior;
+  double mu_prior_1, sd_prior_1;
 
   //////////////////////////////////////////////////////////////////////////////////
-  // Implemented and stable methods for the ZANIM-LN-BART
+  // Implement and stable methods for the ZANIM-LN-BART
 
   // Get the tree-specific prediction by traversing the tree
   double GetMu(Node *tree, std::vector<double> &x);
@@ -72,6 +72,24 @@ public:
                            std::vector<double> mean_prior,
                            arma::mat S_prior, arma::mat B, arma::mat A,
                            std::vector<double> bvec, double eta);
+  // Similar as above, but specific for univariate target
+  double UpdateESS1p(double &x_cur,
+                      std::vector<int> &y,
+                      double &mu_prior,
+                      double &sd_prior,
+                      std::vector<double> &chol_Sigma_V,
+                      std::vector<double> &B,
+                      std::vector<double> &theta,
+                      std::vector<double> &zeta,
+                      const std::vector<std::vector<Node*>> &forest_theta,
+                      const std::vector<std::vector<Node*>> &forest_zeta,
+                      int n_particles);
+
+  std::vector<double> ESS1p(arma::umat Y, std::vector<double> X_ini, int ndpost,
+                            int nadapt,
+                            int nburnin, int n_particles,
+                            double mean_prior, double sd_prior,
+                            arma::mat B);
   // Similar as above, but specific for univariate target
   double UpdateCESS1p(double &x_cur,
                       std::vector<int> &y,
