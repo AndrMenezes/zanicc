@@ -13,6 +13,8 @@ InversePosterior::InversePosterior(int d, int ntrees_theta, int ntrees_zeta,
                                    ntrees_theta(ntrees_theta),
                                    ntrees_zeta(ntrees_zeta),
                                    forests_dir(forests_dir) {
+
+
   dm1 = d-1;
 }
 
@@ -61,6 +63,7 @@ void InversePosterior::GetBARTPredictions(std::vector<double> &x,
 void InversePosterior::SIR(arma::umat Y, int n_proposal, int ndpost,
                            arma::mat B, std::string draws_dir) {
 
+  Rcpp::RNGScope scope;
   // Dimension
   int n_samples = Y.n_rows, d = Y.n_cols, dm1 = d - 1;
 
@@ -196,6 +199,7 @@ std::vector<double> InversePosterior::ESS(arma::umat Y,
                                           std::vector<double> mean_prior,
                                           arma::mat S_prior,
                                           arma::mat B) {
+  Rcpp::RNGScope scope;
   // To read the trees
   int np = 1;
 
@@ -358,6 +362,7 @@ std::vector<double> InversePosterior::CESS(arma::umat Y, arma::mat X_ini,
                                            arma::mat S_prior, arma::mat B,
                                            arma::mat A, std::vector<double> bvec,
                                            double eta) {
+  Rcpp::RNGScope scope;
   // To read the trees
   int np = 1;
 
@@ -518,6 +523,7 @@ std::vector<double> InversePosterior::ESS1p(arma::umat Y, std::vector<double> X_
                                             int nburnin, int n_particles,
                                             double mean_prior, double s_prior,
                                             arma::mat B) {
+  Rcpp::RNGScope scope;
   // To read the trees
   int np = 1;
 
@@ -693,6 +699,7 @@ std::vector<double> InversePosterior::CESS1p(arma::umat Y, std::vector<double> X
                                              double mean_prior, double s_prior,
                                              arma::mat B,
                                              double lower, double upper, double eta) {
+  Rcpp::RNGScope scope;                                             
   // To read the trees
   int np = 1;
 
