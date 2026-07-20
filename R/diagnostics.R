@@ -61,6 +61,7 @@ plot_ppc <- function(Y, Y_ppc = NULL, object = NULL, output = FALSE) {
   q_up <- apply(qs_rep, 1, quantile, probs = 0.975)
   cbind(q_med, q_lo, q_up)
 }
+
 #' Plot marginal QQ-plots using the posterior-predictive distribution
 #' @export
 plot_qqplots <- function(Y, Y_ppc = NULL, object = NULL, relative = FALSE,

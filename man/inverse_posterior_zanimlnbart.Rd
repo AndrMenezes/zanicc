@@ -20,6 +20,7 @@ inverse_posterior_zanimlnbart(
   lower = NULL,
   upper = NULL,
   n_particles = NULL,
+  nadapt = floor(object$ndpost/2),
   eta = 50,
   kernel = c("gauss", "exp"),
   h = 0.01,

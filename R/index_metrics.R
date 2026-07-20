@@ -121,7 +121,7 @@ compute_kl_prob_chain <- function(true_values, draws) {
   kl
 }
 
-#' Compute Frobenius norm, absolute norm, coverage and KL divergences using the posterior
+#' Compute Frobenius norm, absolute norm, coverage, KL, and JS divergences using the posterior
 #' mean as an estimator of the given parameter against the true (or reference)
 #' values.
 #' @param true_values matrix n by d with the true values of the parameter.
@@ -175,8 +175,27 @@ compute_kl_prob <- function(true_values, estimates) {
   }
   kl
 }
-# true_values <- matrix(c(1.0, 0.2, 0.5, 0.7), ncol = 2)
-# estimates <- matrix(c(0.9, 0.225, 0.55, 0.6), ncol = 2)
+#' @export
+compute_js <- function(true_values, estimates) {
+  t1 <- estimates*log(2*estimates / (estimates + true_values))
+  t1[is.na(t1)] <- 0.0
+  t2 <- true_values*log(2*true_values / (estimates + true_values))
+  t2[is.na(t2)] <- 0.0
+  mean(rowSums(t1 + t2))
+}
+#' @export
+compute_hellinger <- function(true_values, estimates) {
+  1/sqrt(2)*mean(rowSums((sqrt(true_values) - sqrt(estimates))^2))
+}
+# d <- 4
+# n <- 10
+# true_values <- matrix(rexp(n*d), ncol = d, nrow = n)
+# true_values[2, 1] <- 0.0
+# true_values[1, 1] <- 0.0
+# true_values <- sweep(true_values, 1, rowSums(true_values), "/")
+# estimates <- matrix(rexp(n*d), ncol = d, nrow = n)
+# estimates[1, 1] <- 0.0
+# estimates <- sweep(estimates, 1, rowSums(estimates), "/")
 
 #' Compute metrics of classification for variable selection.
 #' @param truth vector of 0 and 1 with true labels

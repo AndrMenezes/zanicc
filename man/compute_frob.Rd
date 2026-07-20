@@ -2,7 +2,7 @@
 % Please edit documentation in R/index_metrics.R
 \name{compute_frob}
 \alias{compute_frob}
-\title{Compute Frobenius norm, absolute norm, coverage and KL divergences using the posterior
+\title{Compute Frobenius norm, absolute norm, coverage, KL, and JS divergences using the posterior
 mean as an estimator of the given parameter against the true (or reference)
 values.}
 \usage{

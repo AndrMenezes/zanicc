@@ -5,15 +5,15 @@
 #include <cmath>
 #include "node.h"
 
-struct PriorProbit {
-  double tau_mu;
-  double log_tau_mu;
-  PriorProbit(int ntrees, double k) {
-    double sigma_mu = 3.0 / (k * std::sqrt(ntrees));
-    tau_mu = 1.0 / (sigma_mu * sigma_mu);
-    log_tau_mu = std::log(tau_mu);
-  }
-};
+// struct PriorProbit {
+//   double tau_mu;
+//   double log_tau_mu;
+//   PriorProbit(int ntrees, double k) {
+//     double sigma_mu = 3.0 / (k * std::sqrt(ntrees));
+//     tau_mu = 1.0 / (sigma_mu * sigma_mu);
+//     log_tau_mu = std::log(tau_mu);
+//   }
+// };
 
 class ProbitBART {
 
@@ -46,7 +46,8 @@ public:
                std::vector<double> sparse_parms_, double alpha_sparse_,
                int alpha_random_, arma::mat xinfo, std::string path_out_);
 
-  PriorProbit *prior;
+  // PriorProbit *prior;
+  double tau_mu, log_tau_mu;
   std::vector<Node*> trees;
 
   // General fields/attributes

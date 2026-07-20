@@ -368,9 +368,7 @@ void MultinomialBART::SetMCMC(double v0, int ntrees_, int ndpost_, int nskip_,
   }
 
   // Initialise flags for acceptance rate
-  flag_grow = 0;
-  flag_prune = 0;
-  flag_change = 0;
+  flag_grow = 0, flag_prune = 0, flag_change = 0;
 
   accept_rate = arma::zeros<arma::umat>(3, d);
   avg_leaves = arma::zeros<arma::umat>(ntrees, d);
