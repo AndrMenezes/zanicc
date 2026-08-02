@@ -87,7 +87,6 @@ public:
                       int n_particles);
 
   std::vector<double> ESS1p(arma::umat Y, std::vector<double> X_ini, int ndpost,
-                            int nadapt,
                             int nburnin, int n_particles,
                             double mean_prior, double sd_prior,
                             arma::mat B);

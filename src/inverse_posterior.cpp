@@ -519,7 +519,7 @@ double InversePosterior::UpdateESS1p(double &x_cur,
 
 // Constrained elliptical slice sampling for ZANIM-LN-BART for p>=2
 std::vector<double> InversePosterior::ESS1p(arma::umat Y, std::vector<double> X_ini,
-                                            int ndpost, int nadapt,
+                                            int ndpost,
                                             int nburnin, int n_particles,
                                             double mean_prior, double s_prior,
                                             arma::mat B) {
@@ -603,33 +603,12 @@ std::vector<double> InversePosterior::ESS1p(arma::umat Y, std::vector<double> X_
       // Update the "initial" value of x for the next iteration
       X_ini[i] = x_cur;
       draws[i * ndpost + t] = x_cur + m_prior[i];
-
-      // if (nadapt>1){
-      //   // Adapt the mean and sd of observation "i"
-      //   double x_t, mu_t_1;
-      //   if (t < nadapt) {
-      //     x_t = x_cur + m_prior[i];
-      //     mu_t_1 = m_adapt[i];
-      //     m_adapt[i] += (x_t - mu_t_1)/(t+1);
-      //     s2_adapt[i] += (x_t - mu_t_1) * (x_t - m_adapt[i]);
-      //     // std::cout << m_adapt[i]  << "\n";
-      //   }
-      //   if (t == nadapt) {
-      //     m_prior[i] = m_adapt[i] ;
-      //     sd_prior[i] = std::sqrt(s2_adapt[i] / (nadapt - 1));
-      //     // std::cout << "\n\n" << m_adapt[i] << " " << std::sqrt(s2_adapt[i] / (nadapt - 1)) << "\n";
-      //   }
-      // }
-
     }
     // Delete the trees (to free the memory usage)
     for (int j = 0; j < d; ++j){
       for (auto *tree : forest_theta[j]) delete tree;
       for (auto *tree : forest_zeta[j]) delete tree;
     }
-
-
-
   }
   return draws;
 }
