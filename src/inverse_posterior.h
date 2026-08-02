@@ -7,7 +7,8 @@ class InversePosterior {
 
 public:
   // Constructor
-  InversePosterior(int d, int ntrees_theta, int ntrees_zeta, std::string forests_dir);
+  InversePosterior(int d, int ntrees_theta, int ntrees_zeta,
+                   std::string forests_dir);
 
   int d, ntrees_theta, ntrees_zeta, p, n_samples, dm1;
 
@@ -24,7 +25,7 @@ public:
   double mu_prior_1, sd_prior_1;
 
   //////////////////////////////////////////////////////////////////////////////////
-  // Implement and stable methods for the ZANIM-LN-BART
+  // Stable methods for the ZANIM-LN-BART
 
   // Get the tree-specific prediction by traversing the tree
   double GetMu(Node *tree, std::vector<double> &x);
@@ -109,102 +110,6 @@ public:
                              double mean_prior, double sd_prior,
                              arma::mat B,
                              double lower, double upper, double eta);
-
-
-  //////////////////////////////////////////////////////////////////////////////////
-  //////////////////////////////////////////////////////////////////////////////////
-  // Experimental methods for other models or different samplers
-
-  // Elliptical slice sampling for ML-BART and ZANIM-BART models
-  std::vector<double> SamplerMLBARTeSS(arma::umat Y, arma::mat X_ini, int ndpost,
-                                       std::vector<double> mean_prior,
-                                       arma::mat S_prior,
-                                       int n_rep);
-
-  std::vector<double> SamplerZANIMBARTeSS(arma::umat Y, arma::mat X_ini, int ndpost,
-                                          std::vector<double> mean_prior,
-                                          arma::mat S_prior, int nburnin,
-                                          int conditional);
-
-  // SIR
-  std::vector<int> SIRZANIMLNBART(std::vector<int> y, int n_proposal,
-                                  int ndpost, arma::mat B,
-                                  std::string dir_posterior_fx, int n_particles, int mixture);
-  std::vector<int> SIRMLBART(std::vector<int> y, int n_proposal,
-                             int ndpost, std::string dir_posterior_fx);
-  std::vector<int> SIRZANIMBART(std::vector<int> y, int n_proposal, int ndpost,
-                                std::string dir_posterior_fx, int conditional);
-  std::vector<int> ABCSIRZANIMLNBART(std::vector<int> y, int n_proposal,
-                                     int ndpost, arma::mat B,
-                                     std::string dir_posterior_fx,
-                                     int kernel,
-                                     double h,
-                                     int n_particles);
-
-  // Posterior draws and the probabilities of Population MC scheme
-  std::vector<double> x_posterior, x_probs;
-
-  // Implementation of adaptive Population Monte Carlo method
-  double ComputeEfSS(std::vector<double> &x);
-  void WeightedMeanVar(double &mu, double &s2, std::vector<double> &x,
-                       std::vector<double> &probs);
-  void PopulationMC(std::vector<int> y,
-                    int ndpost, int n_particles_x,
-                    arma::mat B,
-                    std::vector<double> range_prior,
-                    double scale_prop,
-                    double prob_level, double ep);
-
-  // Get the ML-BART predictions for a given x
-  void GetPredictionMLBART(std::vector<double> &x, std::vector<double> &theta,
-                           const std::vector<std::vector<Node*>> &forest_theta);
-
-  // Test different implementations of the marginal log-likelihood for the ZANIM-LN
-  double LogLikelihoodZANIMLN(std::vector<int> &y,
-                              std::vector<double> &x,
-                              int ndpost,
-                              int chain_index, arma::mat B);
-  std::vector<double> LogLikelihoodZANIMLN_2(std::vector<int> &y,
-                                             std::vector<double> &x, int ndpost,
-                                             arma::mat B);
-  double lmlZANIM(std::vector<int> &y, std::vector<double> &x, int n_particles);
-
-  // Get BART predictions without normalise the composition probabilities
-  void GetTreesPredictionsZANIMBART(std::vector<double> &x,
-                                    std::vector<double> &lambda,
-                                    std::vector<double> &zeta,
-                                    const std::vector<std::vector<Node*>> &forest_theta,
-                                    const std::vector<std::vector<Node*>> &forest_zeta);
-
-  // Run one update of ESS using the Poisson-type likelihood
-  std::vector<double> UpdateESSZANIMLNBART2(
-      std::vector<double> &x_cur,
-      std::vector<int> &y,
-      std::vector<double> &z, std::vector<double> &u,
-      double &phi,
-      std::vector<double> &lambda, std::vector<double> &zeta,
-      const std::vector<std::vector<Node*>> &forest_theta,
-      const std::vector<std::vector<Node*>> &forest_zeta);
-
-  // ESS2
-  std::vector<double> ESSZANIMLNBART2(arma::umat Y, arma::mat X_ini,
-                                     int ndpost, int nburnin,
-                                     std::vector<double> mean_prior,
-                                     arma::mat S_prior,
-                                     arma::mat B);
-
-  // Functions to sample from the full conditional of u_i = (u_i1, ..., u_id) under
-  // the ZANIM-LN-BART model
-  double LogTargetU(std::vector<double> &u, std::vector<int> &y,
-                    std::vector<double> &z,
-                    std::vector<double> &lambda);
-  std::vector<double> UpdateESSV(std::vector<double> &v,
-                       std::vector<double> &chol_Sigma_V,
-                       std::vector<double> &B,
-                       std::vector<int> &y, std::vector<double> &z,
-                       std::vector<double> &lambda);
-  //////////////////////////////////////////////////////////////////////////////////
-  //////////////////////////////////////////////////////////////////////////////////
 
 };
 #endif
