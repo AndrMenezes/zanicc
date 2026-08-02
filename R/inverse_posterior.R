@@ -21,18 +21,15 @@
 rconvexhull <- function(n, X) {
   # Triangulate the points. Indexes into simplices, by row.
   V <- geometry::delaunayn(X)
-  # Sample the component simplices of the triangulation in p
-  # to their volumes
+  # Sample the component simplices of the triangulation proportional to their volumes
   probs <- abs(.volume_simplex(V, X))
   probs <- probs / sum(probs)
   i <- sample.int(nrow(V), n, replace = TRUE, prob = probs)
-  # Now, sample uniformly within each selected simplex.
+  # Now, sample uniformly within each selected simplex, that is Dir(1, ...,1)
   wts <- matrix(stats::rexp(n * (dim(X)[2] + 1)), nrow = n)
   wts <- wts / rowSums(wts)
-  # Apply the weights to obtain Cartesian point coordinates.
-  pts <- sapply(seq_len(n), \(j) {
-    wts[j, ] %*% X[V[i[j], ], ]
-  })
+  # Apply the weights to obtain Cartesian point coordinates
+  pts <- sapply(seq_len(n), \(j) wts[j, ] %*% X[V[i[j], ], ])
   t(pts)
 }
 

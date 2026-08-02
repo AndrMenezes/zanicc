@@ -132,7 +132,7 @@ summarise_draws_3d <- function(x, prob = 0.05) {
   ma + log(sum(exp(x - ma)))
 }
 
-#' Get the sets \mathcal{S}_j in the defintion
+# Get the sets \mathcal{S}_j
 .get_set_S <- function(d, j) {
   indexes <- seq_len(d)[-j]
   all_sets <- vector(mode = "list", length = d - 2L)
@@ -205,6 +205,72 @@ create_rectangle_grid <- function(X, step_size = 1.0,
   X_grid
 }
 
+
+#' Compute the posterior distribution of individual-level probabilities under the ZANIM and ZANIM-LN models
+#' @param thetas array with \eqn{(n \times d \times r)} dimension for the posterior distribution of \eqn{\theta_{ij}^{(r)}}.
+#' @param zetas array with \eqn{(n \times d \times r)} dimension for the posterior distribution of \eqn{\zeta_{ij}^{(r)}}.
+#' @param chol_Sigma_V posterior draws of Cholesky decomposition of.
+#' @param Bt Matrix for the contrast relate to the sum-to-zero constraint.
+#' @param verbose logical to keep track of the posterior draws.
+#' @param printevery integer to print the posterior draws.
+#' TODO: These two functions aren't precise because they are not condition on Y* to
+#' generate the latent structural zero z_{ij}, though we use the posterior draws.
+#'
+compute_vartheta_zanimbart <- function(thetas, zetas, verbose = FALSE,
+                                       printevery = 100L)  {
+  n_sample <- dim(thetas)[1L]
+  d <- dim(thetas)[2L]
+  ndpost <- dim(thetas)[3L]
+  seqn <- seq_len(n_sample)
+  draws <- array(data = NA_real_, dim = c(n_sample, d, ndpost))
+  for (k in seq_len(ndpost)) {
+    if (verbose && (k %% printevery == 0L)) cat(k, "of", ndpost, "\n")
+    # Generate the z's
+    tmp <- lapply(seqn, function(i) {
+      z <- stats::rbinom(n = d, size = 1, prob = 1.0 - zetas[i,,k])
+      is_zero <- z == 0L
+      if (all(is_zero)) {
+        vt <- rep(0.0, d)
+      }
+      else if (sum(is_zero) == d - 1L) {
+        vt <- rep(0.0, d)
+        vt[!is_zero] <- 1.0
+      } else {
+        vt <- thetas[i,,k] * z
+        vt <- vt / sum(vt)
+      }
+      vt
+    })
+    draws[,,k] <- do.call(rbind, tmp)
+  }
+  draws
+}
+compute_vartheta_zanimlnbart <- function(thetas, zetas, chol_Sigma_V, Bt,
+                                         verbose = FALSE, printevery = 100L)  {
+  n_sample <- dim(thetas)[1L]
+  d <- dim(thetas)[2L]
+  ndpost <- dim(thetas)[3L]
+  dm1 <- d - 1L
+  seqn <- seq_len(n_sample)
+  draws <- array(data = NA_real_, dim = c(n_sample, d, ndpost))
+  for (k in seq_len(ndpost)) {
+    if (verbose && (k %% printevery == 0L)) cat(k, "of", ndpost, "\n")
+    # Generate the z's
+    tmp <- lapply(seqn, function(i) {
+      v <- stats::rnorm(dm1) %*% chol_Sigma_V[,,k]
+      u <- drop(v %*% Bt)
+      z <- stats::rbinom(n = d, size = 1L, prob = 1.0 - zetas[i,,k])
+      if (all(z == 0L)) p <- rep(0.0, d)
+      else {
+        p <- z * thetas[i,,k] * exp(u)
+        p <- p / sum(p)
+      }
+      p
+    })
+    draws[,,k] <- do.call(rbind, tmp)
+  }
+  draws
+}
 
 
 
