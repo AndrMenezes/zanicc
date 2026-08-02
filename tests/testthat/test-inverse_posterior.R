@@ -384,7 +384,7 @@ test_that("ZANIM-LN-BART two-dimension", {
     x_proposal <- readRDS(file.path(path_results, "x_proposal.rds"))
   } else {
     set.seed(1212)
-    x_proposal <- rconvexhull(n = N_PROPOSAL, X = X_train)
+    x_proposal <- runifconvexhull(n = N_PROPOSAL, X = X_train)
     saveRDS(x_proposal, file.path(path_results, "x_proposal.rds"))
   }
 
@@ -597,7 +597,7 @@ test_that("laplace approximation", {
   ll[k]
   cpp_obj$LogLikelihoodZANIMLN(y, x_true, ndpost, k, B)
 
-  x_proposal <- rconvexhull(n = 4000, X = X_train)
+  x_proposal <- runifconvexhull(n = 4000, X = X_train)
   lls <- sapply(seq_len(nrow(x_proposal)), function(i) {
     cpp_obj$LogLikelihoodZANIMLN(y, x_proposal[i, ], ndpost, 1, B)
   })

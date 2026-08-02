@@ -21,7 +21,7 @@ n_trials <- stats::rpois(n = n_samples, lambda = exp_counts)
 data("pollen_data", package = "zanicc")
 X_pollen <- unique(pollen_data$X[, c("gdd5", "mtco")])
 
-X <- rconvexhull(n = n_samples, X = X_pollen)
+X <- runifconvexhull(n = n_samples, X = X_pollen)
 X <- scale(X)
 plot(X[, 1], X[, 2])
 mu_X <- colMeans(X)
