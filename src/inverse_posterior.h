@@ -37,7 +37,7 @@ public:
 
   // Sampling importance resampling with multiple imputation
   void SIR(arma::umat Y, int n_proposal, int ndpost, arma::mat B,
-           std::string draws_dir);
+           std::string dir_posterior_fx);
   // pseudo-marginal ESS
   std::vector<double> UpdateESS(std::vector<double> &x_cur,
                                 std::vector<int> &y,
@@ -129,14 +129,14 @@ public:
   // SIR
   std::vector<int> SIRZANIMLNBART(std::vector<int> y, int n_proposal,
                                   int ndpost, arma::mat B,
-                                  std::string draws_dir, int n_particles, int mixture);
+                                  std::string dir_posterior_fx, int n_particles, int mixture);
   std::vector<int> SIRMLBART(std::vector<int> y, int n_proposal,
-                             int ndpost, std::string draws_dir);
+                             int ndpost, std::string dir_posterior_fx);
   std::vector<int> SIRZANIMBART(std::vector<int> y, int n_proposal, int ndpost,
-                                std::string draws_dir, int conditional);
+                                std::string dir_posterior_fx, int conditional);
   std::vector<int> ABCSIRZANIMLNBART(std::vector<int> y, int n_proposal,
                                      int ndpost, arma::mat B,
-                                     std::string draws_dir,
+                                     std::string dir_posterior_fx,
                                      int kernel,
                                      double h,
                                      int n_particles);

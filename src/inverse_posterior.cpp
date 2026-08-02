@@ -56,12 +56,12 @@ void InversePosterior::GetBARTPredictions(std::vector<double> &x,
 }
 
 ////////////////////////////////////////////////////////////////////////////////////
-// Methods that work and have been and tested for the ZANIM-LN-BART model
+// Stable methods that have been tested for the ZANIM-LN-BART model
 ////////////////////////////////////////////////////////////////////////////////////
 
 // Run multiple imputation with SIR approach to sample the inverse posterior
 void InversePosterior::SIR(arma::umat Y, int n_proposal, int ndpost,
-                           arma::mat B, std::string draws_dir) {
+                           arma::mat B, std::string dir_posterior_fx) {
 
   Rcpp::RNGScope scope;
   // Dimension
@@ -72,8 +72,8 @@ void InversePosterior::SIR(arma::umat Y, int n_proposal, int ndpost,
 
   // Open file for the the posterior draws of chol(Sigma_V)
   std::ifstream ff_Sigma_V(forests_dir + "/chol_Sigma_V.bin", std::ios::binary);
-  std::ifstream ff_theta(draws_dir + "/theta_ij.bin", std::ios::binary);
-  std::ifstream ff_zeta(draws_dir + "/zeta_ij.bin", std::ios::binary);
+  std::ifstream ff_theta(dir_posterior_fx + "/theta_ij.bin", std::ios::binary);
+  std::ifstream ff_zeta(dir_posterior_fx + "/zeta_ij.bin", std::ios::binary);
 
   // To read the posterior draws of chol_Sigma_V
   std::vector<double> chol_Sigma_V(dm1*dm1, 0.0);
@@ -699,7 +699,7 @@ std::vector<double> InversePosterior::CESS1p(arma::umat Y, std::vector<double> X
                                              double mean_prior, double s_prior,
                                              arma::mat B,
                                              double lower, double upper, double eta) {
-  Rcpp::RNGScope scope;                                             
+  Rcpp::RNGScope scope;
   // To read the trees
   int np = 1;
 
@@ -1126,7 +1126,7 @@ std::vector<int> InversePosterior::ABCSIRZANIMLNBART(std::vector<int> y,
                                                      int n_proposal,
                                                      int ndpost,
                                                      arma::mat B,
-                                                     std::string draws_dir,
+                                                     std::string dir_posterior_fx,
                                                      int kernel,
                                                      double h,
                                                      int n_particles) {
@@ -1139,8 +1139,8 @@ std::vector<int> InversePosterior::ABCSIRZANIMLNBART(std::vector<int> y,
 
   // Open file for the the posterior draws of chol(Sigma_V)
   std::ifstream ff_Sigma_V(forests_dir + "/chol_Sigma_V.bin", std::ios::binary);
-  std::ifstream ff_theta(draws_dir + "/theta_ij.bin", std::ios::binary);
-  std::ifstream ff_zeta(draws_dir + "/zeta_ij.bin", std::ios::binary);
+  std::ifstream ff_theta(dir_posterior_fx + "/theta_ij.bin", std::ios::binary);
+  std::ifstream ff_zeta(dir_posterior_fx + "/zeta_ij.bin", std::ios::binary);
 
   // Create vector to read the posterior draws of chol_Sigma_V
   std::vector<double> chol_Sigma_V(dm1*dm1, 0.0);
@@ -1226,7 +1226,7 @@ std::vector<int> InversePosterior::SIRZANIMLNBART(std::vector<int> y,
                                                   int n_proposal,
                                                   int ndpost,
                                                   arma::mat B,
-                                                  std::string draws_dir,
+                                                  std::string dir_posterior_fx,
                                                   int n_particles,
                                                   int mixture) {
 
@@ -1238,8 +1238,8 @@ std::vector<int> InversePosterior::SIRZANIMLNBART(std::vector<int> y,
 
   // Open file for the the posterior draws of chol(Sigma_V)
   std::ifstream ff_Sigma_V(forests_dir + "/chol_Sigma_V.bin", std::ios::binary);
-  std::ifstream ff_theta(draws_dir + "/theta_ij.bin", std::ios::binary);
-  std::ifstream ff_zeta(draws_dir + "/zeta_ij.bin", std::ios::binary);
+  std::ifstream ff_theta(dir_posterior_fx + "/theta_ij.bin", std::ios::binary);
+  std::ifstream ff_zeta(dir_posterior_fx + "/zeta_ij.bin", std::ios::binary);
 
   // Create vector to read the posterior draws of chol_Sigma_V
   std::vector<double> chol_Sigma_V(dm1*dm1, 0.0);
@@ -1312,7 +1312,7 @@ std::vector<int> InversePosterior::SIRZANIMLNBART(std::vector<int> y,
 std::vector<int> InversePosterior::SIRZANIMBART(std::vector<int> y,
                                                 int n_proposal,
                                                 int ndpost,
-                                                std::string draws_dir,
+                                                std::string dir_posterior_fx,
                                                 int conditional) {
 
 
@@ -1336,8 +1336,8 @@ std::vector<int> InversePosterior::SIRZANIMBART(std::vector<int> y,
   int d = y.size(), dm1 = d - 1;
 
   // Open file for the the posterior draws of chol(Sigma_V)
-  std::ifstream ff_theta(draws_dir + "/theta_ij.bin", std::ios::binary);
-  std::ifstream ff_zeta(draws_dir + "/zeta_ij.bin", std::ios::binary);
+  std::ifstream ff_theta(dir_posterior_fx + "/theta_ij.bin", std::ios::binary);
+  std::ifstream ff_zeta(dir_posterior_fx + "/zeta_ij.bin", std::ios::binary);
 
   // Create vector to read the posterior draws of chol_Sigma_V
   std::vector<double> chol_Sigma_V(dm1*dm1, 0.0);
@@ -1393,13 +1393,13 @@ std::vector<int> InversePosterior::SIRZANIMBART(std::vector<int> y,
 // MI with SIR for ML-BART
 std::vector<int> InversePosterior::SIRMLBART(std::vector<int> y,
                                              int n_proposal, int ndpost,
-                                             std::string draws_dir) {
+                                             std::string dir_posterior_fx) {
 
   // Dimension
   int d = y.size(), dm1 = d - 1;
 
   // Open file for the the posterior draws of chol(Sigma_V)
-  std::ifstream ff_theta(draws_dir + "/theta_ij.bin", std::ios::binary);
+  std::ifstream ff_theta(dir_posterior_fx + "/theta_ij.bin", std::ios::binary);
 
   // Create vector to read one posterior draw of theta_ij  and copy
   // the values for a given observation i
