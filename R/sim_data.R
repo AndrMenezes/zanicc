@@ -235,7 +235,7 @@ sim_data_multinomial_2d <- function(n_grid = 20, n_sample = n_grid^2, d, n_trial
   # Covariates
   region <- match.arg(region)
   if (region == "convexhull") {
-    X <- suppressWarnings(rconvexhull(n = n_sample, X = X_aux))
+    X <- suppressWarnings(runifconvexhull(n = n_sample, X = X_aux))
   } else {
     x1 <- seq(-xmax, xmax, length.out = n_grid)
     x2 <- seq(-xmax, xmax, length.out = n_grid)
@@ -288,7 +288,7 @@ sim_data_zanicc_2d <- function(n_grid = 20, n_sample = n_grid^2, d, n_trials,
       X_aux <- pollen_data$X[, c("gdd5", "mtco")]
       X_aux <- scale(X_aux)
     }
-    X <- suppressWarnings(rconvexhull(n = n_sample, X = X_aux))
+    X <- suppressWarnings(runifconvexhull(n = n_sample, X = X_aux))
   } else {
     x1 <- seq(-xmax, xmax, length.out = n_grid)
     x2 <- seq(-xmax, xmax, length.out = n_grid)
@@ -472,7 +472,7 @@ sim_zanim_ln_gp <- function(n, d, n_trials, X_real, len_scale_theta = 2.0,
 
   # Simulate covariates
   if (p == 1L) X <- matrix(stats::runif(n, min(X_real), max(X_real)), ncol = 1L)
-  else X <- rconvexhull(n = n, X = unique(X_real))
+  else X <- runifconvexhull(n = n, X = unique(X_real))
   X <- sweep(X, 2, colMeans(X), "-")
 
   # Distance
