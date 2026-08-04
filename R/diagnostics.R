@@ -18,7 +18,7 @@
 #' @param stat_fun A function that computes a scalar diagnostic statistic from a
 #' count-compositional matrix.
 #' @param object A fitted model object of class `zanicc` used to generate posterior
-#' predictive samples via the method [ppd()]. Only used when `Y_ppc = NULL`.
+#' predictive samples via the method `ppd()`. Only used when `Y_ppc = NULL`.
 #' @param output Logical. If `TRUE`, return the computed posterior predictive
 #' statistics in addition to producing the plots. Default is `FALSE`.
 #'
@@ -37,7 +37,6 @@
 #' If `output = TRUE`, it returns a named list with the corresponding results
 #' from `ppc_stat()`.
 #'
-#' @seealso [ppd()]
 #'
 #' @export
 stat_ppc <- function(Y, Y_ppc, stat_fun) {
@@ -109,7 +108,7 @@ plot_ppc <- function(Y, Y_ppc = NULL, object = NULL, output = FALSE) {
 #' If `NULL`, then the `plot_qqplots_ppd` function generates the posterior
 #' predictive distribution from the model `object`.
 #' @param object A fitted model object of class `zanicc` used to generate posterior
-#' predictive samples via [ppd()]. Only used when `Y_ppc = NULL`.
+#' predictive samples via `ppd()`. Only used when `Y_ppc = NULL`.
 #' @param relative Logical. If `TRUE`, QQ-plots are computed using relative
 #' compositions instead of counts. Default is `FALSE`.
 #' @param output Logical. If `TRUE`, return the data used to construct the
