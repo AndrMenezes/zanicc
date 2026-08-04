@@ -1,5 +1,129 @@
-#' Univariate zero-inflated index
-#' @param x vector of counts.
+#' @name count_composition_indices
+#'
+#' @title Summary indices for multivariate count-compositional data
+#'
+#' @description
+#' A collection of indices for summarising multivariate compositional count data.
+#' These functions quantify different aspects of the multivariate
+#' count-compositional distribution, including zero-inflation,
+#' dispersion, variability, and compositional diversity.
+#' These indices provide complementary summaries of count-compositional data and
+#' are useful for exploratory analyses, and posterior predictive checks.
+#'
+#' @param Y A count-compositional matrix with samples in rows and categories in
+#' columns.
+#' @param x A vector of counts for a single category.
+#' @param N A vector containing the total counts associated with `x`.
+#' This arguments is specific for the `zi_binomial()` function.
+#' @param standardise Logical. If `TRUE`, return the standardized version of the
+#' binomial zero-inflation index.
+#'
+#' @details
+#' Most functions operate on a count-compositional matrix with samples in rows
+#' and categories in columns.
+#' The exceptions are the functions `zi_poisson()`,  `zi_neg_bin()`, and `zi_binomial()`
+#' instead operate on a single count vector corresponding to one category.
+#' The function `shannon_entropy()` expects compositional data (each row sums to
+#' one). If a count-compositional matrix is supplied, the rows are normalized
+#' before computing the average normalized Shannon entropy.
+#'
+#' ## Zero-inflation indices
+#'
+#' * `zi_poisson()`: zero-inflation index relative to the Poisson distribution.
+#' * `zi_neg_bin()`: zero-inflation index relative to the negative binomial distribution.
+#' See Blasco-Moreno et al. (2019) for details.
+#' * `zi_binomial()`: zero-inflation index relative to the binomial distribution.
+#' See Kim et al. (2018) for details.
+#' * `zi_multinomial()`: multivariate zero-inflation index for count-compositional
+#' data relative to the multinomial distribution. See Menezes et al. (2026) for details.
+#'
+#' ## Dispersion and variability indices
+#'
+#' * `gdi()`: generalised dispersion index. See Kokonendji and Puig (2018) for details.
+#' * `mdi()`: multiple marginal dispersion Index. See Kokonendji and Puig (2018) for details.
+#' * `mcv()`: multivariate coefficient of variation. See Albert and Zhang (2010) for details
+#'
+#' ## Diversity indices
+#'
+#' * `shannon_entropy()`: average normalized Shannon entropy.
+#'
+#' @return
+#' A single numeric value summarizing one aspect of the count-compositional data.
+#'
+#' @references
+#'
+#' Albert, A. and Zhang, L. (2010), A novel definition of the multivariate coefficient of variation,
+#' \emph{Biometrical Journal}, \strong{52(5)}, 667--675.
+#'
+#' Blasco-Moreno, A., P{\'e}rez-Casany, M., Puig, P., Morante, M. and Castells, E. (2019), What does a zero
+#' mean? Understanding false, random and structural zeros in ecology, \emph{Methods in Ecology and Evolution}
+#' \strong{10(7)}, 949--959.
+#'
+#' Kim, H., Wei{\ss}, C. and M{\"o}ller, T. (2018), Testing for an excessive number of
+#' zeros in time series of bounded counts. \emph{Statistical Methods \& Applications}, \strong{27}, 689--714.
+#'
+#' Kokonendji, C. C. and Puig, P. (2018), Fisher dispersion index for multivariate count distributions: A review
+#' and a new proposal, Journal of Multivariate Analysis \strong{165}, 180--193.
+#'
+#' Menezes, A. F. B., Parnell, A. C. and Murphy, K. (2026), Bayesian nonparametric models for zero-inflated
+#' count-compositional data using ensembles of regression trees. <https://arxiv.org/abs/2601.08067>
+#'
+
+#' @rdname count_composition_indices
+#' @export
+zi_multinomial <- function(Y) {
+  N <- rowSums(Y)
+  p <- colSums(Y) / sum(N)
+  q <- outer(N, p, function(Ni, pj) (1 - pj)^Ni)
+  p0 <- sum(Y == 0)
+  p0_teo <- sum(q)
+  index <- (p0 - p0_teo) / length(Y)
+  index
+}
+
+#' @rdname count_composition_indices
+#' @export
+gdi <- function(Y) {
+  m <- colMeans(Y)
+  cv <- cov(Y)
+  drop((crossprod(sqrt(m), cv) %*% sqrt(m)) / crossprod(m))
+}
+
+#' @rdname count_composition_indices
+#' @export
+mdi <- function(Y) {
+  m <- colMeans(Y)
+  v <- diag(cov(Y))
+  di <- v / m
+  drop(sum(m^2 * di) / crossprod(m))
+}
+
+#' @rdname count_composition_indices
+#' @export
+mcv <- function(Y) {
+  m <- colMeans(Y)
+  v <- cov(Y)
+  drop( sqrt( (crossprod(m, v) %*% m) / sum(m^2) ))
+}
+
+#' @rdname count_composition_indices
+#' @export
+shannon_entropy <- function(Y) {
+  N <- rowSums(Y)
+  if (!all(N == 1.0)) {
+    warning(
+      "The rows of `Y` do not sum to one and are therefore not compositional vectors.\n",
+      "Rows will be normalized before computing the Shannon entropy.")
+    Y <- .normalize_composition(Y)
+  }
+  n <- nrow(Y)
+  log_d <- log(ncol(Y))
+  terms <- numeric(n)
+  for (i in seq_len(n)) terms[i] <- -sum(Y[i, ] * log(Y[i, ]), na.rm = TRUE) / log_d
+  mean(terms)
+}
+
+#' @rdname count_composition_indices
 #' @export
 zi_neg_bin <- function(x) {
   p0 <- mean(x == 0)
@@ -8,12 +132,16 @@ zi_neg_bin <- function(x) {
   m <- mean(x)
   1.0 + (s2 - m) * log(p0) / (m^2 * (log(s2) - log(m)))
 }
+
+#' @rdname count_composition_indices
 #' @export
 zi_poisson <- function(x) {
   p0 <- mean(x == 0)
   if (p0 == 0.0) return(0.0)
   1.0 + log(p0) / mean(x)
 }
+
+#' @rdname count_composition_indices
 #' @export
 zi_binomial <- function(x, N, standardise = FALSE) {
   sum_N <- sum(N)
@@ -28,49 +156,117 @@ zi_binomial <- function(x, N, standardise = FALSE) {
   }
   index
 }
-#' Zero-inflated index for multinomial distribution
-#' @param Y An n by d count-compositional matrix.
-#' @description It average over the ZI binomial index of each marginal component.
+
+#' @name recovery_metrics
+#'
+#' @title Parameter recovery metrics for count-compositional models
+#'
+#' @description
+#' A collection of metrics to assess the performance of count-compositional
+#' models in recovering model parameters from simulated data sets.
+#'
+#' @param true_values A matrix containing the true values of the model parameter
+#' being evaluated. Rows correspond to observations and columns
+#' correspond to categories.
+#' @param estimates A matrix containing posterior point estimates (posterior
+#' means or medians) of the corresponding parameter. Must have the same
+#' dimensions as `true_values`.
+#' @param estimates_lo A matrix containing lower posterior credible interval
+#' intervals for the parameter estimates. Must have the same dimensions as
+#' `true_values`.
+#' @param estimates_up A matrix containing upper posterior credible interval
+#' intervals for the parameter estimates. Must have the same dimensions as
+#' `true_values`.
+#' @param ep A small positive constant used in `compute_kl_simplex()` to avoid
+#' undefined values when the true probability is positive but the estimated
+#' probability is zero.
+
+#' Compute Frobenius norm, absolute norm, coverage, KL, and JS divergences using the posterior
+#' mean as an estimator of the given parameter against the true (or reference)
+#' values.
+#' @param true_values matrix n by d with the true values of the parameter.
+#' @param estimates,estimates_lo,estimates_up posterior estimates (mean or median)
+#' and lower and upper estimates of the parameters. All must have the same dimension
+#' as the true_values, that is, n x d.
+#' @description The functions above give the FROB norm and KL divergence using the
+#' posterior mean as estimator of the parameters. For the coverage the (1-p)\%
+#' credible interval is used.
+#'
+#' @rdname recovery_metrics
 #' @export
-zi_multinomial <- function(Y) {
-  N <- rowSums(Y)
-  p <- colSums(Y) / sum(N)
-  q <- outer(N, p, function(Ni, pj) (1 - pj)^Ni)
-  p0 <- sum(Y == 0)
-  p0_teo <- sum(q)
-  index <- (p0 - p0_teo) / length(Y)
-  index
+compute_frob <- function(true_values, estimates) {
+  sqrt(sum((estimates - true_values)^2))
+}
+#' @rdname recovery_metrics
+#' @export
+compute_abs_diff <- function(true_values, estimates) {
+  mean(abs(estimates - true_values))
+}
+#' @rdname recovery_metrics
+#' @export
+compute_coverage <- function(true_values, estimates_lo, estimates_up) {
+  mean((true_values >= estimates_lo) & (true_values <= estimates_up))
+}
+#' @rdname recovery_metrics
+#' @export
+compute_kl_simplex <- function(true_values, estimates) {
+  ep = 1.0
+  # Critical case: theta >0 and draws == 0
+  idx <- which((true_values > 0.0) & estimates == 0.0)
+  estimates[idx] <- ep
+  log_ratio <- log(true_values / estimates)
+  # continuity as limit: lim x -> 0 of x log x = 0:
+  log_ratio[log_ratio == -Inf] <- 0.0
+  # log(0/0) = 0:
+  log_ratio[is.na(log_ratio)] <- 0.0
+  kl_terms <- true_values*log_ratio
+  mean(rowSums(kl_terms))
+}
+#' @rdname recovery_metrics
+#' @export
+compute_kl_prob <- function(true_values, estimates) {
+  n <- nrow(true_values)
+  d <- ncol(true_values)
+  kl <- numeric(d)
+  for (j in seq_len(d)) {
+    true_curr <- true_values[, j]
+    est_curr <- estimates[, j]
+    kl_terms <- true_curr * log(true_curr / est_curr)
+    lr_1p <- log1p(-true_curr) - log1p(-est_curr)
+    lr_1p[lr_1p == -Inf] <- 0.0
+    lr_1p[is.na(lr_1p)] <- 0.0
+    kl_terms <- kl_terms  + (1 - true_curr) * lr_1p
+    kl[j] <- mean(kl_terms)
+  }
+  kl
+}
+#' @rdname recovery_metrics
+#' @export
+compute_js <- function(true_values, estimates) {
+  t1 <- estimates*log(2*estimates / (estimates + true_values))
+  t1[is.na(t1)] <- 0.0
+  t2 <- true_values*log(2*true_values / (estimates + true_values))
+  t2[is.na(t2)] <- 0.0
+  mean(rowSums(t1 + t2))
+}
+#' @rdname recovery_metrics
+#' @export
+compute_hellinger <- function(true_values, estimates) {
+  1.0 / sqrt(2)*mean(rowSums((sqrt(true_values) - sqrt(estimates))^2))
 }
 
-#' Generalised dispersion index (GDI) for multivariate counts
-#' @export
-gdi <- function(Y) {
-  m <- colMeans(Y)
-  cv <- cov(Y)
-  drop((crossprod(sqrt(m), cv) %*% sqrt(m)) / crossprod(m))
-}
-#' @export
-mdi <- function(Y) {
-  m <- colMeans(Y)
-  v <- diag(cov(Y))
-  di <- v / m
-  drop(sum(m^2 * di) / crossprod(m))
-}
-#' @export
-mcv <- function(Y) {
-  m <- colMeans(Y)
-  v <- cov(Y)
-  drop( sqrt( (crossprod(m, v) %*% m) / sum(m^2) ))
-}
-#' Compute the average Shannon entropy for a compositional data
-#' @export
-shannon_entropy <- function(Y) {
-  n <- nrow(Y)
-  log_d <- log(ncol(Y))
-  terms <- numeric(n)
-  for (i in seq_len(n)) terms[i] <- -sum(Y[i, ] * log(Y[i, ]), na.rm = TRUE)/log_d
-  mean(terms)
-}
+# d <- 4
+# n <- 10
+# true_values <- matrix(rexp(n*d), ncol = d, nrow = n)
+# true_values[2, 1] <- 0.0
+# true_values[1, 1] <- 0.0
+# true_values <- sweep(true_values, 1, rowSums(true_values), "/")
+# estimates <- matrix(rexp(n*d), ncol = d, nrow = n)
+# estimates[1, 1] <- 0.0
+# estimates <- sweep(estimates, 1, rowSums(estimates), "/")
+
+
+
 
 #' Compute Frobenius norm and KL divergence for each draw of the parameter against the
 #' true (or reference) values.
@@ -121,81 +317,6 @@ compute_kl_prob_chain <- function(true_values, draws) {
   kl
 }
 
-#' Compute Frobenius norm, absolute norm, coverage, KL, and JS divergences using the posterior
-#' mean as an estimator of the given parameter against the true (or reference)
-#' values.
-#' @param true_values matrix n by d with the true values of the parameter.
-#' @param estimates,estimates_lo,estimates_up posterior estimates (mean or median)
-#' and lower and upper estimates of the parameters. All must have the same dimension
-#' as the true_values, that is, n x d.
-#' @param ep small amount to add in the compute_kl_simplex function to treat cases where
-#' `true_values > 0` and `estimates = 0`.
-#' @description The functions above give the FROB norm and KL divergence using the
-#' posterior mean as estimator of the parameters. For the coverage the (1-p)\%
-#' credible interval is used.
-#' @export
-compute_frob <- function(true_values, estimates) {
-  sqrt(sum((estimates - true_values)^2))
-}
-#' @export
-compute_abs_diff <- function(true_values, estimates) {
-  mean(abs(estimates - true_values))
-}
-#' @export
-compute_coverage <- function(true_values, estimates_lo, estimates_up) {
-  mean((true_values >= estimates_lo) & (true_values <= estimates_up))
-}
-#' @export
-compute_kl_simplex <- function(true_values, estimates, ep = 1.0) {
-  # Critical case: theta >0 and draws == 0
-  idx <- which((true_values > 0.0) & estimates == 0.0)
-  estimates[idx] <- ep
-  log_ratio <- log(true_values / estimates)
-  # continuity as limit: lim x -> 0 of x log x = 0:
-  log_ratio[log_ratio == -Inf] <- 0.0
-  # log(0/0) = 0:
-  log_ratio[is.na(log_ratio)] <- 0.0
-  kl_terms <- true_values*log_ratio
-  mean(rowSums(kl_terms))
-}
-#' @export
-compute_kl_prob <- function(true_values, estimates) {
-  n <- nrow(true_values)
-  d <- ncol(true_values)
-  kl <- numeric(d)
-  for (j in seq_len(d)) {
-    true_curr <- true_values[, j]
-    est_curr <- estimates[, j]
-    kl_terms <- true_curr * log(true_curr / est_curr)
-    lr_1p <- log1p(-true_curr) - log1p(-est_curr)
-    lr_1p[lr_1p == -Inf] <- 0.0
-    lr_1p[is.na(lr_1p)] <- 0.0
-    kl_terms <- kl_terms  + (1 - true_curr) * lr_1p
-    kl[j] <- mean(kl_terms)
-  }
-  kl
-}
-#' @export
-compute_js <- function(true_values, estimates) {
-  t1 <- estimates*log(2*estimates / (estimates + true_values))
-  t1[is.na(t1)] <- 0.0
-  t2 <- true_values*log(2*true_values / (estimates + true_values))
-  t2[is.na(t2)] <- 0.0
-  mean(rowSums(t1 + t2))
-}
-#' @export
-compute_hellinger <- function(true_values, estimates) {
-  1/sqrt(2)*mean(rowSums((sqrt(true_values) - sqrt(estimates))^2))
-}
-# d <- 4
-# n <- 10
-# true_values <- matrix(rexp(n*d), ncol = d, nrow = n)
-# true_values[2, 1] <- 0.0
-# true_values[1, 1] <- 0.0
-# true_values <- sweep(true_values, 1, rowSums(true_values), "/")
-# estimates <- matrix(rexp(n*d), ncol = d, nrow = n)
-# estimates[1, 1] <- 0.0
-# estimates <- sweep(estimates, 1, rowSums(estimates), "/")
 
 #' Compute metrics of classification for variable selection.
 #' @param truth vector of 0 and 1 with true labels
@@ -263,28 +384,3 @@ compute_prediction_metrics <- function(x, draws) {
   })
   rowMeans(do.call(cbind, l))
 }
-
-#' Compute various prediction metrics
-#' @param x vector with true values.
-#' @param draws a list with the draws.
-#' @export
-compute_prediction_metrics_list <- function(x, draws) {
-  n <- length(x)
-  l <- lapply(seq_len(n), function(i) {
-    post <- draws[[i]]
-    mu <- mean(post)
-    md <- median(post)
-    dd <- density(post)
-    mo <- dd$x[which.max(dd$y)]
-    c(mae = sum(abs(x[i] - md)),
-      msep = sum((x[i] - mu)^2),
-      dmode = sum((x[i] - mo)^2),
-      coverage_95 = is_inside(coda::HPDinterval(coda::as.mcmc(post), prob = 0.95), x[i]),
-      coverage_50 = is_inside(coda::HPDinterval(coda::as.mcmc(post), prob = 0.50), x[i])
-    )
-  })
-  rowMeans(do.call(cbind, l))
-}
-
-
-
