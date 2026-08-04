@@ -80,19 +80,84 @@ runifconvexhull <- function(n, X) {
 
 
 
-#' Inverse posterior using the ZANIM-LN-BART model
+#' @name inverse_posterior
+#'
+#' @title Sample from the inverse posterior distribution of past climate variables
+#'
+#' @description
+#' Approximates the inverse posterior distribution of the unobserved climate
+#' variables given the corresponding with fossil compositional counts, and the
+#' posterior draws of parameters from the ZANIM-LN-BART model.
+#'
+#' This is the main quantity of interest when performing pollen-based palaeoclimate
+#' reconstruction using the ZANIM-LN-BART model.
+#'
+#'
+#' @param object A fitted ZANIM-LN-BART model of class `zanicc`. The model must
+#' have been fitted using a modern calibration data set.
+#' @param Y A matrix of fossil count-compositional observations with samples in
+#' rows and taxa in columns. The taxa (columns) must match those used in the modern
+#' data set.
+#' @param method Character string specifying the sampling algorithm. One of
+#' `"sir"`, `"ess"`, or `"cess"`.
+#' @param dir_posterior_fx Directory used by the `"sir"` method to store (or
+#' retrieve) the taxon-specific posterior tree ensembles required for likelihood
+#' evaluation.
+#' @param x_proposal Proposal samples used by the `"sir"` method. Each row
+#' corresponds to a proposed climate vector.
+#' @param ndpost Number of posterior draws from the fitted ZANIM-LN-BART model
+#' to use. Must not exceed `object$ndpost`.
+#' @param nburnin Number of burn-in iterations for the `"ess"` and `"cess"`
+#' methods. For each posterior draw of the forward model, the ESS/cESS sampler
+#' is run for `nburnin` iterations before collecting a sample. The default
+#' (`nburnin = 1`) corresponds to the naive cut-posterior algorithm.
+#' @param n_particles Number of particles, that is, samples used to obtain an unbiased estimate of
+#' the likelihood.
+#'
+#' Integer giving number of independent samples (particles) to
+#' generate obtain an unbiased estimate of the ZANIM-LN-BART likelihood.
+#' @param mean_prior,S_prior Prior mean vector and covariance matrix
+#' for the climate variables used for the `ess` and `cess` methods.
+#' @param X_ini Initial climate values used to initialize the ESS/CESS samplers. Default is NULL,
+#' so it then it uses a sample from the prior.
+#' @param Amat,bvec
+#' @param lower,upper
+#' @param eta Tuning parameter using in the `cess` algorithm related to the logistic
+#' approximation of the indicator function.
+#'
+#' @details
+#'
+#' This function implements the Bayesian modular framework proposed in
+#' in Menezes et al. (2026) to perform palaeoclimate reconstruction.
+#'
+#' The function performs inverse prediction using a previously fitted
+#' ZANIM-LN-BART model.
+#' The ZANIM-LN-BART model is first fitted to a modern
+#' calibration data set in order to estimate the pollen-climate relationships
+#'
+#' Given one or more fossil assemblages, this function uses
+#' these posterior draws to approximate the cut posterior distribution of the
+#' corresponding latent climate variables.
+#'
+#' Several sampling algorithms are available, including sampling-importance-
+#' resampling (SIR), elliptical slice sampling (ESS), and constrained
+#' elliptical slice sampling (CESS).
+#'
+#' This function is a high-level interface to an efficient C++ implementation.
+#'
+#' @rdname inverse_posterior
 #' @export
-inverse_posterior_zanimlnbart <- function(object, Y, dir_posterior_fx = NULL,
-                                          x_proposal = NULL,
+inverse_posterior_zanimlnbart <- function(object, Y,
                                           method = c("sir", "ess", "cess"),
+                                          dir_posterior_fx = NULL,
+                                          x_proposal = NULL,
                                           ndpost = object$ndpost, nburnin = 1L,
+                                          n_particles = NULL,
                                           mean_prior = NULL,
                                           S_prior = NULL,
                                           X_ini = NULL,
                                           Amat = NULL, bvec = NULL,
                                           lower = NULL, upper = NULL,
-                                          n_particles = NULL,
-                                          nadapt = floor(object$ndpost / 2),
                                           eta = 50.0) {
 
   # Some checks
@@ -144,11 +209,9 @@ inverse_posterior_zanimlnbart <- function(object, Y, dir_posterior_fx = NULL,
       indices <- idx_sir[(1 + ndpost*(i - 1L)):(ndpost*i)]
       res[,,i] <- x_proposal[indices, ]
     }
-    # Effective sample size
-    # effsize_sir <- matrix(cpp_obj$ess_sir, nrow = ndpost)
-    # colMeans(effsize_sir)
     res <- simplify2array(res)
-    # res <-
+    # save effective sample size
+    attr(res, "effsize") <- matrix(cpp_obj$ess_sir, nrow = ndpost)
     if (do_predict) attr(res, "elapsed_time_predict") <- end_predict
   } else if (method %in% c("ess", "cess")) {
 
