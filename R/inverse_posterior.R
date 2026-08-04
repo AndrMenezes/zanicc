@@ -64,15 +64,17 @@
 runifconvexhull <- function(n, X) {
   # Triangulate the points. Indexes into simplices, by row.
   V <- geometry::delaunayn(X)
+  p_dim <- ncol(V) - 1 #ncol(X) #
+  k_simplices <- nrow(V)
   # Sample the component simplices of the triangulation proportional to their volumes
   probs <- abs(.volume_simplices(V, X))
   probs <- probs / sum(probs)
-  i <- sample.int(nrow(V), n, replace = TRUE, prob = probs)
+  ind <- sample.int(k_simplices, n, replace = TRUE, prob = probs)
   # Now, sample uniformly within each selected simplex, that is, Dir(1,...,1)
-  wts <- matrix(stats::rexp(n * (dim(X)[2] + 1)), nrow = n)
+  wts <- matrix(stats::rexp(n * (p_dim + 1)), nrow = n)
   wts <- wts / rowSums(wts)
   # Apply the weights to obtain Cartesian point coordinates
-  pts <- sapply(seq_len(n), \(j) wts[j, ] %*% X[V[i[j], ], ])
+  pts <- sapply(seq_len(n), \(j) wts[j, ] %*% X[V[ind[j], ], ])
   t(pts)
 }
 
