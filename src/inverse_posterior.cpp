@@ -126,7 +126,7 @@ void InversePosterior::SIR(arma::umat Y, int n_proposal, int ndpost,
       }
       // Normalise weights and resample
       probs = normalise_weights(log_w, n_proposal);
-      // ess_sir[i*ndpost + k] = ComputeEfSS(probs);
+      ess_sir[i*ndpost + k] = ComputeEfSS(probs);
       indices_sir[i*ndpost + k] = sample_discrete(probs, n_proposal);
     }
   }
