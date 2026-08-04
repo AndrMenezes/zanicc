@@ -148,6 +148,7 @@ inverse_posterior_zanimlnbart <- function(object, Y, dir_posterior_fx = NULL,
     # effsize_sir <- matrix(cpp_obj$ess_sir, nrow = ndpost)
     # colMeans(effsize_sir)
     res <- simplify2array(res)
+    # res <-
     if (do_predict) attr(res, "elapsed_time_predict") <- end_predict
   } else if (method %in% c("ess", "cess")) {
 
