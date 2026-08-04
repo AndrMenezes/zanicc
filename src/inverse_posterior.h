@@ -36,6 +36,9 @@ public:
                           const std::vector<std::vector<Node*>> &forest_theta,
                           const std::vector<std::vector<Node*>> &forest_zeta);
 
+  // Effective sample size for IS-based algorithms
+  double EffectiveSampleSize(std::vector<double> &probs);
+
   // Sampling importance resampling with multiple imputation
   void SIR(arma::umat Y, int n_proposal, int ndpost, arma::mat B,
            std::string dir_posterior_fx);

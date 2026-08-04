@@ -55,9 +55,12 @@ void InversePosterior::GetBARTPredictions(std::vector<double> &x,
   for (auto &u : theta) u /= s_theta;
 }
 
-////////////////////////////////////////////////////////////////////////////////////
-// Stable methods that have been tested for the ZANIM-LN-BART model
-////////////////////////////////////////////////////////////////////////////////////
+// Compute effective sample size for importance sampling based methods
+double InversePosterior::EffectiveSampleSize(std::vector<double> &probs) {
+  double s = 0.0;
+  for (size_t j=0; j < probs.size(); j++) s += probs[j]*probs[j];
+  return 1.0 / s;
+}
 
 // Run multiple imputation with SIR approach to sample the inverse posterior
 void InversePosterior::SIR(arma::umat Y, int n_proposal, int ndpost,
@@ -126,7 +129,7 @@ void InversePosterior::SIR(arma::umat Y, int n_proposal, int ndpost,
       }
       // Normalise weights and resample
       probs = normalise_weights(log_w, n_proposal);
-      ess_sir[i*ndpost + k] = ComputeEfSS(probs);
+      ess_sir[i*ndpost + k] = EffectiveSampleSize(probs);
       indices_sir[i*ndpost + k] = sample_discrete(probs, n_proposal);
     }
   }
