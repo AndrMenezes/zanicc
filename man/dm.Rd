@@ -4,7 +4,7 @@
 \alias{dm}
 \alias{rdm}
 \alias{ddm}
-\title{Dirichlet-Multinomial Distribution}
+\title{Dirichlet-multinomial Distribution}
 \usage{
 rdm(n, sizes, alphas)
 
@@ -24,5 +24,5 @@ same length as \code{alpha}.}
 }
 \description{
 Random number generation and probability mass function for the
-Dirichlet-Multinomial distribution.
+Dirichlet-multinomial distribution.
 }

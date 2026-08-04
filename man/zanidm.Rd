@@ -7,7 +7,7 @@
 \alias{dzanidm_marginal}
 \alias{moments_zanidm}
 \alias{covariance_zanidm}
-\title{Zero-&-N-Inflated Dirichlet-Multinomial Distribution}
+\title{Zero-&-N-Inflated Dirichlet-multinomial Distribution}
 \usage{
 rzanidm(n, size, alpha, zeta)
 
@@ -39,6 +39,11 @@ and \eqn{Y_h}.}
 }
 \description{
 Random number generation and probability mass function for the
-Zero-&-N-Inflated Dirichlet-Multinomial distribution. It also contains the
+Zero-&-N-Inflated Dirichlet-multinomial distribution. It also contains the
 marginal probability mass function and their expected value.
+}
+\references{
+Menezes, A. F. B., Parnell, A. C., and Murphy, K. (2025). Finite mixture representations of
+zero-and-N -inflated distributions for count-compositional data. \emph{Journal of Multivariate Analysis},
+\strong{210:105492}. \url{https://doi.org/10.1016/j.jmva.2025.105492}.
 }
