@@ -59,7 +59,7 @@
 #'
 "pollen_climate"
 
-#' @name pollen_fossil
+#' @name pollen_monticchio
 #'
 #' @title Fossil pollen counts from Lago Grande di Monticchio
 #'
@@ -101,7 +101,7 @@
 #' Joint palaeoclimate reconstruction from pollen data via forward models and climate histories,
 #' \emph{Quaternary Science Reviews} \strong{151}, 111--126.
 #'
-"pollen_fossil"
+"pollen_monticchio"
 
 
 
