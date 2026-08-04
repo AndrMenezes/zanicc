@@ -163,7 +163,8 @@ zi_binomial <- function(x, N, standardise = FALSE) {
 #'
 #' @description
 #' A collection of metrics to assess the performance of count-compositional
-#' models in recovering model parameters from simulated data sets.
+#' models in recovering their parameters from simulated data sets. See below for
+#' further details.
 #'
 #' @param true_values A matrix containing the true values of the model parameter
 #' being evaluated. Rows correspond to observations and columns
@@ -180,18 +181,86 @@ zi_binomial <- function(x, N, standardise = FALSE) {
 #' @param ep A small positive constant used in `compute_kl_simplex()` to avoid
 #' undefined values when the true probability is positive but the estimated
 #' probability is zero.
-
-#' Compute Frobenius norm, absolute norm, coverage, KL, and JS divergences using the posterior
-#' mean as an estimator of the given parameter against the true (or reference)
-#' values.
-#' @param true_values matrix n by d with the true values of the parameter.
-#' @param estimates,estimates_lo,estimates_up posterior estimates (mean or median)
-#' and lower and upper estimates of the parameters. All must have the same dimension
-#' as the true_values, that is, n x d.
-#' @description The functions above give the FROB norm and KL divergence using the
-#' posterior mean as estimator of the parameters. For the coverage the (1-p)\%
-#' credible interval is used.
 #'
+#' @details
+#' The functions are designed for evaluating parameter recovery in
+#' count-compositional models. The appropriate metric depends on the type of
+#' parameter being assessed.
+#'
+#' ## Divergence-based metrics
+#'
+#' * `compute_kl_simplex()`: Kullback-Leibler divergence between probability
+#'   vectors defined on the simplex.
+#' * `compute_kl_prob()`: Kullback-Leibler divergence for scalar probability parameters.
+#' * `compute_js()`: Jensen-Shannon divergence between probability vectors.
+#'
+#' ## Distance-based metrics
+#'
+#' * `compute_hellinger()`: Hellinger distance between true values and posterior
+#'   estimates.
+#' * `compute_frob()`: Frobenius norm between true values and posterior
+#'   estimates.
+#' * `compute_abs_diff()`: Mean absolute difference between true values and
+#'   posterior estimates.
+#'
+#' ## Posterior uncertainty
+#'
+#' * `compute_coverage()`: Compute the empirical coverage given the crebible inteval
+#' of the parameters.
+#'
+#' In the simulation studies conducted in Menezes et al. (2025), we assessed the
+#' and comparing different models with respect their ability to estimate the
+#' following parameters:
+#'
+#' \describe{
+#'   \item{population-level count probabilities, \eqn{\theta_{ij}} }{
+#'    It provides the information underlying the observed compositional counts.
+#'    The vector \eqn{\pmb{\theta}_{i} = (\theta_{i1}, \ldots, \theta_{id}) \in \mathbb{S}^d}
+#'    lie in the continuous simplex space
+#'   \eqn{\mathbb{S}^d=\{\bm{\theta}\in\mathbb{R}^d; \theta_{ij} > 0, \sum_{j=1}^d \theta_{ij}=1\}}.
+#'
+#'   For these parameters, we use the Kullback-Leibler divergence for
+#'   parameters on the simplex, averaged over the observations.
+#'   This is implemented in the function `compute_kl_simplex()`.
+#'
+#'   }
+#'
+#'   \item{population-level structural zeros probabilities, \eqn{\zeta_{ij}} }{
+#'   It provides the information on the probability a given observation \eqn{i} of
+#'   category \eqn{j} is structural zero.
+#'   Each \eqn{\zeta_{ij} \in (0, 1)}.
+#'
+#'   For these parameters, we use the Kullback-Leibler divergence averaged over
+#'   the observations, implemented in the function `compute_kl_prob()`.
+#'
+#'   }
+#'
+#'   \item{individual-level structural zero probabilities, \eqn{\vartheta_{ij}}}{
+#'   It describe within- and between-subject heterogeneity, while \eqn{\bm{\theta}_i}
+#'   characterises the counts at a global level.
+#'   The vector \eqn{\pmb{\vartheta}_{i} = (\vartheta_{i1}, \ldots, \vartheta_{id}) \in \mathbb{S}^d}
+#'   also lie in the continuous simplex space
+#'   \eqn{\mathbb{S}^d=\{\bm{\vartheta}\in\mathbb{R}^d; \vartheta_{ij} \geq 0, \sum_{j=1}^d \vartheta_{ij}=1\}},
+#'
+#'   However, note that \eqn{\vartheta_{ij}} can be have spikes at zero.
+#'   Because of this, for these parameters we use the Jensen-Shannon divergence
+#'   averaged over the observations, implemented in the function `compute_js`.
+#'   }
+#' }
+#'
+#' @references
+#' Menezes, A. F. B., Parnell, A. C. and Murphy, K. (2026), Bayesian nonparametric models for zero-inflated
+#' count-compositional data using ensembles of regression trees. <https://arxiv.org/abs/2601.08067>
+#'
+#' @return
+#' A numeric value or vector containing the recovery metric. The returned value
+#' measures the discrepancy between the true parameter values and their
+#' posterior estimates; smaller values indicate better recovery, while coverage
+#' values closer to the nominal credible level indicate better calibration.
+#'
+#'
+
+
 #' @rdname recovery_metrics
 #' @export
 compute_frob <- function(true_values, estimates) {
@@ -243,12 +312,13 @@ compute_kl_prob <- function(true_values, estimates) {
 #' @rdname recovery_metrics
 #' @export
 compute_js <- function(true_values, estimates) {
-  t1 <- estimates*log(2*estimates / (estimates + true_values))
+  t1 <- estimates*log(2.0*estimates / (estimates + true_values))
   t1[is.na(t1)] <- 0.0
-  t2 <- true_values*log(2*true_values / (estimates + true_values))
+  t2 <- true_values*log(2.0*true_values / (estimates + true_values))
   t2[is.na(t2)] <- 0.0
   mean(rowSums(t1 + t2))
 }
+
 #' @rdname recovery_metrics
 #' @export
 compute_hellinger <- function(true_values, estimates) {
@@ -267,48 +337,91 @@ compute_hellinger <- function(true_values, estimates) {
 
 
 
-
-#' Compute Frobenius norm and KL divergence for each draw of the parameter against the
-#' true (or reference) values.
-#' @param true_values matrix n by d with the true values of the parameter.
-#' @param draws draws with dimension n x d x ndpost, with the draws of the parameter.
-#' @description The functions above give the FROB norm and KL divergence for each
-#' draw of the parameter.
+#' @name posterior_chain_metrics
+#'
+#' @title Posterior chain metrics for count-compositional models
+#'
+#' @description
+#' Metrics for assessing the convergence and stability of posterior samples from
+#' count-compositional models.
+#'
+#' @param reference_values A matrix containing the reference values of the
+#' parameter. These correspond to the true parameter values in simulation
+#' studies or reference estimates in real-data analyses.
+#' Rows correspond to observations and columns correspond to categories.
+#' @param draws A three-dimensional array of posterior draws with dimensions
+#' \eqn{n \times d \times M}, where \eqn{M} is the number of posterior
+#' samples.
+#' @param ep A small positive constant used in
+#' `compute_kl_simplex_chain()` to avoid undefined logarithms when a
+#' reference probability is positive but the corresponding posterior draw is
+#' zero.
+#'
+#' @details
+#'
+#' Unlike the functions in `\link{recovery_metrics}`, which
+#' evaluate posterior point estimates (e.g., posterior means or medians), these
+#' functions compute the discrepancy between each posterior draw and the
+#' corresponding reference values.
+#' They are primarily intended for monitoring the convergence of MCMC
+#' algorithms of the count-compositional models and evaluating the mixing of
+#' posterior chain.
+#'
+#' The currently functions implmented are:
+#'
+#' * `compute_frob_chain()`: Frobenius norm between each posterior draw and the
+#' reference values.
+#' * `compute_kl_simplex_chain()`: Kullback--Leibler divergence for parameters
+#' defined on the simplex.
+#' * `compute_kl_prob_chain()`: Bernoulli Kullback--Leibler divergence for
+#' scalar probability parameters.
+#'
+#' @return
+#' `compute_frob_chain()` and `compute_kl_simplex_chain()` return a numeric
+#' vector of length equal to the number of posterior draws, where each element
+#' contains the corresponding metric for each posterior sample.
+#'
+#' `compute_kl_prob_chain()` returns a matrix whose rows correspond to posterior
+#' draws and whose columns correspond to categories.
+#'
+#' @rdname posterior_chain_metrics
 #' @export
-compute_frob_chain <- function(true_values, draws) {
+compute_frob_chain <- function(reference_values, draws) {
   ndpost <- dim(draws)[3]
-  diffs <- (array(true_values, dim = c(dim(true_values), ndpost)) - draws)^2
+  diffs <- (array(reference_values, dim = c(dim(reference_values), ndpost)) - draws)^2
   sqrt(apply(diffs, 3, sum))
 }
+#' @rdname posterior_chain_metrics
 #' @export
-compute_kl_simplex_chain <-  function(true_values, draws, ep = 1.0) {
+compute_kl_simplex_chain <-  function(reference_values, draws, ep = 1.0) {
   d <- dim(draws)[2]
   ndpost <- dim(draws)[3]
   # Fixing critical case: true_values > 0 and draws == 0
   for (k in seq_len(ndpost)) {
     for (j in seq_len(d)) {
-      idx <- which((true_values[, j] > 0) & (draws[,j,k] == 0))
+      idx <- which((reference_values[, j] > 0) & (draws[,j,k] == 0))
       draws[idx,j,k] <- ep
     }
   }
   # Compute the ratio
-  log_ratio <- log(array(true_values, dim = c(dim(true_values), ndpost)) / draws)
+  log_ratio <- log(array(reference_values, dim = c(dim(reference_values), ndpost)) / draws)
   # 0 log(x) = 0, justify by the continuity limit
   log_ratio[log_ratio == -Inf] <- 0.0
   # log(0/0) = 0
   log_ratio[is.na(log_ratio)] <- 0
-  kl_terms <- array(true_values, dim = c(dim(true_values), ndpost)) * log_ratio
+  kl_terms <- array(reference_values, dim = c(dim(reference_values), ndpost)) * log_ratio
   colMeans(apply(kl_terms, 3, rowSums))
 }
+#' @rdname posterior_chain_metrics
 #' @export
-compute_kl_prob_chain <- function(true_values, draws) {
-  d <- ncol(true_values)
-  n <- nrow(true_values)
+compute_kl_prob_chain <- function(reference_values, draws) {
+  d <- ncol(reference_values)
+  n <- nrow(reference_values)
   ndpost <- dim(draws)[3]
   kl <- matrix(nrow = ndpost, ncol = d)
   for (j in seq_len(d)) {
     # Broadcast in order to compute the KL for each draw of \zeta
-    true_curr <- matrix(true_values[, j], nrow = n, ncol = ndpost)
+    true_curr <- matrix(reference_values[, j], nrow = n, ncol = ndpost)
     draws_curr <- draws[, j, ]
     kl_terms <- true_curr * log(true_curr / draws_curr)
     kl_terms <- kl_terms  + (1 - true_curr) * (log1p(-true_curr) - log1p(-draws_curr))
@@ -317,34 +430,14 @@ compute_kl_prob_chain <- function(true_values, draws) {
   kl
 }
 
-
-#' Compute metrics of classification for variable selection.
-#' @param truth vector of 0 and 1 with true labels
-#' @param estimated vector of estimated labels.
-#' @details
-#' Minor modifications of the code from the function `ZIDM::select_perf`.
-#'
-#' @export
-compute_classification_metrics <- function(truth, estimated) {
-  select <- which(estimated == 1)
-  not_selected <- which(estimated == 0)
-  included <- which(truth == 1)
-  excluded <- which(truth == 0)
-  tp <- sum(select %in% included)
-  tn <- sum(not_selected %in% excluded)
-  fp <- sum(select %in% excluded)
-  fn <- sum(not_selected %in% included)
-  sensitivity <- tp / (fn + tp)
-  specificity <- tn / (fp + tn)
-  mcc <- (tp * tn - fp * fn)/(sqrt(tp + fp) * sqrt(tp + fn) * sqrt(tn + fp) * sqrt(tn + fn))
-  f1 <- 2 * tp / (2 * tp + fn + fp)
-  c(sens = sensitivity, spec = specificity, mcc = mcc, f1 = f1)
-}
+###################################################################################
+# Go back to this later:
+# These are functions I have been using for the inverse posterior experiments.
 
 
-#' Check if x is in the interval.
-#' @param interval matrix
-#' @param x vector
+# Check if x is in the interval.
+# @param interval matrix
+# @param x vector
 is_inside <- function(interval, x) {
   p <- length(x)
   isin <- logical(p)
@@ -353,7 +446,7 @@ is_inside <- function(interval, x) {
   if (all(isin)) return(1L) else return(0L)
 }
 
-#' Compute the mode using kernel density estimates
+# Compute the mode using kernel density estimates
 get_mode <- function(X) {
   apply(X, 2, function(x) {
     dd <- density(x)
@@ -361,11 +454,11 @@ get_mode <- function(X) {
   })
 }
 
-#' Compute various prediction metrics
-#' @param x matrix
-#' @param draws an array with the draws. Each entry is a matrix with number of posterior
-#' draws and each column is the variable.
-#' @export
+# Compute various prediction metrics
+# @param x matrix
+# @param draws an array with the draws. Each entry is a matrix with number of posterior
+# draws and each column is the variable.
+# @export
 compute_prediction_metrics <- function(x, draws) {
   n <- nrow(x)
   stopifnot(n == dim(draws)[3L])
@@ -384,3 +477,26 @@ compute_prediction_metrics <- function(x, draws) {
   })
   rowMeans(do.call(cbind, l))
 }
+
+
+# Compute metrics of classification for variable selection.
+# @param truth vector of 0 and 1 with true labels
+# @param estimated vector of estimated labels.
+# @details
+# Minor modifications of the code from the function `ZIDM::select_perf`.
+compute_classification_metrics <- function(truth, estimated) {
+  select <- which(estimated == 1)
+  not_selected <- which(estimated == 0)
+  included <- which(truth == 1)
+  excluded <- which(truth == 0)
+  tp <- sum(select %in% included)
+  tn <- sum(not_selected %in% excluded)
+  fp <- sum(select %in% excluded)
+  fn <- sum(not_selected %in% included)
+  sensitivity <- tp / (fn + tp)
+  specificity <- tn / (fp + tn)
+  mcc <- (tp * tn - fp * fn)/(sqrt(tp + fp) * sqrt(tp + fn) * sqrt(tn + fp) * sqrt(tn + fn))
+  f1 <- 2 * tp / (2 * tp + fn + fp)
+  c(sens = sensitivity, spec = specificity, mcc = mcc, f1 = f1)
+}
+
