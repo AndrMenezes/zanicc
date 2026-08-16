@@ -93,8 +93,8 @@ void InversePosterior::SIR(arma::umat Y, int n_proposal, int ndpost,
   std::vector<double> log_w(n_proposal, 0.0), probs(n_proposal, 0.0);
   // std::vector<int> sir_indices(ndpost*n_samples, 0);
 
-  // ess_sir.resize(ndpost*n_samples, 0.0);
-  // std::fill(ess_sir.begin(), ess_sir.end(), 0.0);
+  ess_sir.resize(ndpost*n_samples, 0.0);
+  std::fill(ess_sir.begin(), ess_sir.end(), 0.0);
   indices_sir.resize(ndpost*n_samples, 0);
   std::fill(indices_sir.begin(), indices_sir.end(), 0);
 
