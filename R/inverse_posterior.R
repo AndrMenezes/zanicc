@@ -63,7 +63,7 @@
 #' @export
 runifconvexhull <- function(n, X) {
   # Triangulate the points. Indexes into simplices, by row.
-  V <- geometry::delaunayn(X)
+  V <- geometry::delaunayn(X, options = "Qt")
   p_dim <- ncol(V) - 1 #ncol(X) #
   k_simplices <- nrow(V)
   # Sample the component simplices of the triangulation proportional to their volumes
