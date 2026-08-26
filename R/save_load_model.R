@@ -1,9 +1,11 @@
 #' Save and load BART-based models
 #'
 #' These functions provide a workflow for saving and loading BART-based models
-#' implemented in C++ class and expose using the `Rcpp::Module` function.
-#' It includes the C++ class `MultinomialBART`, `MultinomialLNBART`,
+#' implemented in `C++` class and expose using the `Rcpp::Module` function.
+#' It includes the `C++` classes: `MultinomialBART`, `MultinomialLNBART`,
 #' `ZANIMBARTProbit` and `ZANIMLNBART`.
+#' It also includes the `C++` classes for the regression-based models
+#' `ZANIDMReg`, and `DMLinearReg`.
 #'
 #' `save_model()` serializes the R object to disk while removing the underlying
 #' C++ object (`cpp_obj`) because external pointers cannot be saved.
@@ -41,7 +43,7 @@ load_model <- function(model_dir, file_name = "mod.rds") {
   ml <- Rcpp::Module(obj$cpp_module_name, PACKAGE = "zanicc")
   obj$cpp_obj <- switch(obj$cpp_module_name,
     "multinomial_bart" = new(ml$MultinomialBART, matrix(0,1,obj$d), matrix(0,1,obj$p)),
-    "multinomial_lognormal_bart" = new(ml$MultinomialLNBART, matrix(0,1,obj$d), matrix(0,1,obj$p)),
+    "multinomial_ln_bart" = new(ml$MultinomialLNBART, matrix(0,1,obj$d), matrix(0,1,obj$p)),
     "zanim_bart_probit" = new(ml$ZANIMBARTProbit, matrix(0,1,obj$d), matrix(0,1,obj$p_theta), matrix(0,1,obj$p_zeta)),
     "zanim_ln_bart" = new(ml$ZANIMLNBART, matrix(0,1,obj$d), matrix(0,1,obj$p_theta), matrix(0,1,obj$p_zeta)),
     "zanidm_linear_reg" = new(ml$ZANIDMReg, matrix(0,1,obj$d), matrix(0,1,obj$p_alpha), matrix(0,1,obj$p_zeta)),
