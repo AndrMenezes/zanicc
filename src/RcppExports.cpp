@@ -124,7 +124,7 @@ END_RCPP
 RcppExport SEXP _rcpp_module_boot_dm_linear_reg();
 RcppExport SEXP _rcpp_module_boot_inverse_posterior();
 RcppExport SEXP _rcpp_module_boot_multinomial_bart();
-RcppExport SEXP _rcpp_module_boot_multinomial_lognormal_bart();
+RcppExport SEXP _rcpp_module_boot_multinomial_ln_bart();
 RcppExport SEXP _rcpp_module_boot_multinomial_shared_bart();
 RcppExport SEXP _rcpp_module_boot_probit_bart();
 RcppExport SEXP _rcpp_module_boot_shared_logit_bart();
@@ -148,7 +148,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_rcpp_module_boot_dm_linear_reg", (DL_FUNC) &_rcpp_module_boot_dm_linear_reg, 0},
     {"_rcpp_module_boot_inverse_posterior", (DL_FUNC) &_rcpp_module_boot_inverse_posterior, 0},
     {"_rcpp_module_boot_multinomial_bart", (DL_FUNC) &_rcpp_module_boot_multinomial_bart, 0},
-    {"_rcpp_module_boot_multinomial_lognormal_bart", (DL_FUNC) &_rcpp_module_boot_multinomial_lognormal_bart, 0},
+    {"_rcpp_module_boot_multinomial_ln_bart", (DL_FUNC) &_rcpp_module_boot_multinomial_ln_bart, 0},
     {"_rcpp_module_boot_multinomial_shared_bart", (DL_FUNC) &_rcpp_module_boot_multinomial_shared_bart, 0},
     {"_rcpp_module_boot_probit_bart", (DL_FUNC) &_rcpp_module_boot_probit_bart, 0},
     {"_rcpp_module_boot_shared_logit_bart", (DL_FUNC) &_rcpp_module_boot_shared_logit_bart, 0},

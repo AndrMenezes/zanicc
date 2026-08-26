@@ -865,7 +865,7 @@ void MultinomialLNBART::RunMCMC() {
 
 // Exposing a C++ class in R
 //using namespace Rcpp;
-RCPP_MODULE(multinomial_lognormal_bart) {
+RCPP_MODULE(multinomial_ln_bart) {
 
   // Expose class MultinomialLNBART as "MultinomialLNBART" on the R side
   Rcpp::class_<MultinomialLNBART>("MultinomialLNBART")
