@@ -112,16 +112,14 @@ runifconvexhull <- function(n, X) {
 #' is run for `nburnin` iterations before collecting a sample. The default
 #' (`nburnin = 1`) corresponds to the naive cut-posterior algorithm.
 #' @param n_particles Number of particles, that is, samples used to obtain an unbiased estimate of
-#' the likelihood.
-#'
-#' Integer giving number of independent samples (particles) to
-#' generate obtain an unbiased estimate of the ZANIM-LN-BART likelihood.
+#' the ZANIM-LN-BART likelihood.
 #' @param mean_prior,S_prior Prior mean vector and covariance matrix
 #' for the climate variables used for the `ess` and `cess` methods.
 #' @param X_ini Initial climate values used to initialize the ESS/CESS samplers. Default is NULL,
 #' so it then it uses a sample from the prior.
-#' @param Amat,bvec
-#' @param lower,upper
+#' @param Amat,bvec H-representation of the convex hull.
+#' @param lower,upper integer giving the lower and upper limits to constrain the
+#' past climate.
 #' @param eta Tuning parameter using in the `cess` algorithm related to the logistic
 #' approximation of the indicator function.
 #'

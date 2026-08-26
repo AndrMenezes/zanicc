@@ -1,8 +1,27 @@
-#' Vectorise function to compute the log-likelihood from multinomial
-#' Thanks to Keefe.
-.dmultinomial <- function(x, prob, log = TRUE) {
+#' Multinomial likelihood function
+#'
+#' Computes the multinomial likelihood function and the log-predictive distribution
+#' for multinomial compound models.
+#'
+#' @param x A matrix of observed count-compositional data.
+#' @param prob A vector or matrix of compositional probabilities.
+#' @param log Logical; if `TRUE`, return the log-likelihood, otherwise return the likelihood.
+#' @param draws_prob A three-dimensional array of posterior draws of
+#' the compositional probabilities.
+#' @param printevery Frequency at which to print progress while computing the
+#' log-predictive distribution.
+#'
+#' @return `dmultinomial()` returns a vector of multinomial
+#'   (log-)likelihoods. `lpd_multinomial()` returns a matrix of
+#'   log-predictive probabilities, with posterior draws in rows and
+#'   observations in columns.
+#'
+
+#' @rdname multinomial_likelihood
+#' @export
+dmultinomial <- function(x, prob, log = TRUE) {
   x <- x + 0.5
-  storage.mode(x) <- "integer"
+  # storage.mode(x) <- "integer"
   N <- matrixStats::rowSums2(x)
   N <- if (length(unique(N)) == 1) N[1L] else N
   if (is.matrix(prob)) {
@@ -14,42 +33,59 @@
   return( if (log) r else exp(r))
 }
 
-#' Vectorise function to compute log-likelihood of Dirichlet-multinomial distribution.
-#' @description
-#' Y and a0 should have same dimension, n\times d, that is, we have subject-specific
-#' predictions.
-.ddirichletmultinomial <- function(Y, a0) {
-  s_a0 <- rowSums(a0)
-  sum_row_y <- rowSums(Y)
-  t0 <- lgamma(s_a0) - rowSums(lgamma(a0))
-  t1 <- rowSums(lgamma(Y + a0)) - lgamma(s_a0 + sum_row_y)
-  # Constant that depends only the data
-  t2 <- lgamma(sum_row_y + 1L) - rowSums(lgamma(Y + 1L))
-  return(t0 + t1 + t2)
-}
 
-#' Log-predictive distribution for multinomial compound models
-.lpd_multinomial <- function(Y, draws_prob, printevery = 100L) {
+#' @rdname multinomial_likelihood
+#' @export
+lpd_multinomial <- function(x, draws_prob, printevery = 100L) {
   n <- dim(draws_prob)[1L]
   ndpost <- dim(draws_prob)[3L]
   lpl <- matrix(nrow = ndpost, ncol = n)
   for (k in seq_len(ndpost)) {
     if (k %% printevery == 0L) cat(k, "\n")
-    lpl[k, ] <- .dmultinomial(x = Y, prob = draws_prob[, , k])
+    lpl[k, ] <- dmultinomial(x = x, prob = draws_prob[, , k], log = TRUE)
   }
   lpl
 }
 
-#' Read binary data related to the draws of \eqn{\theta} and \eqn{\zeta}.
-#' @description Binary data is exported during the MCMC of ZANIM-BART. This function
-#' read it in memory and format as an array. The `.load_bin` read all first \eqn{m},
-#' while the `.load_bin_batch` read from the \eqn{k}-th to the \eqn{m}-th iteration.
-#' @param fname file name along with the path.
-#' @param n number of sample size.
-#' @param d number of categories/columns of the Y vector.
-#' @param m number of iterations to read, i.e., the batch size.
-#' @param k first iteration to read.
+#' Read binary MCMC output
 #'
+#' @description
+#'
+#' Binary data are exported during the MCMC sampling. These functions read the
+#' binary data into memory and format it as a three-dimensional array.
+#'
+#' [load_bin_predictions()] reads posterior predictions, while
+#' [load_bin_coefficients()] reads posterior coefficient draws. The binary
+#' files are expected to contain values stored as 8-byte doubles.
+#'
+#'
+#' @param fname Character string giving the name and path of the binary file.
+#' @param n Integer giving the number of observations.
+#' @param p Integer giving the number of model parameters (coefficients).
+#' @param d Integer giving the number of categories or columns of the
+#' response vector \eqn{Y}.
+#' @param m Integer giving the number of MCMC iterations to read.
+#'
+#' @return A numeric array containing the values read from the binary file.
+#' For [load_bin_predictions()], the dimensions are \code{c(n, d, m)}.
+#' For [load_bin_coefficients()], the dimensions are \code{c(p, d, m)}.
+#' The first dimension indexes observations or model parameters, the second
+#' indexes categories, and the third indexes MCMC iterations.
+#'
+#'
+
+#' @rdname load_bin
+#' @export
+load_bin_predictions <- function(fname, n, d, m) {
+  array(.load_bin(fname, n*d*m), dim = c(n, d, m))
+}
+
+#' @rdname load_bin
+#' @export
+load_bin_coefficients <- function(fname, p, d, m) {
+  array(.load_bin(fname, p*d*m), dim = c(p, d, m))
+}
+
 .load_bin <- function(fname, len) {
   con <- file(fname, "rb")
   on.exit(close(con))
@@ -66,18 +102,19 @@
   if (arr) array(data, dim = c(n, d, m)) else data
 }
 
-#' @export
-load_bin_predictions <- function(fname, n, d, m) {
-  array(.load_bin(fname, n*d*m), dim = c(n, d, m))
-}
-#' @export
-load_bin_coefficients <- function(fname, p, d, m) {
-  array(.load_bin(fname, p*d*m), dim = c(p, d, m))
-}
 
-
-#' Generic functions for summarise the posterior draws of parameters
-#' Rows are parameters and columns are draws
+#' Summarise posterior draws
+#'
+#' Summarises posterior draws of sample-specific parameters by their mean,
+#' median, and credible interval.
+#'
+#' @param x A matrix or three-dimensional array of posterior draws.
+#' @param prob The probability excluded from the credible interval.
+#'
+#' @return A data frame containing posterior summaries for each sample,
+#' optionally by category if `x` is given as a three-dimensional array.
+#'
+#' @rdname summarise_draws
 #' @export
 summarise_draws <- function(x, prob = 0.05) {
   n <- nrow(x)
@@ -85,6 +122,7 @@ summarise_draws <- function(x, prob = 0.05) {
              ci_lower = apply(x, 1, quantile, prob / 2),
              ci_upper = apply(x, 1, quantile, 1 - prob / 2))
 }
+#' @rdname summarise_draws
 #' @export
 summarise_draws_3d <- function(x, prob = 0.05) {
   d <- dim(x)[2L]
@@ -94,21 +132,29 @@ summarise_draws_3d <- function(x, prob = 0.05) {
   do.call(rbind, l)
 }
 
-#' Aux functions to plot posterior predictive against one covariate
+# Aux functions to plot posterior predictive against one covariate
 .plot_fit_curve <- function(data) {
-  ggplot(data, aes(x = x, y = theta)) +
-    geom_line() +
-    geom_line(aes(y = mean), col = "dodgerblue",  linewidth = 0.8) +
-    geom_ribbon(aes(ymin = ci_lower, ymax = ci_upper),
-                fill = "dodgerblue", alpha = 0.3)
+  ggplot2::ggplot(data, aes(x = x, y = theta)) +
+    ggplot2::geom_line() +
+    ggplot2::geom_line(aes(y = mean), col = "dodgerblue",  linewidth = 0.8) +
+    ggplot2::geom_ribbon(aes(ymin = ci_lower, ymax = ci_upper),
+                         fill = "dodgerblue", alpha = 0.3)
 }
-#' Similar as above but faceted by category
+# Similar as above but faceted by category
 .plot_fit_curve_3d <- function(data) {
-  .plot_fit_curve(data) +
-    facet_wrap(~category)
+  .plot_fit_curve(data) + ggplot2::facet_wrap(~category)
 }
 
-#' Normalise count-compositional matrix into compositional vectors at simples
+#' Normalise count-compositional matrix
+#'
+#' @description
+#' Transform a count-compositional matrix into a empirical compositional matrix
+#' by dividing the category-specific counts of each sample by their respective
+#' total counts.
+#'
+#' @param x A matrix of multivariate count-compositional data.
+#' Rows correspond to observations and columns correspond to categories.
+#' @return Matrix of empirical composition on the continuous simplex.
 .normalize_composition <- function(x) {
   x <- sweep(x = x, MARGIN = c(1, 2), STATS = apply(x, c(1, 2), sum), FUN = "/")
   # Rare case when n_trials = 0
@@ -116,17 +162,16 @@ summarise_draws_3d <- function(x, prob = 0.05) {
   x
 }
 
-#' Ledermann bound
-#' Thanks to Keefe.
+# Ledermann bound
 .ledermann <- function(q)  floor(q + 0.5 * (1 - sqrt(8L * q + 1L)))
 
-#' pmf of beta-binomial
+# pmf of beta-binomial
 .dbetabinomial <- function(x, n, a, b, log = TRUE) {
   out <- lchoose(n, x) + lbeta(x + a, n - x + b) - lbeta(a, b)
   if (log) return(out) else return(exp(out))
 }
 
-#' log-sum-exp
+# log-sum-exp
 .log_sum_exp <- function(x) {
   ma <- max(x)
   ma + log(sum(exp(x - ma)))
@@ -216,8 +261,8 @@ create_rectangle_grid <- function(X, step_size = 1.0,
 #' TODO: These two functions aren't precise because they are not condition on Y* to
 #' generate the latent structural zero z_{ij}, though we use the posterior draws.
 #'
-compute_vartheta_zanimbart <- function(thetas, zetas, verbose = FALSE,
-                                       printevery = 100L)  {
+compute_vartheta_zanim <- function(thetas, zetas, verbose = FALSE,
+                                   printevery = 100L)  {
   n_sample <- dim(thetas)[1L]
   d <- dim(thetas)[2L]
   ndpost <- dim(thetas)[3L]
@@ -245,8 +290,8 @@ compute_vartheta_zanimbart <- function(thetas, zetas, verbose = FALSE,
   }
   draws
 }
-compute_vartheta_zanimlnbart <- function(thetas, zetas, chol_Sigma_V, Bt,
-                                         verbose = FALSE, printevery = 100L)  {
+compute_vartheta_zanimln <- function(thetas, zetas, chol_Sigma_V, Bt,
+                                     verbose = FALSE, printevery = 100L)  {
   n_sample <- dim(thetas)[1L]
   d <- dim(thetas)[2L]
   ndpost <- dim(thetas)[3L]

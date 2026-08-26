@@ -30,7 +30,7 @@ test_that("multinomial logistic normal BART", {
     Y[i, ] <- stats::rmultinom(n = 1L, size = n_trials[i], prob = true_varthetas[i, ])
   }
   devtools::load_all()
-  self <- zanicc(Y = Y, X_count = X, model = "mult_ln_bart", ndpost = 1000,
+  self <- zanicc(Y = Y, X_count = X, model = "mln_bart", ndpost = 1000,
                  nskip = 1000, ntrees_theta = 50L)
   y_fitted <- self$GetPosteriorPredictive(conditional_rf = TRUE)
   y_marginal <- self$GetPosteriorPredictive(conditional_rf = FALSE)
@@ -65,7 +65,7 @@ test_that("multinomial logistic normal BART", {
       # Compute the probabilities
       probs <- self$draws_theta[, ,k] * exp(U)
       probs <- sweep(probs, 1, rowSums(probs), "/")
-      .dmultinomial(x = Y, prob = probs)
+      dmultinomial(x = Y, prob = probs)
     }, simplify = "array")
     # log-sum-exp
     maxlog <- apply(vals, 1, max)
@@ -162,7 +162,7 @@ test_that("predict and ppd functions", {
   Y_train_rel <- sweep(Y_train, 1, n_trials_train, "/")
   Y_test_rel <- sweep(Y_test, 1, n_trials_test, "/")
   # devtools::load_all()
-  mln_bart <- zanicc(Y = Y_train, X_count = X_train, model = "mult_ln_bart",
+  mln_bart <- zanicc(Y = Y_train, X_count = X_train, model = "mln_bart",
                      ndpost = 1000, nskip = 5000, ntrees_theta = 20L,
                      save_trees = TRUE, covariance_type = "wishart",
                      forests_dir = path_res)

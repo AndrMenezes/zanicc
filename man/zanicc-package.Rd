@@ -4,7 +4,15 @@
 \alias{zanicc-package}
 \title{Overview of the \pkg{zanicc} package}
 \description{
-The \pkg{zanicc} R package provides functions to ....
+The \pkg{zanicc} R package provides functions to analysis zero-inflated
+count-compositional data.
+
+Count-compositional data are multivariate count data constrained by sample-specific
+totals.
+This
+
+The terminology \code{zani} comes from the fact that in
+count-compositional settings it can happen
 }
 \author{
 André F. B. Menezes \email{andrefelipemaringa@gmail.com}

@@ -49,7 +49,7 @@ They are primarily intended for monitoring the convergence of MCMC
 algorithms of the count-compositional models and evaluating the mixing of
 posterior chain.
 
-The currently functions implmented are:
+The currently functions implemented are:
 \itemize{
 \item \code{compute_frob_chain()}: Frobenius norm between each posterior draw and the
 reference values.

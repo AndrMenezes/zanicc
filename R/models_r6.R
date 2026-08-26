@@ -43,7 +43,7 @@ ZANIMBART <- R6::R6Class(classname = "ZANIMBART", public = list(
 
   },
   SetupMCMC = function(v0_theta = 1.5 / sqrt(2),
-                       v0_zeta = if (self$link_zeta == "logit") 3.5 / sqrt(2) else 3.0,
+                       k_zeta = if (self$link_zeta == "logit") 3.5 / sqrt(2) else 3.0,
                        ntrees_theta = 20L, ntrees_zeta = 20L,
                        ndpost = 1000L, nskip = 1000L,
                        numcut = 100L, power = 2.0, base = 0.95,
@@ -72,7 +72,7 @@ ZANIMBART <- R6::R6Class(classname = "ZANIMBART", public = list(
         splitprobs_mult <- replicate(self$d, splitprobs_mult, simplify = FALSE)
       alpha_sparse_mult <- rep(alpha_sparse[2L], self$d)
     }
-    self$cpp_obj$SetMCMC(v0_theta, v0_zeta, ntrees_theta, ntrees_zeta, ndpost, nskip,
+    self$cpp_obj$SetMCMC(v0_theta, k_zeta, ntrees_theta, ntrees_zeta, ndpost, nskip,
                          numcut, power, base, proposals_prob,
                          as.integer(update_sigma_theta), s0_2_theta, w_ss,
                          splitprobs_zi, splitprobs_mult,
@@ -460,7 +460,7 @@ MultinomialBART <- R6::R6Class(classname = "MultinomialBART", public = list(
     lpl <- matrix(nrow = ndpost, ncol = n_pred)
     for (k in seq_len(ndpost)) {
       if (k %% printevery == 0L) cat(k, "\n")
-      lpl[k, ] <- .dmultinomial(x = Y, prob = draws[, ,idx[k]])
+      lpl[k, ] <- dmultinomial(x = Y, prob = draws[, ,idx[k]])
     }
     lpl
   }
@@ -479,9 +479,9 @@ MultinomialLNBART <- R6::R6Class(classname = "MultinomialLNBART", public = list(
   draws_phi = NULL, keep_draws = logical(), save_trees = logical(),
   initialize = function(Y, X) {
     # Call the C++ class in R
-    ml <- Rcpp::Module(module = "multinomial_lognormal_bart", PACKAGE = "zanicc")
+    ml <- Rcpp::Module(module = "multinomial_ln_bart", PACKAGE = "zanicc")
     self$cpp_obj <- new(ml$MultinomialLNBART, Y, X)
-    self$cpp_module_name <- "multinomial_lognormal_bart"
+    self$cpp_module_name <- "multinomial_ln_bart"
     self$n <- nrow(Y)
     self$d <- ncol(Y)
     self$p <- ncol(X)
@@ -567,7 +567,7 @@ MultinomialLNBART <- R6::R6Class(classname = "MultinomialLNBART", public = list(
       lpl <- matrix(nrow = ndpost, ncol = n)
       for (k in seq_len(ndpost)) {
         if (k %% printevery == 0L) cat(k, "\n")
-        lpl[k, ] <- .dmultinomial(x = Y, prob = self$draws_abundance[, ,k])
+        lpl[k, ] <- dmultinomial(x = Y, prob = self$draws_abundance[, ,k])
       }
     } else if (!conditional && in_sample) {
       # Monte Carlo approximation (this takes time....)
@@ -581,7 +581,7 @@ MultinomialLNBART <- R6::R6Class(classname = "MultinomialLNBART", public = list(
           # Compute the probabilities
           probs <- self$draws_theta[, ,k] * exp(U)
           probs <- sweep(probs, 1, rowSums(probs), "/")
-          .dmultinomial(x = Y, prob = probs)
+          dmultinomial(x = Y, prob = probs)
         }, simplify = "array")
         # log-sum-exp
         maxlog <- apply(vals, 1, max)
@@ -844,7 +844,7 @@ ZANIMLNRegression <- R6::R6Class(
     lpl <- matrix(nrow = self$ndpost, ncol = self$n)
     for (k in seq_len(self$ndpost)) {
       if (k %% printevery == 0L) cat(t, "\n")
-      lpl[k, ] <- .dmultinomial(x = Y, prob = self$draws_abundance[, ,k])
+      lpl[k, ] <- dmultinomial(x = Y, prob = self$draws_abundance[, ,k])
     }
     lpl
   }

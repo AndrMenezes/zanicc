@@ -34,7 +34,7 @@ test_that("MLN-BART one-dimension", {
     mln_bart <- load_model(model_dir = path_res)
   } else {
     mln_bart <- zanicc(Y = Y_train, X_count = X_train,
-                       model = "mult_ln_bart", ntrees_theta = NTREES, ndpost = NDPOST,
+                       model = "mln_bart", ntrees_theta = NTREES, ndpost = NDPOST,
                        nskip = NSKIP, save_trees = TRUE, forests_dir = forests_dir)
     save_model(object = mln_bart, model_dir = path_res)
   }

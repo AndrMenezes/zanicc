@@ -15,10 +15,10 @@ ddm(x, alphas, log = TRUE)
 
 \item{sizes}{vector. The number of trials.}
 
-\item{alphas}{matrix. The concentration parameter Positive real numbers.}
+\item{alphas}{matrix. The concentration parameter Positive real numbers. It should have
+same length as \code{x}.}
 
-\item{x}{matrix. observed vector of compositional counts. It should have
-same length as \code{alpha}.}
+\item{x}{matrix. observed vector of compositional counts.}
 
 \item{log}{logical; if \code{TRUE}, probabilities p are given as log(p).}
 }

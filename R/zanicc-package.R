@@ -4,7 +4,17 @@ if (getRversion() >= "2.15.1")  utils::globalVariables(c("self", "private"))
 #'
 #' @title Overview of the \pkg{zanicc} package
 #'
-#' @description The \pkg{zanicc} R package provides functions to ....
+#' @description
+#' The \pkg{zanicc} R package provides functions to analysis zero-inflated
+#' count-compositional data.
+#'
+#' Count-compositional data are multivariate count data constrained by sample-specific
+#' totals.
+#' This
+#'
+#' The terminology `zani` comes from the fact that in
+#' count-compositional settings it can happen
+#'
 #' @author
 #' André F. B. Menezes \email{andrefelipemaringa@gmail.com}
 #'

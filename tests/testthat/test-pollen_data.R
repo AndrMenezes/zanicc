@@ -25,10 +25,10 @@ test_that("fit models in pollen data", {
   NTREES <- 100L
 
   # ML-BART
-  ml_bart <- zanicc(Y = Y, X_count = Xscaled, model = "mult_bart",
+  ml_bart <- zanicc(Y = Y, X_count = Xscaled, model = "ml_bart",
                     ntrees_theta = NTREES, ndpost = NDPOST, nskip = NSKIP)
   # MLN-BART
-  mln_bart <- zanicc(Y = Y, X_count = Xscaled, model = "mult_ln_bart",
+  mln_bart <- zanicc(Y = Y, X_count = Xscaled, model = "mln_bart",
                      ntrees_theta = NTREES, ndpost = NDPOST, nskip = NSKIP)
 
   # ZANIM-BART

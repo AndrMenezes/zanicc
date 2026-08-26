@@ -33,7 +33,7 @@ test_that("ML-BART one-dimension", {
   if (file.exists(file.path(path_res, "mod.rds"))) {
     ml_bart <- load_model(model_dir = path_res)
   } else {
-    ml_bart <- zanicc(Y = Y_train, X_count = X_train, model = "mult_bart",
+    ml_bart <- zanicc(Y = Y_train, X_count = X_train, model = "ml_bart",
                       ntrees_theta = NTREES, ndpost = NDPOST, nskip = NSKIP,
                       save_trees = TRUE, forests_dir = forests_dir)
     save_model(object = ml_bart, model_dir = path_res)
@@ -188,7 +188,7 @@ test_that("ML-BART two-dimension", {
   if (file.exists(file.path(path_res, "mod.rds"))) {
     ml_bart <- load_model(model_dir = path_res)
   } else {
-    ml_bart <- zanicc(Y = Y_train, X_count = X_train, model = "mult_bart",
+    ml_bart <- zanicc(Y = Y_train, X_count = X_train, model = "ml_bart",
                       ntrees_theta = NTREES, ndpost = NDPOST, nskip = NSKIP,
                       save_trees = TRUE, forests_dir = forests_dir)
     save_model(object = ml_bart, model_dir = path_res)

@@ -51,16 +51,18 @@ is run for \code{nburnin} iterations before collecting a sample. The default
 (\code{nburnin = 1}) corresponds to the naive cut-posterior algorithm.}
 
 \item{n_particles}{Number of particles, that is, samples used to obtain an unbiased estimate of
-the likelihood.
-
-Integer giving number of independent samples (particles) to
-generate obtain an unbiased estimate of the ZANIM-LN-BART likelihood.}
+the ZANIM-LN-BART likelihood.}
 
 \item{mean_prior, S_prior}{Prior mean vector and covariance matrix
 for the climate variables used for the \code{ess} and \code{cess} methods.}
 
 \item{X_ini}{Initial climate values used to initialize the ESS/CESS samplers. Default is NULL,
 so it then it uses a sample from the prior.}
+
+\item{Amat, bvec}{H-representation of the convex hull.}
+
+\item{lower, upper}{integer giving the lower and upper limits to constrain the
+past climate.}
 
 \item{eta}{Tuning parameter using in the \code{cess} algorithm related to the logistic
 approximation of the indicator function.}

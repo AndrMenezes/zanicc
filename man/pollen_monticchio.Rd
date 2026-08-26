@@ -10,7 +10,7 @@ taxa. It also contains in the attributes the \code{depth} and the \code{age} est
 corresponding to each fossil sample.
 }
 \usage{
-data(pollen_fossil, package = "zanicc")
+data(pollen_monticchio, package = "zanicc")
 }
 \description{
 The fossil data set contains \eqn{924} samples of compositional counts of same

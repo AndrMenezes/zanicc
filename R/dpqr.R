@@ -293,11 +293,11 @@ covariance_zanidm <- function(size, alpha, zeta, j, h) {
 #'
 #' @description Random number generation and probability mass function for the
 #' Dirichlet-multinomial distribution.
-#' @param x matrix. observed vector of compositional counts. It should have
-#' same length as `alpha`.
+#' @param x matrix. observed vector of compositional counts.
 #' @param n integer. The number of samples to generate.
 #' @param sizes vector. The number of trials.
-#' @param alphas matrix. The concentration parameter Positive real numbers.
+#' @param alphas matrix. The concentration parameter Positive real numbers. It should have
+#' same length as `x`.
 #' @param log logical; if \code{TRUE}, probabilities p are given as log(p).
 #'
 #' @rdname dm
