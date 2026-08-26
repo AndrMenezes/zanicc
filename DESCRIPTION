@@ -1,6 +1,6 @@
 Package: zanicc
 Title: Bayesian nonparametric models for zero-inflated count-compositional data
-Version: 0.0.1
+Version: 0.0.2
 Authors@R: c(person(given = "André F. B.", family = "Menezes", role = c("aut", "cre"), email = "andrefelipemaringa@gmail.com", comment = c(ORCID = "0000-0002-3320-9834")),
     person(given = "Keefe", family = "Murphy", role = "ctb", comment = c(ORCID = "0000-0002-5668-7046")))
 Maintainer: André F. B. Menezes <andrefelipemaringa@gmail.com>
