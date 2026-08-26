@@ -367,7 +367,7 @@ compute_hellinger <- function(true_values, estimates) {
 #' algorithms of the count-compositional models and evaluating the mixing of
 #' posterior chain.
 #'
-#' The currently functions implmented are:
+#' The currently functions implemented are:
 #'
 #' * `compute_frob_chain()`: Frobenius norm between each posterior draw and the
 #' reference values.
@@ -430,15 +430,10 @@ compute_kl_prob_chain <- function(reference_values, draws) {
   kl
 }
 
-###################################################################################
-# Go back to this later:
-# These are functions I have been using for the inverse posterior experiments.
-
-
 # Check if x is in the interval.
 # @param interval matrix
 # @param x vector
-is_inside <- function(interval, x) {
+.is_inside <- function(interval, x) {
   p <- length(x)
   isin <- logical(p)
   for (j in seq_len(p))
@@ -447,18 +442,26 @@ is_inside <- function(interval, x) {
 }
 
 # Compute the mode using kernel density estimates
-get_mode <- function(X) {
+.get_mode <- function(X) {
   apply(X, 2, function(x) {
     dd <- density(x)
     dd$x[which.max(dd$y)]
   })
 }
 
-# Compute various prediction metrics
-# @param x matrix
-# @param draws an array with the draws. Each entry is a matrix with number of posterior
-# draws and each column is the variable.
-# @export
+#' Prediction metrics
+#' @param x A matrix of observed values, with rows corresponding to observations
+#' and columns to variables.
+#' @param draws An array of posterior draws. The first two dimensions contain
+#' posterior draws and variables, respectively, and the third dimension indexes
+#' observations.
+#' @return A named vector containing the mean prediction metrics across
+#' observations.
+#' The metrics are mean absolute error (`mae`), mean squared error based on
+#' posterior means (`msep`), squared error based on posterior modes (`dmode`),
+#' continuous ranked probability score (`crps`), and 95\% and 50\% empirical
+#' coverage of the highest posterior interval (`coverage_95` and `coverage_50`).
+#' @export
 compute_prediction_metrics <- function(x, draws) {
   n <- nrow(x)
   stopifnot(n == dim(draws)[3L])
@@ -466,24 +469,31 @@ compute_prediction_metrics <- function(x, draws) {
     post <- as.matrix(draws[,,i])
     mu <- colMeans(post)
     md <- apply(post, 2, median)
-    mo <- get_mode(post)
+    mo <- .get_mode(post)
     c(mae = sum(abs(x[i, ] - md)),
       msep = sum((x[i, ] - mu)^2),
       dmode = sum((x[i, ] - mo)^2),
       crps = scoringRules::crps_sample(y = x[i, ], dat = t(post)),
-      coverage_95 = is_inside(coda::HPDinterval(coda::as.mcmc(post), prob = 0.95), x[i, ]),
-      coverage_50 = is_inside(coda::HPDinterval(coda::as.mcmc(post), prob = 0.50), x[i, ])
+      coverage_95 = .is_inside(coda::HPDinterval(coda::as.mcmc(post), prob = 0.95), x[i, ]),
+      coverage_50 = .is_inside(coda::HPDinterval(coda::as.mcmc(post), prob = 0.50), x[i, ])
     )
   })
   rowMeans(do.call(cbind, l))
 }
 
 
-# Compute metrics of classification for variable selection.
-# @param truth vector of 0 and 1 with true labels
-# @param estimated vector of estimated labels.
-# @details
-# Minor modifications of the code from the function `ZIDM::select_perf`.
+#' Classification metrics
+#'
+#' Computes common binary classification performance metrics from observed
+#' (`truth`) and estimated (`estimated`) class labels.
+#'
+#' @param truth A vector of true binary class labels, coded as `0` and `1`.
+#' @param estimated A vector of estimated binary class labels, coded as `0` and `1`.
+#'
+#' @return A named vector containing sensitivity (`sens`), specificity (`spec`),
+#' Matthews correlation coefficient (`mcc`), and F1 score (`f1`).
+#'
+#' @export
 compute_classification_metrics <- function(truth, estimated) {
   select <- which(estimated == 1)
   not_selected <- which(estimated == 0)
