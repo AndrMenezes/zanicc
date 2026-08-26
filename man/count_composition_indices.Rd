@@ -2,22 +2,16 @@
 % Please edit documentation in R/index_metrics.R
 \name{count_composition_indices}
 \alias{count_composition_indices}
-\alias{zi_neg_bin}
-\alias{zi_poisson}
-\alias{zi_binomial}
 \alias{zi_multinomial}
 \alias{gdi}
 \alias{mdi}
 \alias{mcv}
 \alias{shannon_entropy}
+\alias{zi_neg_bin}
+\alias{zi_poisson}
+\alias{zi_binomial}
 \title{Summary indices for multivariate count-compositional data}
 \usage{
-zi_neg_bin(x)
-
-zi_poisson(x)
-
-zi_binomial(x, N, standardise = FALSE)
-
 zi_multinomial(Y)
 
 gdi(Y)
@@ -27,8 +21,17 @@ mdi(Y)
 mcv(Y)
 
 shannon_entropy(Y)
+
+zi_neg_bin(x)
+
+zi_poisson(x)
+
+zi_binomial(x, N, standardise = FALSE)
 }
 \arguments{
+\item{Y}{A count-compositional matrix with samples in rows and categories in
+columns.}
+
 \item{x}{A vector of counts for a single category.}
 
 \item{N}{A vector containing the total counts associated with \code{x}.
@@ -36,9 +39,6 @@ This arguments is specific for the \code{zi_binomial()} function.}
 
 \item{standardise}{Logical. If \code{TRUE}, return the standardized version of the
 binomial zero-inflation index.}
-
-\item{Y}{A count-compositional matrix with samples in rows and categories in
-columns.}
 }
 \value{
 A single numeric value summarizing one aspect of the count-compositional data.
@@ -96,8 +96,8 @@ mean? Understanding false, random and structural zeros in ecology, \emph{Methods
 Kim, H., Wei{\ss}, C. and M{\"o}ller, T. (2018), Testing for an excessive number of
 zeros in time series of bounded counts. \emph{Statistical Methods \& Applications}, \strong{27}, 689--714.
 
-Kokonendji, C. C. and Puig, P. (2018), ‘Fisher dispersion index for multivariate count distributions: A review
-and a new proposal’, Journal of Multivariate Analysis \strong{165}, 180--193.
+Kokonendji, C. C. and Puig, P. (2018), Fisher dispersion index for multivariate count distributions: A review
+and a new proposal, Journal of Multivariate Analysis \strong{165}, 180--193.
 
 Menezes, A. F. B., Parnell, A. C. and Murphy, K. (2026), Bayesian nonparametric models for zero-inflated
 count-compositional data using ensembles of regression trees. \url{https://arxiv.org/abs/2601.08067}

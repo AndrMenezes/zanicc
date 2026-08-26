@@ -14,7 +14,7 @@ knitr::opts_chunk$set(collapse = TRUE, comment = "#>",
 <!-- badges: start -->
 <!-- badges: end -->
 
-The zanicc R package implements Bayesian models for zero- and
+The `zanicc` R package implements Bayesian models for zero- and
 $N$-inflated count-compositional data. Its main contribution is an
 implementation of the models introduced in the paper
 [“Bayesian nonparametric models for zero-inflated count-compositional
