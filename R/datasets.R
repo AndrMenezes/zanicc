@@ -85,7 +85,7 @@
 #' André F. B. Menezes
 #'
 #' @usage
-#' data(pollen_fossil, package = "zanicc")
+#' data(pollen_monticchio, package = "zanicc")
 #'
 #' @references
 #' Allen, J. R. M., Watts, W. A., \& Huntley, B. (2000).

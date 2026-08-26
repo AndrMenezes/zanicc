@@ -214,13 +214,18 @@ ZANIMLNBART <- R6::R6Class(classname = "ZANIMLNBART", public = list(
                        ntrees_theta = 50L, ntrees_zeta = 100L,
                        ndpost = 1000L, nskip = 1000L,
                        covariance_type = c("diag", "wishart", "fa", "fa_mgp"),
+                       #### Related to the covariance
+                       # Inv-Wishart or indep. Gammas
                        nu_prior = self$d,
                        Psi_prior = diag(self$d, self$d - 1),
+                       # FA
                        a_sigma = 1.0, b_sigma = 1.0,
                        q_factors = .ledermann(self$d - 1L), sigma2_gamma = 1.0,
+                       # MGP
                        a_psi = 2.5, b_psi = 1.0,
                        shape_lsphis = 3.0, a1_gs = 2.1, a2_gs = 3.1,
                        # shape_lsphis = 2.0, a1_gs = 1.5, a2_gs = 2.8,
+                       ####
                        numcut = 100L, power = 2.0, base = 0.95,
                        proposals_prob = c(0.25, 0.25, 0.50),
                        update_sigma_theta = TRUE, s0_2_theta = 1 / ntrees_theta,
