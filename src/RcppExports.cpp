@@ -55,6 +55,19 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// log_pmf_dm
+double log_pmf_dm(std::vector<int>& x, int& size, std::vector<double>& alpha);
+RcppExport SEXP _zanicc_log_pmf_dm(SEXP xSEXP, SEXP sizeSEXP, SEXP alphaSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< std::vector<int>& >::type x(xSEXP);
+    Rcpp::traits::input_parameter< int& >::type size(sizeSEXP);
+    Rcpp::traits::input_parameter< std::vector<double>& >::type alpha(alphaSEXP);
+    rcpp_result_gen = Rcpp::wrap(log_pmf_dm(x, size, alpha));
+    return rcpp_result_gen;
+END_RCPP
+}
 // log_pmf_zanidm
 double log_pmf_zanidm(std::vector<int> x, std::vector<double> alpha, std::vector<double> zeta);
 RcppExport SEXP _zanicc_log_pmf_zanidm(SEXP xSEXP, SEXP alphaSEXP, SEXP zetaSEXP) {
@@ -65,6 +78,21 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< std::vector<double> >::type alpha(alphaSEXP);
     Rcpp::traits::input_parameter< std::vector<double> >::type zeta(zetaSEXP);
     rcpp_result_gen = Rcpp::wrap(log_pmf_zanidm(x, alpha, zeta));
+    return rcpp_result_gen;
+END_RCPP
+}
+// log_pmf_zanim_ln_conditional
+double log_pmf_zanim_ln_conditional(std::vector<int>& x, std::vector<double>& prob, std::vector<double>& zeta, std::vector<double>& chol_Sigma_V, std::vector<double>& B);
+RcppExport SEXP _zanicc_log_pmf_zanim_ln_conditional(SEXP xSEXP, SEXP probSEXP, SEXP zetaSEXP, SEXP chol_Sigma_VSEXP, SEXP BSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< std::vector<int>& >::type x(xSEXP);
+    Rcpp::traits::input_parameter< std::vector<double>& >::type prob(probSEXP);
+    Rcpp::traits::input_parameter< std::vector<double>& >::type zeta(zetaSEXP);
+    Rcpp::traits::input_parameter< std::vector<double>& >::type chol_Sigma_V(chol_Sigma_VSEXP);
+    Rcpp::traits::input_parameter< std::vector<double>& >::type B(BSEXP);
+    rcpp_result_gen = Rcpp::wrap(log_pmf_zanim_ln_conditional(x, prob, zeta, chol_Sigma_V, B));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -81,23 +109,22 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// compute_crps
-arma::vec compute_crps(const arma::mat& samples, const arma::vec& truth, const int& n_samps);
-RcppExport SEXP _zanicc_compute_crps(SEXP samplesSEXP, SEXP truthSEXP, SEXP n_sampsSEXP) {
+// mat_to_double_rowmajor
+std::vector<double> mat_to_double_rowmajor(const arma::mat& X);
+RcppExport SEXP _zanicc_mat_to_double_rowmajor(SEXP XSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const arma::mat& >::type samples(samplesSEXP);
-    Rcpp::traits::input_parameter< const arma::vec& >::type truth(truthSEXP);
-    Rcpp::traits::input_parameter< const int& >::type n_samps(n_sampsSEXP);
-    rcpp_result_gen = Rcpp::wrap(compute_crps(samples, truth, n_samps));
+    Rcpp::traits::input_parameter< const arma::mat& >::type X(XSEXP);
+    rcpp_result_gen = Rcpp::wrap(mat_to_double_rowmajor(X));
     return rcpp_result_gen;
 END_RCPP
 }
 
 RcppExport SEXP _rcpp_module_boot_dm_linear_reg();
+RcppExport SEXP _rcpp_module_boot_inverse_posterior();
 RcppExport SEXP _rcpp_module_boot_multinomial_bart();
-RcppExport SEXP _rcpp_module_boot_multinomial_lognormal_bart();
+RcppExport SEXP _rcpp_module_boot_multinomial_ln_bart();
 RcppExport SEXP _rcpp_module_boot_multinomial_shared_bart();
 RcppExport SEXP _rcpp_module_boot_probit_bart();
 RcppExport SEXP _rcpp_module_boot_shared_logit_bart();
@@ -113,12 +140,15 @@ static const R_CallMethodDef CallEntries[] = {
     {"_zanicc_log_pmf_zanim", (DL_FUNC) &_zanicc_log_pmf_zanim, 3},
     {"_zanicc_log_pmf_zanim_vec", (DL_FUNC) &_zanicc_log_pmf_zanim_vec, 5},
     {"_zanicc_log_pmf_zanim_approx", (DL_FUNC) &_zanicc_log_pmf_zanim_approx, 6},
+    {"_zanicc_log_pmf_dm", (DL_FUNC) &_zanicc_log_pmf_dm, 3},
     {"_zanicc_log_pmf_zanidm", (DL_FUNC) &_zanicc_log_pmf_zanidm, 3},
+    {"_zanicc_log_pmf_zanim_ln_conditional", (DL_FUNC) &_zanicc_log_pmf_zanim_ln_conditional, 5},
     {"_zanicc_rtnorm", (DL_FUNC) &_zanicc_rtnorm, 3},
-    {"_zanicc_compute_crps", (DL_FUNC) &_zanicc_compute_crps, 3},
+    {"_zanicc_mat_to_double_rowmajor", (DL_FUNC) &_zanicc_mat_to_double_rowmajor, 1},
     {"_rcpp_module_boot_dm_linear_reg", (DL_FUNC) &_rcpp_module_boot_dm_linear_reg, 0},
+    {"_rcpp_module_boot_inverse_posterior", (DL_FUNC) &_rcpp_module_boot_inverse_posterior, 0},
     {"_rcpp_module_boot_multinomial_bart", (DL_FUNC) &_rcpp_module_boot_multinomial_bart, 0},
-    {"_rcpp_module_boot_multinomial_lognormal_bart", (DL_FUNC) &_rcpp_module_boot_multinomial_lognormal_bart, 0},
+    {"_rcpp_module_boot_multinomial_ln_bart", (DL_FUNC) &_rcpp_module_boot_multinomial_ln_bart, 0},
     {"_rcpp_module_boot_multinomial_shared_bart", (DL_FUNC) &_rcpp_module_boot_multinomial_shared_bart, 0},
     {"_rcpp_module_boot_probit_bart", (DL_FUNC) &_rcpp_module_boot_probit_bart, 0},
     {"_rcpp_module_boot_shared_logit_bart", (DL_FUNC) &_rcpp_module_boot_shared_logit_bart, 0},

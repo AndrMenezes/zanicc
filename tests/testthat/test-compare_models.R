@@ -84,20 +84,20 @@ test_that("comparison of models", {
   # Fitting the models
 
   # multinomial-BART
-  mod_mult_bart <- MultinomialBART$new(Y = Y, X = X)
-  mod_mult_bart$SetupMCMC(ntrees = NTREES_THETA, ndpost = NDPOST, nskip = NSKIP,
+  mod_ml_bart <- MultinomialBART$new(Y = Y, X = X)
+  mod_ml_bart$SetupMCMC(ntrees = NTREES_THETA, ndpost = NDPOST, nskip = NSKIP,
                           update_sigma = TRUE)
-  mod_mult_bart$RunMCMC()
-  # saveRDS(object = mod_mult_bart, file = file.path(path_res, "mult_bart.rds"))
-  # mod_mult_bart <- readRDS(file = file.path(path_res, "mult_bart.rds"))
+  mod_ml_bart$RunMCMC()
+  # saveRDS(object = mod_ml_bart, file = file.path(path_res, "ml_bart.rds"))
+  # mod_ml_bart <- readRDS(file = file.path(path_res, "ml_bart.rds"))
 
   # multinomial-LN-BART
-  mod_mult_ln_bart <- MultinomialLNBART$new(Y = Y, X = X)
-  mod_mult_ln_bart$SetupMCMC(ntrees = NTREES_THETA, ndpost = NDPOST, nskip = NSKIP,
+  mod_mln_bart <- MultinomialLNBART$new(Y = Y, X = X)
+  mod_mln_bart$SetupMCMC(ntrees = NTREES_THETA, ndpost = NDPOST, nskip = NSKIP,
                              update_sigma = TRUE, covariance_type = "wishart")
-  mod_mult_ln_bart$RunMCMC()
-  # saveRDS(object = mod_mult_bart, file = file.path(path_res, "mult_bart.rds"))
-  # mod_mult_bart <- readRDS(file = file.path(path_res, "mult_bart.rds"))
+  mod_mln_bart$RunMCMC()
+  # saveRDS(object = mod_ml_bart, file = file.path(path_res, "ml_bart.rds"))
+  # mod_ml_bart <- readRDS(file = file.path(path_res, "ml_bart.rds"))
 
   # ZANIM-BART
   mod_zanim_bart <- ZANIMBART$new(Y = Y, X_theta = X, X_zeta = X)
@@ -149,8 +149,8 @@ test_that("comparison of models", {
 
 
   model_specs <- list(
-    mult_bart = list(obj = "mod_mult_bart", theta = "draws_theta", vartheta = "draws_theta"),
-    mult_ln_bart = list(obj = "mod_mult_ln_bart", theta = "draws_theta", vartheta = "draws_vartheta"),
+    ml_bart = list(obj = "mod_ml_bart", theta = "draws_theta", vartheta = "draws_theta"),
+    mln_bart = list(obj = "mod_mln_bart", theta = "draws_theta", vartheta = "draws_vartheta"),
     zanim_bart = list(obj = "mod_zanim_bart", theta = "draws_theta", vartheta = "draws_abundance"),
     zanim_ln_bart = list(obj = "mod_zanim_ln_bart", theta = "draws_theta", vartheta = "draws_abundance"),
     zanidm_reg = list(obj = "mod_zanidm_reg", theta = "draws_theta", vartheta = "draws_abundance"),
@@ -191,20 +191,20 @@ test_that("comparison of models", {
 
   par(mfrow = c(1, 3))
   plot(compute_frob(true_values = true_varthetas, draws_theta_fido), type = "l", ylim = c(1.1, 1.7))
-  plot(compute_frob(true_values = true_varthetas, mod_mult_ln_bart$draws_vartheta), type = "l", ylim = c(1.1, 1.7))
+  plot(compute_frob(true_values = true_varthetas, mod_mln_bart$draws_vartheta), type = "l", ylim = c(1.1, 1.7))
   plot(compute_frob(true_values = true_varthetas, mod_zanim_ln_bart$draws_abundance), type = "l", ylim = c(1.1, 1.7))
 
 
   data_theta_zanim_bart <- .summarise_draws_3d(x = mod_zanim_bart$draws_theta)
   data_theta_zanim_ln_bart <- .summarise_draws_3d(x = mod_zanim_ln_bart$draws_theta)
-  data_theta_mult_bart <- .summarise_draws_3d(x = mod_mult_bart$draws_theta)
-  data_theta_mult_ln_bart <- .summarise_draws_3d(x = mod_mult_ln_bart$draws_theta)
-  data_theta_mult_bart$x <- data_theta_mult_ln_bart$x <- data_theta_zanim_bart$x <- data_theta_zanim_ln_bart$x <- rep(c(X), times = d)
+  data_theta_ml_bart <- .summarise_draws_3d(x = mod_ml_bart$draws_theta)
+  data_theta_mln_bart <- .summarise_draws_3d(x = mod_mln_bart$draws_theta)
+  data_theta_ml_bart$x <- data_theta_mln_bart$x <- data_theta_zanim_bart$x <- data_theta_zanim_ln_bart$x <- rep(c(X), times = d)
 
   data_theta <- dplyr::bind_rows(
     dplyr::mutate(data_theta_zanim_bart, model = "ZANIM-BART"),
-    dplyr::mutate(data_theta_mult_bart, model = "multinomial-BART"),
-    dplyr::mutate(data_theta_mult_ln_bart, model = "multinomial-LN-BART"),
+    dplyr::mutate(data_theta_ml_bart, model = "multinomial-BART"),
+    dplyr::mutate(data_theta_mln_bart, model = "multinomial-LN-BART"),
     dplyr::mutate(data_theta_zanim_ln_bart, model = "ZANIM-LN-BART"))
 
   data_theta$category_lab <- paste0("j == ", data_theta$category)

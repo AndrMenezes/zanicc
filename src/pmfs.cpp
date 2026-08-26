@@ -2,15 +2,17 @@
 #include <algorithm>
 #include <cmath>
 #include "utils.h"
+#include "rng.h"
+#include "pmfs.h"
 
 // Log PMF of multinomial
-inline double log_pmf_mult(std::vector<int> &x, int &size,
+double log_pmf_mult(std::vector<int> &x, int &size,
                            std::vector<double> &prob) {
-  double r = std::lgamma(size + 1);
+  double out = std::lgamma(size + 1);
   for(int j = 0; j < x.size(); j++) {
-    r += x[j] * log(prob[j]) - std::lgamma(x[j] + 1);
+    out += x[j] * log(prob[j]) - std::lgamma(x[j] + 1);
   }
-  return(r);
+  return out;
 }
 
 
@@ -102,7 +104,7 @@ double log_pmf_zanim(std::vector<int> x, std::vector<double> prob,
       }
     }
   }
-  return(log_sum_exp(tmp));
+  return log_sum_exp(tmp);
 }
 
 // Vectorize version of log_pmf_zanim, meaning that x, prob and zeta should have n*d
@@ -141,7 +143,7 @@ double log_pmf_zip(int &x, double &zeta, double &lambda, double &phi) {
     return(t1[0] + x * log(lambda) - std::lgamma( (double) x + 1.0));
   } else {
     t1[1] = log(zeta);
-    return(log_sum_exp(t1));
+    return log_sum_exp(t1);
   }
 }
 
@@ -209,14 +211,15 @@ double log_pmf_zanim_approx(std::vector<int> x, std::vector<double> prob,
 }
 
 // Log PMF of Dirichlet-multinomial
-inline double log_pmf_dm(std::vector<int> &x, int &size,
-                         std::vector<double> &alpha) {
+// [[Rcpp::export]]
+double log_pmf_dm(std::vector<int> &x, int &size,
+                  std::vector<double> &alpha) {
   double a0 = std::accumulate(alpha.begin(), alpha.end(), 0.0);
   double r = std::lgamma(a0) + std::lgamma(size + 1) - std::lgamma(size + a0);
   for(int j = 0; j < x.size(); j++) {
     r += lgamma(x[j] + alpha[j]) - lgamma(alpha[j]) - lgamma(x[j] + 1L);
   }
-  return(r);
+  return r;
 }
 
 // Implement log_dzanidm
@@ -306,3 +309,173 @@ double log_pmf_zanidm(std::vector<int> x, std::vector<double> alpha,
   }
   return(log_sum_exp(tmp));
 }
+
+// Evaluate the ZANIM-PMF using the hierarchical representation conditional on z
+double log_pmf_zanim_conditional(std::vector<int> x, std::vector<double> prob,
+                                 std::vector<double> zeta) {
+  int d = x.size();
+  std::vector<int> z(d, 1.0);
+  std::vector<double> vartheta(d, 0.0);
+  double s = 0.0;
+  for (int j = 0; j < d; j++) {
+    if (x[j] == 0) z[j] = R::rbinom(1, 1.0 - zeta[j]);
+    vartheta[j] = prob[j] * z[j];
+    s += vartheta[j];
+  }
+
+  // std::cout << s << "\n";
+
+  // std::cout << "All zeros: " << s << "\n";
+  if (s == 0.0) return 0.0;
+
+  // for(auto &p : vartheta) p /= s;
+
+  //std::cout << "vartheta: " << vartheta[0]/s << " " << vartheta[1]/s << " " << vartheta[2]/s << "\n";
+
+  double out = std::lgamma(std::accumulate(x.begin(), x.end(), 0.0) + 1.0);
+  for (int j = 0; j < d; j++) {
+    if (x[j] > 0) out += x[j] * log(vartheta[j] / s) - std::lgamma(x[j] + 1);
+  }
+  return out;
+
+  // return log_pmf_mult(x, n_trials, vartheta);
+}
+
+// Evaluate the ZANIM-LN-PMF using the hierarchical representation conditional on z
+// and u
+// [[Rcpp::export]]
+double log_pmf_zanim_ln_conditional(std::vector<int> &x, std::vector<double> &prob,
+                                    std::vector<double> &zeta,
+                                    std::vector<double> &chol_Sigma_V,
+                                    std::vector<double> &B) {
+  int d = x.size(), dm1 = d-1;
+  std::vector<int> z(d, 1.0);
+  std::vector<double> v(dm1, 0.0), u(d, 0.0), vartheta(d, 0.0);
+
+  // Simulate random effect v ~ N_{d-1}[0, Sigma_V]
+  rmvnorm_chol2(v, chol_Sigma_V, dm1);
+  // Transform to u = Bv.
+  Bv(u, v, B, d, dm1);
+  // Compute \vartheta_{ij} \propto theta_j*z_ij * e^{u_ij}
+  double s = 0.0;
+  for (int j = 0; j < d; j++) {
+    if (x[j] == 0) z[j] = R::rbinom(1, 1.0 - zeta[j]);
+
+    vartheta[j] = prob[j] * z[j] * exp(u[j]);
+    s += vartheta[j];
+  }
+  // if (s == 0.0) return -1000.0;
+
+  // Compute the multinomial likelihood
+  double out = std::lgamma(std::accumulate(x.begin(), x.end(), 0.0) + 1.0);
+  for (int j = 0; j < d; j++) {
+    if (x[j] > 0) out += x[j] * log(vartheta[j] / s) - std::lgamma(x[j] + 1);
+  }
+  return out;
+}
+
+double log_pmf_zanim_ln(int n_particles, std::vector<int> &x,
+                        std::vector<double> &prob,
+                        std::vector<double> &zeta,
+                        std::vector<double> &chol_Sigma_V,
+                        std::vector<double> &B) {
+  std::vector<double> ll(n_particles, 0.0);
+  for (int k=0; k < n_particles; k++) {
+    ll[k] = log_pmf_zanim_ln_conditional(x, prob, zeta, chol_Sigma_V, B);
+  }
+
+  return log_sum_exp(ll) - std::log(n_particles);
+
+}
+
+double log_pmf_zanim_ln_conditional2(std::vector<int> &x, std::vector<double> &prob,
+                                    std::vector<double> &zeta,
+                                    std::vector<double> &chol_Sigma_V,
+                                    std::vector<double> &B) {
+  int d = x.size(), dm1 = d - 1;
+  std::vector<double> v(dm1, 0.0), u(d, 0.0), vartheta(d, 0.0);
+  // Simulate random effect v ~ N_{d-1}[0, Sigma_V]
+  rmvnorm_chol2(v, chol_Sigma_V, dm1);
+  Bv(u, v, B, d, dm1);
+  // Add random effect
+  double s = 0.0;
+  for (int j = 0; j < d; j++) {
+    vartheta[j] = prob[j] * exp(u[j]);
+    s += vartheta[j];
+  }
+  // Normalise
+  for(auto &p : vartheta) p /= s;
+  // Compute the ZANIM likelihood
+  return log_pmf_zanim(x, vartheta, zeta);
+}
+
+
+// Augmented likelihood under ZANIM-LN
+double log_pmf_zanim_ln_augmented(std::vector<int> &x,
+                                  std::vector<double> &z,
+                                  std::vector<double> &zeta,
+                                  std::vector<double> &lambda,
+                                  std::vector<double> &u,
+                                  double &phi) {
+  int d = x.size();
+  double ll = 0;
+  for (int j=0; j < d; j++) {
+    if (z[j] == 0) ll += std::log(zeta[j]);
+    else {
+      ll +=  std::log1p(-zeta[j]) + x[j] * std::log(lambda[j]) - phi*lambda[j]*exp(u[j]);
+    }
+  }
+  return ll;
+}
+
+// Smooth/logistic approximation of log I_C(x), where C is a linear constraint
+// of the form C = {x\in R: Ax + b>=0}.
+// I_c(x) \approx 1 / (1 + exp(-eta (Ax* + b))) with x* = x + mu
+double log_I_lc(std::vector<double> &x,
+                std::vector<double> &mu,
+                std::vector<double> &A, std::vector<double> &b,
+                double eta) {
+  int p = x.size();
+  int n = b.size();
+
+  double out = 0.0, u;
+  // Compute Ax + b (recall row-major order!)
+  for (int i=0; i < n; i++) {
+    u = b[i];
+    for (int j=0; j < p; j++) {
+      u += (x[j] + mu[j]) * A[i*p + j];
+    }
+    out += std::log1p(exp(-eta *u));
+  }
+  return -out;
+}
+double log_I_lc2(std::vector<double> &x, std::vector<double> &A,
+                 std::vector<double> &b, double eta) {
+  int p = x.size();
+  int n = b.size();
+
+  double out = 0.0, u;
+  // Compute Ax + b (recall row-major order!)
+  for (int i=0; i < n; i++) {
+    u = b[i];
+    for (int j=0; j < p; j++) {
+      u += x[j] * A[i*p + j];
+    }
+    out += std::log1p(exp(-eta *u));
+  }
+  return -out;
+}
+
+// Smooth/logistic approximation of log I(a <= x <= b)
+// I_c(x) \approx 1 / (1 + exp(-eta (x - a))) \times 1 / (1 + exp(-eta (b - x))) with x* = x + mu
+double log_I_ab(double x, double a, double b, double eta) {
+  return -std::log1p(exp(-eta * (x - a)) + exp(-eta * (b - x)) + exp(-eta * (b - a)) );
+}
+
+double ldtrucnorm(double &x, double &mean, double &sd, double &a, double &b) {
+  double lpdf = R::dnorm4(x, mean, sd, 1);
+  return lpdf - std::log(R::pnorm5(b, mean, sd, 1, 0) - R::pnorm5(a, mean, sd, 1, 0));
+}
+
+
+

@@ -34,7 +34,8 @@ same length as \code{prob} and \code{zeta}.}
 \item{log}{logical; if \code{TRUE}, probabilities p are given as log(p).}
 
 \item{j, h}{integers. Index corresponding to the component for computing the
-marginal PMF of \eqn{Y_j} and for computing the covariance between \eqn{Y_j} and \eqn{Y_h}.}
+marginal PMF of \eqn{Y_j} and for computing the covariance between \eqn{Y_j}
+and \eqn{Y_h}.}
 }
 \value{
 The \code{rzanim} function returns a matrix of integer counts with \code{n} rows and
@@ -44,4 +45,9 @@ The \code{rzanim} function returns a matrix of integer counts with \code{n} rows
 Random number generation and probability mass function for the
 Zero-&-N-Inflated Multinomial distribution. It also contains the
 marginal probability mass function and their expected value.
+}
+\references{
+Menezes, A. F. B., Parnell, A. C., and Murphy, K. (2025). Finite mixture representations of
+zero-and-N -inflated distributions for count-compositional data. \emph{Journal of Multivariate Analysis},
+\strong{210:105492}. \url{https://doi.org/10.1016/j.jmva.2025.105492}.
 }

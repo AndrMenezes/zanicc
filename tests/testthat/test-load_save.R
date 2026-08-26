@@ -28,7 +28,7 @@ test_that("test save-load model", {
   Y_test_rel <- sweep(Y_test, 1, rowSums(Y_test), "/")
 
   # Fit model
-  ml_bart <- zanicc(Y = Y_train, X_count = X_train, model = "mult_bart",
+  ml_bart <- zanicc(Y = Y_train, X_count = X_train, model = "ml_bart",
                     ntrees_theta = 20L, ndpost = 100L, nskip = 30L,
                     forests_dir = path_res, keep_draws = TRUE, save_trees = TRUE)
   # save model object
@@ -46,7 +46,7 @@ test_that("test save-load model", {
   path_res <- file.path("./tests/testthat/mln_bart", time_id, "draws")
   if (!dir.exists(path_res)) dir.create(path_res, recursive = TRUE)
 
-  mln_bart <- zanicc(Y = Y_train, X_count = X_train, model = "mult_ln_bart",
+  mln_bart <- zanicc(Y = Y_train, X_count = X_train, model = "mln_bart",
                     ntrees_theta = 20L, ndpost = 100L, nskip = 30L,
                     keep_draws = TRUE, save_trees = TRUE,
                     forests_dir = path_res)

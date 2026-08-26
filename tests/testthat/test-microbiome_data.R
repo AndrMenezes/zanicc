@@ -13,22 +13,22 @@ test_that("fit models in microbiome data", {
   NSKIP <- 5000L
   NTREES <- 100L
   # multinomial-BART
-  mult_bart <- zanicc(Y = Y, X_count = X, model = "mult_bart",
+  ml_bart <- zanicc(Y = Y, X_count = X, model = "ml_bart",
                       ntrees_theta = NTREES, sparse = TRUE)
-  mult_bart$avg_leaves
-  colMeans(mult_bart$avg_leaves)
-  ll1 <- lpd_multinomial(Y = Y, draws_vartheta = mult_bart$draws_theta)
-  prob_vc <- apply(mult_bart$cpp_obj$varcount_mcmc > 0, c(1, 2), mean)
+  ml_bart$avg_leaves
+  colMeans(ml_bart$avg_leaves)
+  ll1 <- lpd_multinomial(Y = Y, draws_vartheta = ml_bart$draws_theta)
+  prob_vc <- apply(ml_bart$cpp_obj$varcount_mcmc > 0, c(1, 2), mean)
   mean(prob_vc > 0.5)
   plot(sort(prob_vc, decreasing = TRUE))
 
   # multinomial-LN-BART
-  mult_ln_bart <- zanicc(Y = Y, X_count = X, model = "mult_ln_bart",
+  mln_bart <- zanicc(Y = Y, X_count = X, model = "mln_bart",
                          ntrees_theta = NTREES, sparse = TRUE)
-  colMeans(mult_ln_bart$avg_leaves)
-  ll2 <- lpd_multinomial(Y = Y, draws_vartheta = mult_ln_bart$draws_abundance)
+  colMeans(mln_bart$avg_leaves)
+  ll2 <- lpd_multinomial(Y = Y, draws_vartheta = mln_bart$draws_abundance)
 
-  prob_vc <- apply(mult_ln_bart$cpp_obj$varcount_mcmc > 0, c(1, 2), mean)
+  prob_vc <- apply(mln_bart$cpp_obj$varcount_mcmc > 0, c(1, 2), mean)
   mean(prob_vc > 0.5)
   plot(sort(prob_vc, decreasing = TRUE))
 
@@ -68,8 +68,8 @@ test_that("fit models in microbiome data", {
   ll7 <- lpd_multinomial(Y = Y, draws_vartheta = draws_abundance_gp)
 
 
-  yppc_mult_bart <- posterior_predictive_multinomial(n_trials = rowSums(Y), draws_prob = mult_bart$draws_theta, relative = TRUE)
-  yppc_mult_ln_bart <- posterior_predictive_multinomial(n_trials = rowSums(Y), draws_prob = mult_ln_bart$draws_abundance, relative = TRUE)
+  yppc_ml_bart <- posterior_predictive_multinomial(n_trials = rowSums(Y), draws_prob = ml_bart$draws_theta, relative = TRUE)
+  yppc_mln_bart <- posterior_predictive_multinomial(n_trials = rowSums(Y), draws_prob = mln_bart$draws_abundance, relative = TRUE)
   yppc_zanim_bart <- zanim_bart$GetPosteriorPredictive()
   yppc_zanim_ln_bart <- zanim_ln_bart$GetPosteriorPredictive()
 
@@ -79,34 +79,34 @@ test_that("fit models in microbiome data", {
         STATS = apply(yppc_zanim_ln_bart, c(1, 2), sum), FUN = "/")
   Y_rel <- sweep(Y, MARGIN = 1, STATS = rowSums(Y), FUN = "/")
 
-  rps_mult_bart <- scoringutils::crps_sample(observed = Y_rel[, 10], predicted = t(yppc_mult_bart[,,10]))
+  rps_ml_bart <- scoringutils::crps_sample(observed = Y_rel[, 10], predicted = t(yppc_ml_bart[,,10]))
   rps_zanim_bart <- scoringutils::crps_sample(observed = Y_rel[, 10], predicted = t(yppc_zanim_bart[,,10]))
-  mean(rps_mult_bart)
+  mean(rps_ml_bart)
   mean(rps_zanim_bart)
 
   # ECDF
   cowplot::plot_grid(
-    bayesplot::ppc_ecdf_overlay(y = Y_rel[, 10], yrep = yppc_mult_bart[,,10]) +
+    bayesplot::ppc_ecdf_overlay(y = Y_rel[, 10], yrep = yppc_ml_bart[,,10]) +
       ggplot2::scale_x_continuous(limits = c(0, 1)),
     bayesplot::ppc_ecdf_overlay(y = Y_rel[, 10], yrep = yppc_zanim_bart[,,10]) +
       ggplot2::scale_x_continuous(limits = c(0, 1))
   )
-  bayesplot::ppc_ecdf_overlay(y = Y[, 3], yrep = yppc_mult_ln_bart[,,3])
+  bayesplot::ppc_ecdf_overlay(y = Y[, 3], yrep = yppc_mln_bart[,,3])
   bayesplot::ppc_ecdf_overlay(y = Y[, 3], yrep = yppc_zanim_ln_bart[,,3])
 
   #
-  bayesplot::ppc_stat(y = Y[, 16], yrep = yppc_mult_bart[,,16], stat = function(x) var(x)/mean(x))
-  bayesplot::ppc_stat(y = Y[, 16], yrep = yppc_mult_ln_bart[,,16], stat = function(x) var(x)/mean(x))
+  bayesplot::ppc_stat(y = Y[, 16], yrep = yppc_ml_bart[,,16], stat = function(x) var(x)/mean(x))
+  bayesplot::ppc_stat(y = Y[, 16], yrep = yppc_mln_bart[,,16], stat = function(x) var(x)/mean(x))
   bayesplot::ppc_stat(y = Y[, 16], yrep = yppc_zanim_bart[,,16], stat = function(x) var(x)/mean(x))
   bayesplot::ppc_stat(y = Y[, 16], yrep = yppc_zanim_ln_bart[,,16], stat = function(x) var(x)/mean(x))
 
-  bayesplot::ppc_stat(y = Y[, 16], yrep = yppc_mult_bart[,,16], stat = zi_b)
-  bayesplot::ppc_stat(y = Y[, 16], yrep = yppc_mult_ln_bart[,,16], stat = zi_b)
+  bayesplot::ppc_stat(y = Y[, 16], yrep = yppc_ml_bart[,,16], stat = zi_b)
+  bayesplot::ppc_stat(y = Y[, 16], yrep = yppc_mln_bart[,,16], stat = zi_b)
   bayesplot::ppc_stat(y = Y[, 16], yrep = yppc_zanim_bart[,,16], stat = zi_b)
   bayesplot::ppc_stat(y = Y[, 16], yrep = yppc_zanim_ln_bart[,,16], stat = zi_b)
 
 cowplot::plot_grid(
-  bayesplot::ppc_stat(y = Y_rel[, 10], yrep = yppc_mult_bart[,,10], stat = function(x) mean(x==0)) +
+  bayesplot::ppc_stat(y = Y_rel[, 10], yrep = yppc_ml_bart[,,10], stat = function(x) mean(x==0)) +
     ggplot2::scale_x_continuous(limits = c(0, 1)) +
     ggplot2::ggtitle("mult-BART"),
   bayesplot::ppc_stat(y = Y_rel[, 10], yrep = yppc_zanim_bart[,,10], stat = function(x) mean(x==0)) +
@@ -121,7 +121,7 @@ dim(zanim_bart$draws_zeta)
 #auc(Y_rel[, 10] == 0, rowMeans(zanim_bart$draws_zeta[,10,]))
 
 cowplot::plot_grid(
-  bayesplot::ppc_stat(y = Y_rel[, 10], yrep = yppc_mult_bart[,,10], stat = function(x) mean(x)) +
+  bayesplot::ppc_stat(y = Y_rel[, 10], yrep = yppc_ml_bart[,,10], stat = function(x) mean(x)) +
     ggplot2::scale_x_continuous(limits = c(0, 1)) +
     ggplot2::ggtitle("mult-BART"),
   bayesplot::ppc_stat(y = Y_rel[, 10], yrep = yppc_zanim_bart[,,10], stat = function(x) mean(x)) +
@@ -136,8 +136,8 @@ cowplot::plot_grid(
 
 
   res <- as.data.frame(  loo::loo_compare(
-    list(mult_bart = loo::waic(ll1),
-         mult_ln_bart = loo::waic(ll2),
+    list(ml_bart = loo::waic(ll1),
+         mln_bart = loo::waic(ll2),
          zanim_bart = loo::waic(ll3),
          zanim_bart_marg = loo::waic(ll_zanim),
          zanim_ln_bart_marg = loo::waic(ll_zanim_ln),

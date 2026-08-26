@@ -41,19 +41,12 @@ test_that("check dart prior on zanim", {
   zeta_truth <- cbind(eta_1, eta_2, eta_3)
   zeta_truth <- pnorm(zeta_truth)
 
-
-  plot(x_zeta[, 6L], zeta_truth[, 2L])
-  plot(x_zeta[, 6L], rowMeans(zeta_zidm[, 2L, ]))
-  plot(x_zeta[, 6L], rowMeans(mod_zanim$draws_zeta[, 2L, ]))
-
-
-
   # Generate data
   Y <- Z <- theta_truth <- matrix(0L, nrow = n, ncol = 3L)
   for (i in seq_len(n)) {
     theta_truth[i, ] <- exp(f[i, ]) / sum(exp(f[i, ]))
     tmp <- zanicc:::.rzanim(size = 800L, prob = theta_truth[i, ],
-                                zeta = zeta_truth[i, ], d = 3L)
+                            zeta = zeta_truth[i, ], d = 3L)
     Y[i, ] <- tmp[[1L]]
     Z[i, ] <- tmp[[2L]]
   }
@@ -91,19 +84,18 @@ test_that("check dart prior on zanim", {
   mod_zanidm_reg$SetupMCMC()
   mod_zanidm_reg$RunMCMC()
 
-  mean(compute_frob(true_values = zeta_truth, draws = mod_zanim$draws_zeta))
-  mean(compute_frob(true_values = zeta_truth, draws = mod_zanim_reg$draws_zeta))
-  mean(compute_frob(true_values = zeta_truth, draws = mod_zanidm_reg$draws_zeta))
-  # mean(compute_frob(true_values = zeta_truth, draws = zeta_zidm))
+  mean(compute_frob(true_values = zeta_truth, estimates = mod_zanim$draws_zeta))
+  mean(compute_frob(true_values = zeta_truth, estimates = mod_zanim_reg$draws_zeta))
+  mean(compute_frob(true_values = zeta_truth, estimates = mod_zanidm_reg$draws_zeta))
 
-  colMeans(compute_kl_prob(true_values = zeta_truth, draws = mod_zanim$draws_zeta))
-  colMeans(compute_kl_prob(true_values = zeta_truth, draws = mod_zanim_reg$draws_zeta))
-  colMeans(compute_kl_prob(true_values = zeta_truth, draws = mod_zanidm_reg$draws_zeta))
+  colMeans(compute_kl_prob(true_values = zeta_truth, estimates = mod_zanim$draws_zeta))
+  colMeans(compute_kl_prob(true_values = zeta_truth, estimates = mod_zanim_reg$draws_zeta))
+  colMeans(compute_kl_prob(true_values = zeta_truth, estimates = mod_zanidm_reg$draws_zeta))
   # colMeans(compute_kl_prob(true_values = zeta_truth, draws = zeta_zidm))
 
   # Check
-  vc_theta_dart <- mod_zanim$GetVarCount(parameter = "theta")
-  vc_zeta_dart <- mod_zanim$GetVarCount(parameter = "zeta")
+  vc_theta_dart <- mod_zanim$varcount_theta
+  vc_zeta_dart <- mod_zanim$varcount_zeta
 
   mean_vc_theta_dart <- apply(vc_theta_dart, c(1, 2), mean)
   prob_vc_theta_dart <- apply(vc_theta_dart > 0, c(1, 2), mean)
@@ -128,9 +120,10 @@ test_that("check dart prior on zanim", {
                col = "red") +
     scale_x_continuous(breaks = scales::pretty_breaks(8), limits = c(1, ncol(X))) +
     scale_y_continuous(breaks = scales::pretty_breaks(6), limits = c(0, 1)) +
-    labs(x = "Covariate k", y = "Prob[k in model]")
-  save_plot(filename = file.path(path_res, "prob_vc_theta3.png"), plot = p_vc_theta,
-            bg = "white", base_height = 7.0)
+    labs(x = "Covariate k", y = "Prob[k in model]") +
+    ggtitle("Probability of inclusion f_j^{(c)}")
+  # cowplot::save_plot(filename = file.path(path_res, "prob_vc_theta3.png"), plot = p_vc_theta,
+  #           bg = "white", base_height = 7.0)
 
 
   data_dart_zeta <- data.frame(prob = c(prob_vc_zeta_dart),
@@ -150,9 +143,12 @@ test_that("check dart prior on zanim", {
                col = "red") +
     scale_x_continuous(breaks = scales::pretty_breaks(6)) +
     scale_y_continuous(breaks = scales::pretty_breaks(6), limits = c(0, 1)) +
-    labs(x = "Covariate k", y = "Prob[k in model]")
-  save_plot(filename = file.path(path_res, "prob_vc_zeta3.png"), plot = p_vc_zeta,
+    labs(x = "Covariate k", y = "Prob[k in model]")+
+    ggtitle("Probability of inclusion f_j^{(0)}")
+  cowplot::save_plot(filename = file.path(path_res, "prob_vc_zeta3.png"), plot = p_vc_zeta,
             bg = "white", base_height = 7.0)
+
+  cowplot::plot_grid(p_vc_theta, p_vc_zeta)
 
 })
 

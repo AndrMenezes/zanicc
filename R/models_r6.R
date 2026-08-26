@@ -1,5 +1,4 @@
-#' ZANIM logistic BART
-#' @export
+# ZANIM logistic BART
 ZANIMBART <- R6::R6Class(classname = "ZANIMBART", public = list(
   cpp_obj = NULL, cpp_module_name = character(),
   n_trials = integer(), n = integer(), d = integer(), p_theta = integer(),
@@ -43,8 +42,8 @@ ZANIMBART <- R6::R6Class(classname = "ZANIMBART", public = list(
     self$n_trials <- rowSums(Y)
 
   },
-  SetupMCMC = function(v0_theta = 3.5 / sqrt(2),
-                       v0_zeta = if (self$link_zeta == "logit") 3.5 / sqrt(2) else 3.0,
+  SetupMCMC = function(v0_theta = 1.5 / sqrt(2),
+                       k_zeta = if (self$link_zeta == "logit") 3.5 / sqrt(2) else 3.0,
                        ntrees_theta = 20L, ntrees_zeta = 20L,
                        ndpost = 1000L, nskip = 1000L,
                        numcut = 100L, power = 2.0, base = 0.95,
@@ -73,7 +72,7 @@ ZANIMBART <- R6::R6Class(classname = "ZANIMBART", public = list(
         splitprobs_mult <- replicate(self$d, splitprobs_mult, simplify = FALSE)
       alpha_sparse_mult <- rep(alpha_sparse[2L], self$d)
     }
-    self$cpp_obj$SetMCMC(v0_theta, v0_zeta, ntrees_theta, ntrees_zeta, ndpost, nskip,
+    self$cpp_obj$SetMCMC(v0_theta, k_zeta, ntrees_theta, ntrees_zeta, ndpost, nskip,
                          numcut, power, base, proposals_prob,
                          as.integer(update_sigma_theta), s0_2_theta, w_ss,
                          splitprobs_zi, splitprobs_mult,
@@ -104,95 +103,10 @@ ZANIMBART <- R6::R6Class(classname = "ZANIMBART", public = list(
       self$draws_abundance <- self$cpp_obj$draws_vartheta
       self$draws_zeta <- self$cpp_obj$draws_zeta
       if (self$link_zeta == "probit") self$draws_zeta <- stats::pnorm(self$draws_zeta)
-      self$draws_phi <- self$cpp_obj$draws_phi
+      # self$draws_phi <- self$cpp_obj$draws_phi
       self$varcount_theta <- self$cpp_obj$varcount_mcmc_theta
       self$varcount_zeta <- self$cpp_obj$varcount_mcmc_zeta
     }
-  },
-  GetPosteriorPredictive = function(in_sample = TRUE, batch_size = 100L,
-                                    ndpost = self$ndpost,
-                                    forests_dir = self$forests_dir,
-                                    output_dir = self$forests_dir,
-                                    n_pred = self$n_pred, ...) {
-    if (in_sample) {
-      if (!self$keep_draws)
-        stop("Draws are not saved in the class. Run MCMC again with {keep_draws=TRUE}")
-      ppd(self, ...)
-    } else {
-      # Path for the file with the predictions
-      ff_theta <- file.path(forests_dir, "theta_ij.bin")
-      ff_zeta <- file.path(forests_dir, "zeta_ij.bin")
-
-      if (!file.exists(ff_theta))
-        stop("File with the predictions of theta_{ij} does not exist.")
-      if (!file.exists(ff_zeta))
-        stop("File with the predictions of zeta_{ij} does not exist.")
-
-      # Create a vector to load the predictions by batch
-      look_head <- seq.int(from = 1L, to = ndpost, by = batch_size)
-      # y_rep <- array(0L, dim = c(n_pred, self$d, ndpost))
-      y_rep <- array(0L, dim = c(ndpost, n_pred, self$d))
-      # Load by batch and generate the posterior-predictive
-      for (i in seq_len(length(look_head))) {
-        shift <- look_head[i] - 1L
-        # Load \theta_ij
-        thetas <- .load_bin_batch(fname = ff_theta, n = n_pred, d = self$d,
-                                  k = look_head[i], m = batch_size)
-        # Load \zeta_{ij}
-        zetas <- .load_bin_batch(fname = ff_zeta, n = n_pred, d = self$d,
-                                 k = look_head[i], m = batch_size)
-        for (k in seq_len(batch_size)) {
-          cat(shift + k, "\n")
-          y_rep[shift + k,,] <- .rzanim_vec(n = n_pred, sizes = n_trials,
-                                            probs = thetas[, , k],
-                                            zetas = zetas[, , k], d = self$d)
-        }
-      }
-      # if (relative) y_rep <- .normalize_composition(y_rep)
-      return(y_rep)
-    }
-  },
-  GetVarCount = function(parameter = c("theta", "zeta"), ndpost = self$npost) {
-    if (self$shared_trees) stop("Method not available for shared trees.")
-    parameter <- match.arg(parameter)
-    if (!is.null(self$elapsed_time)) {
-      vc <- switch(parameter,
-                  "theta" = self$cpp_obj$varcount_mcmc_theta,
-                  "zeta" = self$cpp_obj$varcount_mcmc_zeta)
-    } else {
-      ntrees <- ifelse(parameter == "theta", self$ntrees_theta, self$ntrees_zeta)
-      vc <- self$cpp_obj$GetVarCount(ndpost, ntrees, parameter, self$forests_dir)
-    }
-    vc
-  },
-  ComputePredictions = function(X, ndpost = self$ndpost,
-                                forests_dir = self$forests_dir,
-                                output_dir = self$forests_dir,
-                                parameter = c("theta", "zeta"),
-                                verbose = TRUE) {
-    self$n_pred <- nrow(X)
-    self$ndpost_pred <- ndpost
-    parameter <- match.arg(parameter)
-    switch(parameter,
-           "theta" = self$cpp_obj$ComputePredictProb(X, ndpost,
-                                                     self$ntrees_theta,
-                                                     forests_dir, output_dir,
-                                                     as.integer(verbose)),
-           "zeta" = self$cpp_obj$ComputePredictProbZero(X, ndpost,
-                                                        self$ntrees_zeta,
-                                                        forests_dir, output_dir,
-                                                        as.integer(verbose)))
-  },
-  LoadPredictions = function(ndpost = self$ndpost_pred,
-                             parameter = c("theta", "zeta"),
-                             output_dir = self$forests_dir, n_pred = self$n_pred) {
-    parameter <- match.arg(parameter)
-    ff <- paste0(parameter, "_ij.bin")
-    if (!file.exists(file.path(output_dir, ff))) stop("File with the predictions does not exist.")
-    load_bin_predictions(fname = file.path(output_dir, ff), n = n_pred, d = self$d, m = ndpost)
-  },
-  DeleteForests = function() {
-    unlink(x = self$forests_dir)
   },
   LogPredictiveLikelihood = function(in_sample = TRUE,
                                      Y = NULL, ndpost = self$ndpost,
@@ -271,8 +185,7 @@ ZANIMBART <- R6::R6Class(classname = "ZANIMBART", public = list(
   }
 ))
 
-#' ZANIM logistic normal BART
-#' @export
+# ZANIM logistic normal BART
 ZANIMLNBART <- R6::R6Class(classname = "ZANIMLNBART", public = list(
   cpp_obj = NULL, cpp_module_name = character(),
   n_trials = integer(), n = integer(), d = integer(), p_theta = integer(),
@@ -297,17 +210,22 @@ ZANIMLNBART <- R6::R6Class(classname = "ZANIMLNBART", public = list(
     self$p_zeta <- ncol(X_zeta)
     self$n_trials <- rowSums(Y)
   },
-  SetupMCMC = function(v0_theta = 3.5 / sqrt(2), k_zeta = 3.0,
+  SetupMCMC = function(v0_theta = 1.5 / sqrt(2), k_zeta = 3.0,
                        ntrees_theta = 50L, ntrees_zeta = 100L,
                        ndpost = 1000L, nskip = 1000L,
                        covariance_type = c("diag", "wishart", "fa", "fa_mgp"),
+                       #### Related to the covariance
+                       # Inv-Wishart or indep. Gammas
                        nu_prior = self$d,
                        Psi_prior = diag(self$d, self$d - 1),
+                       # FA
                        a_sigma = 1.0, b_sigma = 1.0,
                        q_factors = .ledermann(self$d - 1L), sigma2_gamma = 1.0,
+                       # MGP
                        a_psi = 2.5, b_psi = 1.0,
                        shape_lsphis = 3.0, a1_gs = 2.1, a2_gs = 3.1,
                        # shape_lsphis = 2.0, a1_gs = 1.5, a2_gs = 2.8,
+                       ####
                        numcut = 100L, power = 2.0, base = 0.95,
                        proposals_prob = c(0.25, 0.25, 0.50),
                        update_sigma_theta = TRUE, s0_2_theta = 1 / ntrees_theta,
@@ -374,77 +292,6 @@ ZANIMLNBART <- R6::R6Class(classname = "ZANIMLNBART", public = list(
       self$draws_chol_Sigma_V <- self$cpp_obj$draws_chol_Sigma_V
       self$varcount_theta <- self$cpp_obj$varcount_mcmc_theta
       self$varcount_zeta <- self$cpp_obj$varcount_mcmc_zeta
-    }
-  },
-  GetPosteriorPredictive = function(in_sample = TRUE, batch_size = 100L,
-                                    output_dir = self$forests_dir, n_pred = self$n_pred) {
-    if (in_sample) {
-      if (!self$keep_draws)
-        stop("Draws are not saved in the class. Run MCMC again with {keep_draws=TRUE}.")
-      ppd(self, ...)
-    } else {
-      # Path for the file with the predictions
-      ff_theta <- file.path(output_dir, "theta_ij.bin")
-      ff_zeta <- file.path(output_dir, "zeta_ij.bin")
-
-      if (!file.exists(ff_theta))
-        stop("File with the predictions of theta_{ij} does not exist.")
-      if (!file.exists(ff_zeta))
-        stop("File with the predictions of zeta_{ij} does not exist.")
-
-      # Create a vector to load the predictions by batch
-      look_head <- seq.int(from = 1L, to = ndpost, by = batch_size)
-      y_rep <- array(data = NA_real_, dim = c(n_pred, self$d, ndpost))
-      # Load by batch and generate the posterior-predictive
-      for (i in seq_len(length(look_head))) {
-        shift <- look_head[i] - 1L
-        # Load \theta_ij
-        thetas <- .load_bin_batch(fname = ff_theta, n = n_pred, d = self$d,
-                                  k = look_head[i], m = batch_size)
-        # Load \zeta_{ij}
-        zetas <- .load_bin_batch(fname = ff_zeta, n = n_pred, d = self$d,
-                                 k = look_head[i], m = batch_size)
-        # TODO: load chol_Sigma_V and generate random effect
-
-        for (k in seq_len(batch_size)) {
-          cat(shift + k, "\n")
-          y_rep[,,shift + k] <- .rzanim_vec(n = n_pred, sizes = n_trials,
-                                            probs = thetas[, , k],
-                                            zetas = zetas[, , k])
-        }
-      }
-      if (relative) y_rep <- .normalize_composition(y_rep)
-      return(y_rep)
-    }
-  },
-  ComputePredictions = function(X, ndpost = self$ndpost,
-                                forests_dir = self$forests_dir,
-                                output_dir = self$forests_dir,
-                                parameter = c("theta", "zeta"), verbose = TRUE) {
-    self$n_pred <- nrow(X)
-    self$ndpost_pred <- ndpost
-    parameter <- match.arg(parameter)
-    switch(parameter,
-           "theta" = self$cpp_obj$ComputePredictProb(X, ndpost,
-                                                     self$ntrees_theta,
-                                                     forests_dir, output_dir,
-                                                     as.integer(verbose)),
-           "zeta" = self$cpp_obj$ComputePredictProbZero(X, ndpost,
-                                                        self$ntrees_zeta,
-                                                        forests_dir, output_dir,
-                                                        as.integer(verbose)))
-  },
-  LoadPredictions = function(output_dir = self$forests_dir, parameter = c("theta", "zeta")) {
-    parameter <- match.arg(parameter)
-    if (!self$keep_draws) {
-      ff <- paste0(parameter, "_ij.bin")
-      if (!file.exists(file.path(output_dir, ff)))
-        stop("File with the predictions does not exist.")
-      return(load_bin_predictions(fname = file.path(output_dir, ff), n = self$n_pred, d = self$d,
-                       m = self$ndpost_pred))
-    } else {
-      if (parameter == "theta") return(self$draws_theta)
-      else return(self$draws_zeta)
     }
   },
   LogPredictiveLikelihood = function(in_sample = TRUE,
@@ -519,14 +366,12 @@ ZANIMLNBART <- R6::R6Class(classname = "ZANIMLNBART", public = list(
       self$elapsed_time_log_lik <- proc.time() - ini
       self$log_lik_draws <- do.call(rbind, out)
     }
-
   },
   DeleteForests = function() unlink(x = self$forests_dir)
 ))
 
 
-#' Multinomial logistic BART
-#' @export
+# Multinomial logistic BART
 MultinomialBART <- R6::R6Class(classname = "MultinomialBART", public = list(
   cpp_obj = NULL, cpp_module_name = character(),
   n_trials = integer(), n = integer(), d = integer(), p = integer(),
@@ -567,6 +412,7 @@ MultinomialBART <- R6::R6Class(classname = "MultinomialBART", public = list(
     self$nskip <- nskip
     self$forests_dir <- forests_dir
     self$keep_draws <- keep_draws
+    self$save_trees <- save_trees
     if (!self$shared_trees) {
       if (!is.list(splitprobs)) splitprobs <- replicate(self$d, splitprobs, simplify = FALSE)
       alpha_sparse <- rep(alpha_sparse, self$d)
@@ -590,28 +436,8 @@ MultinomialBART <- R6::R6Class(classname = "MultinomialBART", public = list(
     # Copy draws to R
     if (self$keep_draws) {
       self$draws_theta <- self$cpp_obj$draws
-      self$draws_phi <- self$cpp_obj$draws_phi
+      # self$draws_phi <- self$cpp_obj$draws_phi
       self$varcount <- self$cpp_obj$varcount_mcmc
-    }
-  },
-  GetPredictions = function(X, ndpost = self$ndpost,
-                            forests_dir = self$forests_dir,
-                            output_dir = self$forests_dir,
-                            verbose = TRUE) {
-    self$cpp_obj$Predict(X, self$d, ndpost, self$ntrees, forests_dir, output_dir,
-                         as.integer(verbose))
-  },
-  DeleteForests = function() {
-    unlink(x = self$forests_dir)
-  },
-  GetPosteriorPredictive = function(in_sample = TRUE, X = NULL,
-                                    forests_dir = self$forests_dir,
-                                    ndpost = self$ndpost, ...) {
-    if (in_sample) {
-      # Compute the predictions
-      ppd(self, ...)
-    } else {
-      stop("Not implemented yet")
     }
   },
   LogPredictiveLikelihood = function(in_sample = TRUE,
@@ -634,15 +460,13 @@ MultinomialBART <- R6::R6Class(classname = "MultinomialBART", public = list(
     lpl <- matrix(nrow = ndpost, ncol = n_pred)
     for (k in seq_len(ndpost)) {
       if (k %% printevery == 0L) cat(k, "\n")
-      lpl[k, ] <- .dmultinomial(x = Y, prob = draws[, ,idx[k]])
+      lpl[k, ] <- dmultinomial(x = Y, prob = draws[, ,idx[k]])
     }
-    #self$lpl <- lpl
     lpl
   }
 ))
 
-#' Multinomial logistic normal BART
-#' @export
+# Multinomial logistic normal BART
 MultinomialLNBART <- R6::R6Class(classname = "MultinomialLNBART", public = list(
   cpp_obj = NULL, cpp_module_name = character(),
   n_trials = integer(), n = integer(), d = integer(), p = integer(),
@@ -655,9 +479,9 @@ MultinomialLNBART <- R6::R6Class(classname = "MultinomialLNBART", public = list(
   draws_phi = NULL, keep_draws = logical(), save_trees = logical(),
   initialize = function(Y, X) {
     # Call the C++ class in R
-    ml <- Rcpp::Module(module = "multinomial_lognormal_bart", PACKAGE = "zanicc")
+    ml <- Rcpp::Module(module = "multinomial_ln_bart", PACKAGE = "zanicc")
     self$cpp_obj <- new(ml$MultinomialLNBART, Y, X)
-    self$cpp_module_name <- "multinomial_lognormal_bart"
+    self$cpp_module_name <- "multinomial_ln_bart"
     self$n <- nrow(Y)
     self$d <- ncol(Y)
     self$p <- ncol(X)
@@ -688,6 +512,7 @@ MultinomialLNBART <- R6::R6Class(classname = "MultinomialLNBART", public = list(
     self$nskip <- nskip
     self$forests_dir <- forests_dir
     self$keep_draws <- keep_draws
+    self$save_trees <- save_trees
     if (!is.list(splitprobs)) splitprobs <- replicate(self$d, splitprobs, simplify = FALSE)
       alpha_sparse <- rep(alpha_sparse, self$d)
 
@@ -727,9 +552,6 @@ MultinomialLNBART <- R6::R6Class(classname = "MultinomialLNBART", public = list(
       # self$draws_phi <- self$cpp_obj$draws_phi
     }
   },
-  GetPosteriorPredictive = function(...) {
-    ppd(self, ...)
-  },
   LogPredictiveLikelihood = function(Y = NULL, X = NULL,
                                      in_sample = TRUE, conditional = TRUE,
                                      ndpost = self$ndpost, forests_dir = self$forests_dir,
@@ -745,7 +567,7 @@ MultinomialLNBART <- R6::R6Class(classname = "MultinomialLNBART", public = list(
       lpl <- matrix(nrow = ndpost, ncol = n)
       for (k in seq_len(ndpost)) {
         if (k %% printevery == 0L) cat(k, "\n")
-        lpl[k, ] <- .dmultinomial(x = Y, prob = self$draws_abundance[, ,k])
+        lpl[k, ] <- dmultinomial(x = Y, prob = self$draws_abundance[, ,k])
       }
     } else if (!conditional && in_sample) {
       # Monte Carlo approximation (this takes time....)
@@ -759,7 +581,7 @@ MultinomialLNBART <- R6::R6Class(classname = "MultinomialLNBART", public = list(
           # Compute the probabilities
           probs <- self$draws_theta[, ,k] * exp(U)
           probs <- sweep(probs, 1, rowSums(probs), "/")
-          .dmultinomial(x = Y, prob = probs)
+          dmultinomial(x = Y, prob = probs)
         }, simplify = "array")
         # log-sum-exp
         maxlog <- apply(vals, 1, max)
@@ -769,18 +591,11 @@ MultinomialLNBART <- R6::R6Class(classname = "MultinomialLNBART", public = list(
       stop("Out-of-sample log-likelihood not implemented yet")
     }
     return(lpl)
-  },
-  GetPredictions = function(X, ndpost = self$ndpost, forests_dir = self$forests_dir) {
-    self$cpp_obj$Predict(X, self$d, ndpost, self$ntrees, forests_dir)
-  },
-  DeleteForests = function() {
-    unlink(x = self$forests_dir)
   }
 ))
 
 
-#' ZANIM-linear regression
-#' @export
+# ZANIM-linear regression
 ZANIMRegression <- R6::R6Class(
   classname = "ZANIMRegression",
   public = list(
@@ -837,17 +652,6 @@ ZANIMRegression <- R6::R6Class(
       "theta" = apply(self$draws_betas_theta, c(1, 2), mean)
     )
   },
-  ComputePredictions = function(X, ndpost = self$ndpost,
-                                parameter = c("theta", "zeta"),
-                                verbose = TRUE) {
-    stop("not implemented yet")
-    self$n_pred <- nrow(X)
-    self$ndpost_pred <- ndpost
-    parameter <- match.arg(parameter)
-  },
-  GetPosteriorPredictive = function(...) {
-    ppd(self, ...)
-  },
   LogPredictiveLikelihood = function(Y = NULL, ndpost = self$ndpost, printevery = 100L) {
     if (is.null(Y)) stop("Please provide the count matrix in argument {Y}")
     ll <- matrix(data = 0.0, nrow = self$n, ncol = ndpost)
@@ -864,8 +668,7 @@ ZANIMRegression <- R6::R6Class(
 ))
 
 
-#' ZANIDM logistic regression
-#' @export
+# ZANIDM logistic regression
 ZANIDMRegression <- R6::R6Class(
   classname = "ZANIDMRegression",
   public = list(
@@ -930,17 +733,6 @@ ZANIDMRegression <- R6::R6Class(
       "alpha" = apply(self$draws_betas_alpha, c(1, 2), mean)
     )
   },
-  ComputePredictions = function(X, ndpost = self$ndpost,
-                                parameter = c("alpha", "zeta"),
-                                verbose = TRUE) {
-    stop("not implemented yet")
-    self$n_pred <- nrow(X)
-    self$ndpost_pred <- ndpost
-    parameter <- match.arg(parameter)
-  },
-  GetPosteriorPredictive = function(...) {
-    ppd(self, ...)
-  },
   LogPredictiveLikelihood = function(ndpost = self$ndpost, parallel = FALSE,
                                      ncores = 4L) {
 
@@ -968,8 +760,7 @@ ZANIDMRegression <- R6::R6Class(
   }
 ))
 
-#' ZANIM logistic normal regression
-#' @export
+# ZANIM logistic normal regression
 ZANIMLNRegression <- R6::R6Class(
   classname = "ZANIMLNRegression",
   public = list(
@@ -1049,27 +840,18 @@ ZANIMLNRegression <- R6::R6Class(
       "theta" = apply(self$draws_betas_theta, c(1, 2), mean)
     )
   },
-  ComputePredictions = function(X, ndpost = self$ndpost,
-                                parameter = c("theta", "zeta"),
-                                verbose = TRUE) {
-    stop("not implemented yet")
-  },
-  GetPosteriorPredictive = function(...) {
-    ppd(self, ...)
-  },
   LogPredictiveLikelihood = function(Y) {
     lpl <- matrix(nrow = self$ndpost, ncol = self$n)
     for (k in seq_len(self$ndpost)) {
       if (k %% printevery == 0L) cat(t, "\n")
-      lpl[k, ] <- .dmultinomial(x = Y, prob = self$draws_abundance[, ,k])
+      lpl[k, ] <- dmultinomial(x = Y, prob = self$draws_abundance[, ,k])
     }
     lpl
   }
 ))
 
 
-#' DM-linear regression
-#' @export
+# DM-linear regression
 DMRegression <- R6::R6Class(
   classname = "DMRegression",
   public = list(
@@ -1128,9 +910,6 @@ DMRegression <- R6::R6Class(
   PosterioMeanCoef = function() {
     if (self$keep_draws) apply(self$draws_betas, c(1, 2), mean)
   },
-  GetPosteriorPredictive = function(...) {
-    ppd(self, ...)
-  },
   LogPredictiveLikelihood = function(Y, ndpost = self$ndpost, parallel = FALSE,
                                      ncores = 4L, printevery = 100L) {
     if (!parallel) {
@@ -1147,8 +926,5 @@ DMRegression <- R6::R6Class(
       self$log_lik_draws <- do.call(rbind, ll)
     }
     return(self$log_lik_draws)
-  },
-  ComputePredictions = function(X, ndpost = self$ndpost) {
-    stop("not implemented yet")
   }
 ))

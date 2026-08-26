@@ -7,7 +7,6 @@
 *.DS_Store
 *.rda
 
-
 # Do not version data files
 *.parquet
 *.txt

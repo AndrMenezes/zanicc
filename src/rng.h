@@ -11,6 +11,7 @@ double target_sigma_prior(double &x, int &n, double &sum_log_lambda,
 int sample_discrete(const std::vector<double> &probs, const int &k);
 int sample_discrete(const int &k);
 double rtnorm(const double &mean, const double &sd, const double &a);
+double rtnorm_ab(const double &mean, const double &sd, const double &a, const double &b);
 std::vector<double> UpdateSplitProbs(const arma::uvec &m, const double &a,
                                      const int &p);
 double UpdateAlphaDirchlet(const std::vector<double> &alphas,
@@ -18,5 +19,14 @@ double UpdateAlphaDirchlet(const std::vector<double> &alphas,
                            const double &sum_log_splitprobs,
                            const double &p, const int &k);
 arma::vec rmvnorm(int p, arma::mat &sigma_chol);
+void rmvnorm_chol(std::vector<double>& out,
+                  const std::vector<double>& mean,
+                  const std::vector<double>& L, int p);
+void rmvnorm_chol2(std::vector<double>& out,
+                   const std::vector<double>& L, int p);
+std::vector<int> rzanimln(int n_trial, std::vector<double> &prob,
+                          std::vector<double> &zeta,
+                          std::vector<double> &chol_Sigma_V,
+                          std::vector<double> &B);
 
 #endif

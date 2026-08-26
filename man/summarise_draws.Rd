@@ -2,12 +2,23 @@
 % Please edit documentation in R/utils.R
 \name{summarise_draws}
 \alias{summarise_draws}
-\title{Generic functions for summarise the posterior draws of parameters
-Rows are parameters and columns are draws}
+\alias{summarise_draws_3d}
+\title{Summarise posterior draws}
 \usage{
 summarise_draws(x, prob = 0.05)
+
+summarise_draws_3d(x, prob = 0.05)
+}
+\arguments{
+\item{x}{A matrix or three-dimensional array of posterior draws.}
+
+\item{prob}{The probability excluded from the credible interval.}
+}
+\value{
+A data frame containing posterior summaries for each sample,
+optionally by category if \code{x} is given as a three-dimensional array.
 }
 \description{
-Generic functions for summarise the posterior draws of parameters
-Rows are parameters and columns are draws
+Summarises posterior draws of sample-specific parameters by their mean,
+median, and credible interval.
 }

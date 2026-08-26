@@ -13,15 +13,23 @@ log_pmf_zanim_vec <- function(n, d, x, prob, zeta) {
     .Call(`_zanicc_log_pmf_zanim_approx`, x, prob, zeta, scale, mc, nskip)
 }
 
+log_pmf_dm <- function(x, size, alpha) {
+    .Call(`_zanicc_log_pmf_dm`, x, size, alpha)
+}
+
 log_pmf_zanidm <- function(x, alpha, zeta) {
     .Call(`_zanicc_log_pmf_zanidm`, x, alpha, zeta)
+}
+
+log_pmf_zanim_ln_conditional <- function(x, prob, zeta, chol_Sigma_V, B) {
+    .Call(`_zanicc_log_pmf_zanim_ln_conditional`, x, prob, zeta, chol_Sigma_V, B)
 }
 
 rtnorm <- function(mean, sd, a) {
     .Call(`_zanicc_rtnorm`, mean, sd, a)
 }
 
-compute_crps <- function(samples, truth, n_samps) {
-    .Call(`_zanicc_compute_crps`, samples, truth, n_samps)
+mat_to_double_rowmajor <- function(X) {
+    .Call(`_zanicc_mat_to_double_rowmajor`, X)
 }
 

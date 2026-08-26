@@ -14,13 +14,13 @@ ProbitBART::~ProbitBART() {
   for (int h = 0; h < ntrees; h++) {
     delete trees[h];
   }
-  delete prior;
+  // delete prior;
 }
 
 // Log-marginal likelihood
 double ProbitBART::lml(Node *tree) {
-  double nt = tree->nobs + prior->tau_mu;
-  return 0.5 * (std::pow(tree->ss1(0), 2) / nt - std::log(nt) + prior->log_tau_mu);
+  double nt = tree->nobs + tau_mu;
+  return 0.5 * (std::pow(tree->ss1(0), 2) / nt - std::log(nt) + log_tau_mu);
 }
 
 // Update sufficient statistics
@@ -47,7 +47,7 @@ void ProbitBART::DrawPosterior(Node *tree) {
   std::vector<Node*> leaves;
   tree->GetLeaves(leaves);
   for (Node* leaf : leaves) {
-    den = leaf->nobs + prior->tau_mu;
+    den = leaf->nobs + tau_mu;
     mu = R::rnorm(leaf->ss1(0) / den, 1.0 / sqrt(den));
     leaf->mu(0) = mu;
     // Save the predictions at g_trees.
@@ -134,7 +134,10 @@ void ProbitBART::SetMCMC(double k, int ntrees_, int ndpost_, int nskip_,
   path_out = path_out_;
 
   // Define the prior
-  prior = new PriorProbit(ntrees, k);
+  // prior = new PriorProbit(ntrees, k);
+  double sigma_mu = 3.0 / (k * std::sqrt(ntrees));
+  tau_mu = 1.0 / (sigma_mu * sigma_mu);
+  log_tau_mu = std::log(tau_mu);
 
   // Setting the cut-points
   if (xinfo.n_rows == 1) {
@@ -205,7 +208,7 @@ void ProbitBART::SetMCMC(double k, int ntrees_, int ndpost_, int nskip_,
 
   int flag_grow = 0, flag_prune = 0, flag_change = 0;
 
-  std::cout << "Model set up!" << "\n\n";
+  // std::cout << "Model set up!" << "\n\n";
 }
 
 // Method to Run MCMC

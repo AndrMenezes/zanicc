@@ -2,10 +2,19 @@
 % Please edit documentation in R/utils.R
 \name{.normalize_composition}
 \alias{.normalize_composition}
-\title{Normalise count-compositional matrix into compositional vectors at simples}
+\title{Normalise count-compositional matrix}
 \usage{
 .normalize_composition(x)
 }
+\arguments{
+\item{x}{A matrix of multivariate count-compositional data.
+Rows correspond to observations and columns correspond to categories.}
+}
+\value{
+Matrix of empirical composition on the continuous simplex.
+}
 \description{
-Normalise count-compositional matrix into compositional vectors at simples
+Transform a count-compositional matrix into a empirical compositional matrix
+by dividing the category-specific counts of each sample by their respective
+total counts.
 }

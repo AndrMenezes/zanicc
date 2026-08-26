@@ -13,13 +13,18 @@
 #' @param prob numeric vector. The probability vector for the multinomial distribution.
 #' @param zeta numeric vector. The probability of structural zero for each category.
 #' @param j,h integers. Index corresponding to the component for computing the
-#' marginal PMF of \eqn{Y_j} and for computing the covariance between \eqn{Y_j} and \eqn{Y_h}.
+#' marginal PMF of \eqn{Y_j} and for computing the covariance between \eqn{Y_j}
+#' and \eqn{Y_h}.
 #' @param log logical; if \code{TRUE}, probabilities p are given as log(p).
 #'
 #' @return
 #' The `rzanim` function returns a matrix of integer counts with `n` rows and
 #' `d` columns, where `d` is the number of categories.
-
+#'
+#' @references Menezes, A. F. B., Parnell, A. C., and Murphy, K. (2025). Finite mixture representations of
+#' zero-and-N -inflated distributions for count-compositional data. \emph{Journal of Multivariate Analysis},
+#' \strong{210:105492}. <https://doi.org/10.1016/j.jmva.2025.105492>.
+#'
 #' @rdname zanim
 #' @export
 rzanim <- function(n, size, prob, zeta) {
@@ -139,13 +144,13 @@ covariance_zanim <- function(size, prob, zeta, j, h) {
   size * (size - 1) * c_jh - mean_j * mean_h
 }
 
-#' Zero-&-N-Inflated Dirichlet-Multinomial Distribution
+#' Zero-&-N-Inflated Dirichlet-multinomial Distribution
 #' @name zanidm
 #' @aliases zanidm rzanidm dzanidm
 #'
 #'
 #' @description Random number generation and probability mass function for the
-#' Zero-&-N-Inflated Dirichlet-Multinomial distribution. It also contains the
+#' Zero-&-N-Inflated Dirichlet-multinomial distribution. It also contains the
 #' marginal probability mass function and their expected value.
 #'
 #' @param x vector. observed vector of compositional counts. It should have
@@ -158,6 +163,11 @@ covariance_zanim <- function(size, prob, zeta, j, h) {
 #' marginal PMF of \eqn{Y_j} and for computing the covariance between \eqn{Y_j}
 #' and \eqn{Y_h}.
 #' @param log logical; if \code{TRUE}, probabilities p are given as log(p).
+#'
+#'
+#' @references Menezes, A. F. B., Parnell, A. C., and Murphy, K. (2025). Finite mixture representations of
+#' zero-and-N -inflated distributions for count-compositional data. \emph{Journal of Multivariate Analysis},
+#' \strong{210:105492}. <https://doi.org/10.1016/j.jmva.2025.105492>.
 
 #' @rdname zanidm
 #' @export
@@ -277,18 +287,17 @@ covariance_zanidm <- function(size, alpha, zeta, j, h) {
   size * c_jh - mean_j * mean_h
 }
 
-#' Dirichlet-Multinomial Distribution
+#' Dirichlet-multinomial Distribution
 #' @name dm
 #' @aliases dm rdm ddm
 #'
-#'
 #' @description Random number generation and probability mass function for the
-#' Dirichlet-Multinomial distribution.
-#' @param x matrix. observed vector of compositional counts. It should have
-#' same length as `alpha`.
+#' Dirichlet-multinomial distribution.
+#' @param x matrix. observed vector of compositional counts.
 #' @param n integer. The number of samples to generate.
 #' @param sizes vector. The number of trials.
-#' @param alphas matrix. The concentration parameter Positive real numbers.
+#' @param alphas matrix. The concentration parameter Positive real numbers. It should have
+#' same length as `x`.
 #' @param log logical; if \code{TRUE}, probabilities p are given as log(p).
 #'
 #' @rdname dm
@@ -323,8 +332,8 @@ ddm <- function(x, alphas, log = TRUE) {
 }
 
 
-#' Generate one sample from ZANIM and ZANIDM distribution.
-#' Returns the counts and indicator of zero-inflation.
+# Generate one sample from ZANIM and ZANIDM distribution.
+# Returns the counts and indicator of zero-inflation.
 .rzanim <- function(size, prob, zeta, d) {
   z <- stats::rbinom(n = d, size = 1L, prob = 1.0 - zeta)
   is_zero <- z == 0L
@@ -355,8 +364,8 @@ ddm <- function(x, alphas, log = TRUE) {
   list(x, z)
 }
 
-#' Vectorise version that assumed `sizes`, `probs`/`alphas` and `zetas` have same dimension
-#' and are subject-specific.
+# Vectorise version that assumed `sizes`, `probs`/`alphas` and `zetas` have same dimension
+# and are subject-specific.
 .rzanim_vec <- function(n, sizes, probs, zetas, d = ncol(zetas)) {
   do.call(rbind, sapply(X = seq_len(n), FUN = function(i) {
     .rzanim(size = sizes[i], prob = probs[i, ], zeta = zetas[i, ], d = d)[[1L]]

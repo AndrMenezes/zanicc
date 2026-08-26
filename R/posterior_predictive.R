@@ -232,7 +232,7 @@
                    relative = relative, printevery = printevery)
 }
 
-# Internal functions to compute PDP loading the draws of the parameters by batch
+#' Internal functions to compute PDP loading the draws of the parameters by batch
 #' @param n_trials vector with the individual-level number of trials.
 #' @param output_dir,output_dir_chol_V the directory where the predictions are
 #' located, and the posterior draws of the Cholesky decomposition of \eqn{Sigma_V}

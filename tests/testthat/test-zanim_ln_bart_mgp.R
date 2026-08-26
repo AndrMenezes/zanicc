@@ -99,7 +99,7 @@ test_that("Check if the ZANIM-LN-BART with MGP prior is working", {
     lpl <- matrix(nrow = ndpost, ncol = n_samples)
     for (t in seq_len(ndpost)) {
       if (t %% printevery == 0L) cat(t, "\n")
-      lpl[t, ] <- .dmultinomial(x = Y, prob = draws[, ,t])
+      lpl[t, ] <- dmultinomial(x = Y, prob = draws[, ,t])
     }
     lpl
   }

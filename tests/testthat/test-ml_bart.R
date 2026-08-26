@@ -112,7 +112,7 @@ test_that("test predict and ppd functions for multinomialBART class", {
   Y_train_rel <- sweep(Y_train, 1, rowSums(Y_train), "/")
   Y_test_rel <- sweep(Y_test, 1, rowSums(Y_test), "/")
 
-  ml_bart <- zanicc(Y = Y_train, X_count = X_train, model = "mult_bart",
+  ml_bart <- zanicc(Y = Y_train, X_count = X_train, model = "ml_bart",
                     ntrees_theta = 20L, ndpost = 1000L, nskip = 3000L,
                     path = path_res, keep_draws = TRUE, save_trees = TRUE)
 

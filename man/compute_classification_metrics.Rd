@@ -2,18 +2,20 @@
 % Please edit documentation in R/index_metrics.R
 \name{compute_classification_metrics}
 \alias{compute_classification_metrics}
-\title{Compute metrics of classification for variable selection.}
+\title{Classification metrics}
 \usage{
 compute_classification_metrics(truth, estimated)
 }
 \arguments{
-\item{truth}{vector of 0 and 1 with true labels}
+\item{truth}{A vector of true binary class labels, coded as \code{0} and \code{1}.}
 
-\item{estimated}{vector of estimated labels.}
+\item{estimated}{A vector of estimated binary class labels, coded as \code{0} and \code{1}.}
+}
+\value{
+A named vector containing sensitivity (\code{sens}), specificity (\code{spec}),
+Matthews correlation coefficient (\code{mcc}), and F1 score (\code{f1}).
 }
 \description{
-Compute metrics of classification for variable selection.
-}
-\details{
-Minor modifications of the code from the function \code{ZIDM::select_perf}.
+Computes common binary classification performance metrics from observed
+(\code{truth}) and estimated (\code{estimated}) class labels.
 }

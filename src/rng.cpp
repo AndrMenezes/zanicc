@@ -56,6 +56,16 @@ double rtnorm(const double &mean, const double &sd, const double &a) {
   return z * sd + mean;
 }
 
+// Inverse transform method for Truncated normal at (a, b)
+double rtnorm_ab(const double &mean, const double &sd, const double &a, const double &b) {
+  double u = unif_rand();
+  double p_low = R::pnorm5(a, mean, sd, 1, 0);
+  double p = p_low + u * (R::pnorm5(b, mean, sd, 1, 0) - p_low);
+  return R::qnorm5(p, mean, sd, 1, 0);
+}
+
+
+
 // RGN for Dirichlet_k[a] using the Gamma stochastic representation
 // This is used in the sparse Dirichlet prior
 std::vector<double> UpdateSplitProbs(const arma::uvec &m, const double &a,
@@ -100,3 +110,115 @@ arma::vec rmvnorm(int p, arma::mat &sigma_chol) {
   return (ep * sigma_chol).t();
   // return sigma_chol * ep; // ?
 }
+
+// RNG for multivariate normal using only std and make use of lower triangle chol
+void rmvnorm_chol(std::vector<double>& out,
+                  const std::vector<double>& mean,
+                  const std::vector<double>& L, int p) {
+  std::vector<double> z(p);
+
+  for (int j = 0; j < p; j++) z[j] = R::rnorm(0.0, 1.0);
+
+  // Matrix multiplication using the fact that L is upper triangle
+  double sum;
+  for (int j = 0; j < p; j++) {
+    sum = 0.0;
+    for (int k = 0; k <= j; k++) sum += z[k] * L[k * p + j];
+    out[j] = mean[j] + sum;
+  }
+}
+
+void rmvnorm_chol2(std::vector<double>& out,
+                   const std::vector<double>& L, int p) {
+  std::vector<double> z(p);
+
+  for (int j = 0; j < p; j++) z[j] = R::rnorm(0.0, 1.0);
+  // Matrix multiplication using the fact that L is upper triangle
+  double sum;
+  for (int j = 0; j < p; j++) {
+    sum = 0.0;
+    for (int k = 0; k <= j; k++) sum += z[k] * L[k * p + j];
+    out[j] = sum;
+  }
+}
+
+// // [[Rcpp::export]]
+// std::vector<double> rmvnorm_chol_22(
+//                   const std::vector<double>& mean,
+//                   const std::vector<double>& L, int p) {
+//   std::vector<double> z(p);
+//   std::vector<double> out(p);
+//
+//   for (int j = 0; j < p; j++) z[j] = R::rnorm(0.0, 1.0);
+//
+//   // Matrix multiplication using the fact that L is upper triangle
+//   double sum;
+//   for (int j = 0; j < p; j++) {
+//     sum = 0.0;
+//     for (int k = 0; k <= j; k++) sum += z[k] * L[k * p + j];
+//     out[j] = mean[j] + sum;
+//   }
+//   return out;
+// }
+//
+// // [[Rcpp::export]]
+// std::vector<double> rmvnorm_chol_33(
+//                   std::vector<double>& mean,
+//                   arma::mat Sigma, int p) {
+//   std::vector<double> z(p);
+//   std::vector<double> out(p);
+//
+//   arma::mat S_chol = arma::chol(Sigma);
+//   std::vector<double> L = mat_to_double_rowmajor(S_chol);
+//
+//   for (int j = 0; j < p; j++) z[j] = R::rnorm(0.0, 1.0);
+//
+//   // Matrix multiplication using the fact that L is upper triangle
+//   double sum;
+//   for (int j = 0; j < p; j++) {
+//     sum = 0.0;
+//     for (int k = 0; k <= j; k++) sum += z[k] * L[k * p + j];
+//     out[j] = mean[j] + sum;
+//   }
+//   return out;
+// }
+
+
+std::vector<int> rzanimln(int n_trial, std::vector<double> &prob,
+                          std::vector<double> &zeta,
+                          std::vector<double> &chol_Sigma_V,
+                          std::vector<double> &B) {
+
+  int d = prob.size(), dm1 = d-1;
+  std::vector<double> z(d, 1.0), v(dm1, 0.0), u(d, 0.0), vartheta(d, 0.0);
+  std::vector<int> y(d, 0);
+
+  // Simulate random effect v ~ N_{d-1}[0, Sigma_V]
+  std::vector<double> m0(dm1, 0.0);
+  rmvnorm_chol2(v, chol_Sigma_V, dm1);
+  // Transform to u = Bv
+  // double sum = 0.0;
+  // Iterate rows first then columns
+  for (int i=0; i < d; i++) {
+    for (int j=0; j < dm1; j++) u[i] += v[j] * B[i*dm1 + j];
+  }
+
+  // Compute \vartheta_{ij} \propto theta_j*z_ij * e^{u_ij}
+  double s = 0.0;
+  for (int j = 0; j < d; j++) {
+    z[j] = (double)R::rbinom(1, 1.0 - zeta[j]);
+    vartheta[j] = prob[j] * z[j] * exp(u[j]);
+    s += vartheta[j];
+  }
+
+  if (s == 0.0) return y;
+
+  // Normalise
+  for (int j=0; j < d; j++) vartheta[j] /= s;
+
+  // Multinomial draw
+  R::rmultinom(n_trial, vartheta.data(), d, y.data());
+
+  return y;
+}
+
