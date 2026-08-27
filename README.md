@@ -25,4 +25,4 @@ remotes::install_github("AndrMenezes/zanicc")
 
 > Code to reproduce the simulations and the real data analyses presented
 > in the paper can be found in
-> [AndrMenezes/zanicc_paper](https://github.com/AndrMenezes/zanicc_paper).
+> [AndrMenezes/zanicc_paper](https://github.com/AndrMenezes/reproduce__zanim_ln_bart).
