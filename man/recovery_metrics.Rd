@@ -17,7 +17,7 @@ compute_abs_diff(true_values, estimates)
 
 compute_coverage(true_values, estimates_lo, estimates_up)
 
-compute_kl_simplex(true_values, estimates)
+compute_kl_simplex(true_values, estimates, ep = 1)
 
 compute_kl_prob(true_values, estimates)
 
@@ -44,7 +44,7 @@ intervals for the parameter estimates. Must have the same dimensions as
 
 \item{ep}{A small positive constant used in \code{compute_kl_simplex()} to avoid
 undefined values when the true probability is positive but the estimated
-probability is zero.}
+probability is zero. Defaults to \code{1.0}.}
 }
 \value{
 A numeric value or vector containing the recovery metric. The returned value

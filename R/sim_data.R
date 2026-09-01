@@ -284,7 +284,6 @@ sim_data_zanicc_2d <- function(n_grid = 20, n_sample = n_grid^2, d, n_trials,
   region <- match.arg(region)
   if (region == "convexhull") {
     if (is.null(X_aux)) {
-      data(pollen_data, package = "zanicc")
       X_aux <- pollen_data$X[, c("gdd5", "mtco")]
       X_aux <- scale(X_aux)
     }
@@ -383,6 +382,11 @@ sim_data_zanicc_2d <- function(n_grid = 20, n_sample = n_grid^2, d, n_trials,
 #' Simulate data following the scenario 1 of the main paper, which
 #' corresponds to d=4 with cosine, sine, and polynomial predictors as defined in
 #' main paper.
+#'
+#' @param n_sample Number of observations to generate.
+#' @param random_effects Logical, defaulting to \code{TRUE}, indicating whether random effects should (ZANIM-LN) or should not (ZANIM) be incorporated.
+#' @param structural_zero Logical, defaulting to \code{TRUE}, indicating whether structural zeros should (ZANIM / ZANIM-LN) or should not (Multinomial / MLN) be incorporated.
+#' @param seed Random seed governing RNG for reproducibility. Defaults to \code{1212}.
 #' @export
 sim_zanim_ln_s1 <- function(n_sample, random_effects = TRUE, structural_zero = TRUE,
                             seed = 1212) {
@@ -501,7 +505,7 @@ sim_zanim_ln_gp <- function(n, d, n_trials, X_real, len_scale_theta = 2.0,
   true_zetas <- stats::pnorm(t(stats::qnorm(lower_bound_zeta) + max_range * t(fx_zeta)))
 
   # Random effect
-  q_factors <- zanicc:::.ledermann(d)
+  q_factors <- .ledermann(d)
   Gamma <- matrix(stats::runif(d * q_factors, 0, 1), d, q_factors)
   Psi <- diag(seq(psi_range[1L], psi_range[2L], length.out = d))
   Sigma_U <- tcrossprod(Gamma) + Psi

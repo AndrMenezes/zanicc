@@ -107,8 +107,10 @@
 #' the regression coefficients associated with `X_zi`.
 #' @param S_prior_betas Prior covariance matrix for the regression coefficients
 #' associated with the count-compositional component.
+#' @param ... Catches unused arguments.
 #'
 #' @return An R6 object which class depends on the specified `model`.
+#' @importFrom R6 "R6Class"
 #'
 #' @export
 zanicc <- function(Y, X_count, X_zi = NULL,

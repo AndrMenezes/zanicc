@@ -50,7 +50,7 @@ Climate variables were computed from weighted averaging of observations from
 nearby weather stations over climatological periods of approximately 30 years.
 }
 \references{
-Allen, J. R. M., Watts, W. A., \& Huntley, B. (2000).
+Allen, J. R. M., Watts, W. A., & Huntley, B. (2000).
 Weichselian palynostratigraphy, palaeovegetation and palaeoenvironment:
 the record from Lago Grande di Monticchio, southern Italy.
 \emph{Quaternary International}, \strong{73--74}, 91--110.

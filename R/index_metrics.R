@@ -55,12 +55,12 @@
 #' Albert, A. and Zhang, L. (2010), A novel definition of the multivariate coefficient of variation,
 #' \emph{Biometrical Journal}, \strong{52(5)}, 667--675.
 #'
-#' Blasco-Moreno, A., P{\'e}rez-Casany, M., Puig, P., Morante, M. and Castells, E. (2019), What does a zero
+#' Blasco-Moreno, A., Pérez-Casany, M., Puig, P., Morante, M. and Castells, E. (2019), What does a zero
 #' mean? Understanding false, random and structural zeros in ecology, \emph{Methods in Ecology and Evolution}
 #' \strong{10(7)}, 949--959.
 #'
-#' Kim, H., Wei{\s s}, C. and M{\"o}ller, T. (2018), Testing for an excessive number of
-#' zeros in time series of bounded counts. \emph{Statistical Methods \& Applications}, \strong{27}, 689--714.
+#' Kim, H., Weiß, C. and Möller, T. (2018), Testing for an excessive number of
+#' zeros in time series of bounded counts. \emph{Statistical Methods & Applications}, \strong{27}, 689--714.
 #'
 #' Kokonendji, C. C. and Puig, P. (2018), Fisher dispersion index for multivariate count distributions: A review
 #' and a new proposal, Journal of Multivariate Analysis \strong{165}, 180--193.
@@ -180,7 +180,7 @@ zi_binomial <- function(x, N, standardise = FALSE) {
 #' `true_values`.
 #' @param ep A small positive constant used in `compute_kl_simplex()` to avoid
 #' undefined values when the true probability is positive but the estimated
-#' probability is zero.
+#' probability is zero. Defaults to \code{1.0}.
 #'
 #' @details
 #' The functions are designed for evaluating parameter recovery in
@@ -278,8 +278,7 @@ compute_coverage <- function(true_values, estimates_lo, estimates_up) {
 }
 #' @rdname recovery_metrics
 #' @export
-compute_kl_simplex <- function(true_values, estimates) {
-  ep = 1.0
+compute_kl_simplex <- function(true_values, estimates, ep = 1.0) {
   # Critical case: theta >0 and draws == 0
   idx <- which((true_values > 0.0) & estimates == 0.0)
   estimates[idx] <- ep

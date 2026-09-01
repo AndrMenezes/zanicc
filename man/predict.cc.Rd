@@ -2,6 +2,11 @@
 % Please edit documentation in R/predict.R
 \name{predict.MultinomialBART}
 \alias{predict.MultinomialBART}
+\alias{predict.MultinomialLNBART}
+\alias{predict.ZANIMBART}
+\alias{predict.ZANIMLNBART}
+\alias{predict.DMRegression}
+\alias{predict.ZANIDMRegression}
 \title{Posterior predictions}
 \usage{
 \method{predict}{MultinomialBART}(
@@ -10,7 +15,58 @@
   ndpost = object$ndpost,
   output_dir = tempdir(),
   load = TRUE,
-  verbose = TRUE
+  verbose = TRUE,
+  ...
+)
+
+\method{predict}{MultinomialLNBART}(
+  object,
+  newdata,
+  ndpost = object$ndpost,
+  output_dir = tempdir(),
+  load = TRUE,
+  verbose = TRUE,
+  ...
+)
+
+\method{predict}{ZANIMBART}(
+  object,
+  newdata,
+  type = c("theta", "zeta"),
+  ndpost = object$ndpost,
+  output_dir = tempdir(),
+  load = TRUE,
+  verbose = TRUE,
+  ...
+)
+
+\method{predict}{ZANIMLNBART}(
+  object,
+  newdata,
+  type = c("theta", "zeta"),
+  ndpost = object$ndpost,
+  output_dir = tempdir(),
+  load = TRUE,
+  verbose = TRUE,
+  ...
+)
+
+\method{predict}{DMRegression}(
+  object,
+  newdata,
+  type = c("alpha", "theta"),
+  ndpost = object$ndpost,
+  verbose = TRUE,
+  ...
+)
+
+\method{predict}{ZANIDMRegression}(
+  object,
+  newdata,
+  type = c("alpha", "zeta", "theta"),
+  ndpost = object$ndpost,
+  verbose = TRUE,
+  ...
 )
 }
 \arguments{
@@ -36,6 +92,8 @@ files should be loaded into R memory. Defaults to \code{TRUE}. Set to
 
 \item{verbose}{Logical indicating whether progress should be displayed.
 Defaults is \code{TRUE}.}
+
+\item{...}{Catches unused arguments.}
 
 \item{type}{The type of prediction to return. For \code{ZANIMBART} and
 \code{ZANIMLNBART}, choices are \code{"theta"} and \code{"zeta"}. For

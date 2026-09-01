@@ -26,7 +26,7 @@ Relevant references which study this data set are Allen et al. (2000),
 Allen and Huntley (2009), and Parnell et al. (2016) and references cite therein.
 }
 \references{
-Allen, J. R. M., Watts, W. A., \& Huntley, B. (2000).
+Allen, J. R. M., Watts, W. A., & Huntley, B. (2000).
 Weichselian palynostratigraphy, palaeovegetation and palaeoenvironment:
 the record from Lago Grande di Monticchio, southern Italy.
 \emph{Quaternary International}, \strong{73--74}, 91--110.

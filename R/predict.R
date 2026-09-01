@@ -77,47 +77,52 @@
 #' `FALSE` when predictions are too large to comfortably fit in memory.
 #' @param verbose Logical indicating whether progress should be displayed.
 #' Defaults is `TRUE`.
+#' @param ... Catches unused arguments.
 #'
 #' @return Posterior prediction draws. When `load = TRUE`, the draws are
 #'   loaded into R memory. When `load = FALSE`, the prediction draws are
 #'   written to the files in `output_dir`.
-#'
+#' @rdname predict.cc
 #' @export
 predict.MultinomialBART <- function(object, newdata, ndpost = object$ndpost,
                                     output_dir = tempdir(), load = TRUE,
-                                    verbose = TRUE) {
+                                    verbose = TRUE, ...) {
   .predictMLNBART(object = object, newdata = newdata, ndpost = ndpost,
                   output_dir = output_dir, load = load, verbose = verbose)
 }
 
 #' @export
+#' @rdname predict.cc
 predict.MultinomialLNBART <- function(object, newdata, ndpost = object$ndpost,
                                       output_dir = tempdir(), load = TRUE,
-                                      verbose = TRUE) {
+                                      verbose = TRUE, ...) {
   .predictMLNBART(object = object, newdata = newdata, ndpost = ndpost,
                   output_dir = output_dir, load = load, verbose = verbose)
 }
 
 #' @export
+#' @rdname predict.cc
 predict.ZANIMBART <- function(object, newdata, type = c("theta", "zeta"),
                               ndpost = object$ndpost, output_dir = tempdir(),
-                              load = TRUE, verbose = TRUE) {
+                              load = TRUE, verbose = TRUE, ...) {
   type <- match.arg(type)
   .predictZANIBART(object, newdata = newdata, type = type, ndpost = ndpost,
                    output_dir = output_dir, load = load, verbose = verbose)
 }
 #' @export
+#' @rdname predict.cc
 predict.ZANIMLNBART <- function(object, newdata, type = c("theta", "zeta"),
                                 ndpost = object$ndpost, output_dir = tempdir(),
-                                load = TRUE, verbose = TRUE) {
+                                load = TRUE, verbose = TRUE, ...) {
   type <- match.arg(type)
   .predictZANIBART(object, newdata = newdata, type = type, ndpost = ndpost,
                    output_dir = output_dir, load = load, verbose = verbose)
 }
 
 #' @export
+#' @rdname predict.cc
 predict.DMRegression <- function(object, newdata, type = c("alpha", "theta"),
-                                 ndpost = object$ndpost, verbose = TRUE) {
+                                 ndpost = object$ndpost, verbose = TRUE, ...) {
   type <- match.arg(type)
   if (!is.null(object$draws_betas)) {
     predictions <- apply(object$draws_betas, 3,
@@ -136,8 +141,9 @@ predict.DMRegression <- function(object, newdata, type = c("alpha", "theta"),
 }
 
 #' @export
+#' @rdname predict.cc
 predict.ZANIDMRegression <- function(object, newdata, type = c("alpha", "zeta", "theta"),
-                                     ndpost = object$ndpost, verbose = TRUE) {
+                                     ndpost = object$ndpost, verbose = TRUE, ...) {
   type <- match.arg(type)
   if (!is.null(object$draws_betas_alpha) && !is.null(object$draws_betas_alpha)) {
     res <- switch(type,

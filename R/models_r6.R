@@ -277,7 +277,8 @@ ZANIMLNBART <- R6::R6Class(classname = "ZANIMLNBART", public = list(
                          xinfo, forests_dir, as.integer(keep_draws), as.integer(save_trees))
   },
   RunMCMC = function() {
-    ini <- proc.time()if (q_factors == 0) q_factors <- self$d-1
+    ini <- proc.time()
+    if (q_factors == 0) q_factors <- self$d-1
     self$cpp_obj$RunMCMC()
     self$elapsed_time <- proc.time() - ini
     # Average number of leaves for theta and zeta regression trees

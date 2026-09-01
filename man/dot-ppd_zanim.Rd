@@ -4,11 +4,16 @@
 \alias{.ppd_zanim}
 \title{Posterior predictive distribution under the ZANIM model}
 \usage{
-.ppd_zanim(n_trials, draws_prob, draws_zeta, relative, printevery)
+.ppd_zanim(n_trials, draws_theta, draws_zeta, relative, printevery)
 }
 \arguments{
 \item{n_trials}{Integer vector of length \eqn{n} giving the total number of
 trials for each observation.}
+
+\item{draws_theta}{A 3D array of posterior draws of the population-level count
+probabilities with dimensions \eqn{n \times d \times ndpost}, where \eqn{n} is
+the number of observations, \eqn{d} is the number of categories, and \eqn{ndpost} is the
+number of posterior samples.}
 
 \item{draws_zeta}{A 3D array containing posterior draws of the structural
 zero probabilities \eqn{\zeta_{ij}} with dimensions \eqn{n \times d \times ndpost}.}
@@ -18,11 +23,6 @@ samples are returned as compositional vectors, i.e.,
 \eqn{y^{(k)}_{ij}/N_i}.}
 
 \item{printevery}{Integer specifying how often progress is printed during sampling.}
-
-\item{draws_theta}{A 3D array of posterior draws of the population-level count
-probabilities with dimensions \eqn{n \times d \times ndpost}, where \eqn{n} is
-the number of observations, \eqn{d} is the number of categories, and \eqn{ndpost} is the
-number of posterior samples.}
 }
 \value{
 A 3D array of posterior predictive samples with dimensions

@@ -51,7 +51,7 @@
 #' data(pollen_climate, package = "zanicc")
 #'
 #' @references
-#' Allen, J. R. M., Watts, W. A., \& Huntley, B. (2000).
+#' Allen, J. R. M., Watts, W. A., & Huntley, B. (2000).
 #' Weichselian palynostratigraphy, palaeovegetation and palaeoenvironment:
 #' the record from Lago Grande di Monticchio, southern Italy.
 #' \emph{Quaternary International}, \strong{73--74}, 91--110.
@@ -88,7 +88,7 @@
 #' data(pollen_monticchio, package = "zanicc")
 #'
 #' @references
-#' Allen, J. R. M., Watts, W. A., \& Huntley, B. (2000).
+#' Allen, J. R. M., Watts, W. A., & Huntley, B. (2000).
 #' Weichselian palynostratigraphy, palaeovegetation and palaeoenvironment:
 #' the record from Lago Grande di Monticchio, southern Italy.
 #' \emph{Quaternary International}, \strong{73--74}, 91--110.

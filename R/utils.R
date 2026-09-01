@@ -259,8 +259,9 @@ create_rectangle_grid <- function(X, step_size = 1.0,
 #' @param verbose logical to keep track of the posterior draws.
 #' @param printevery integer to print the posterior draws.
 #' TODO: These two functions aren't precise because they are not condition on Y* to
-#' generate the latent structural zero z_{ij}, though we use the posterior draws.
+#' generate the latent structural zero \eqn{z_{ij}}, though we use the posterior draws.
 #'
+#' @rdname compute_vartheta
 compute_vartheta_zanim <- function(thetas, zetas, verbose = FALSE,
                                    printevery = 100L)  {
   n_sample <- dim(thetas)[1L]
@@ -290,6 +291,7 @@ compute_vartheta_zanim <- function(thetas, zetas, verbose = FALSE,
   }
   draws
 }
+#' @rdname compute_vartheta
 compute_vartheta_zanimln <- function(thetas, zetas, chol_Sigma_V, Bt,
                                      verbose = FALSE, printevery = 100L)  {
   n_sample <- dim(thetas)[1L]

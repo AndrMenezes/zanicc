@@ -89,12 +89,12 @@ data relative to the multinomial distribution. See Menezes et al. (2026) for det
 Albert, A. and Zhang, L. (2010), A novel definition of the multivariate coefficient of variation,
 \emph{Biometrical Journal}, \strong{52(5)}, 667--675.
 
-Blasco-Moreno, A., P{\'e}rez-Casany, M., Puig, P., Morante, M. and Castells, E. (2019), What does a zero
+Blasco-Moreno, A., Pérez-Casany, M., Puig, P., Morante, M. and Castells, E. (2019), What does a zero
 mean? Understanding false, random and structural zeros in ecology, \emph{Methods in Ecology and Evolution}
 \strong{10(7)}, 949--959.
 
-Kim, H., Wei{\s s}, C. and M{\"o}ller, T. (2018), Testing for an excessive number of
-zeros in time series of bounded counts. \emph{Statistical Methods \& Applications}, \strong{27}, 689--714.
+Kim, H., Weiß, C. and Möller, T. (2018), Testing for an excessive number of
+zeros in time series of bounded counts. \emph{Statistical Methods & Applications}, \strong{27}, 689--714.
 
 Kokonendji, C. C. and Puig, P. (2018), Fisher dispersion index for multivariate count distributions: A review
 and a new proposal, Journal of Multivariate Analysis \strong{165}, 180--193.

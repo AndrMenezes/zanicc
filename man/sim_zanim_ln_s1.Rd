@@ -11,6 +11,15 @@ sim_zanim_ln_s1(
   seed = 1212
 )
 }
+\arguments{
+\item{n_sample}{Number of observations to generate.}
+
+\item{random_effects}{Logical, defaulting to \code{TRUE}, indicating whether random effects should (ZANIM-LN) or should not (ZANIM) be incorporated.}
+
+\item{structural_zero}{Logical, defaulting to \code{TRUE}, indicating whether structural zeros should (ZANIM / ZANIM-LN) or should not (Multinomial / MLN) be incorporated.}
+
+\item{seed}{Random seed governing RNG for reproducibility. Defaults to \code{1212}.}
+}
 \description{
 Simulate data following the scenario 1 of the main paper, which
 corresponds to d=4 with cosine, sine, and polynomial predictors as defined in

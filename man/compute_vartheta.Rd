@@ -2,9 +2,19 @@
 % Please edit documentation in R/utils.R
 \name{compute_vartheta_zanim}
 \alias{compute_vartheta_zanim}
+\alias{compute_vartheta_zanimln}
 \title{Compute the posterior distribution of individual-level probabilities under the ZANIM and ZANIM-LN models}
 \usage{
 compute_vartheta_zanim(thetas, zetas, verbose = FALSE, printevery = 100L)
+
+compute_vartheta_zanimln(
+  thetas,
+  zetas,
+  chol_Sigma_V,
+  Bt,
+  verbose = FALSE,
+  printevery = 100L
+)
 }
 \arguments{
 \item{thetas}{array with \eqn{(n \times d \times r)} dimension for the posterior distribution of \eqn{\theta_{ij}^{(r)}}.}
@@ -15,7 +25,7 @@ compute_vartheta_zanim(thetas, zetas, verbose = FALSE, printevery = 100L)
 
 \item{printevery}{integer to print the posterior draws.
 TODO: These two functions aren't precise because they are not condition on Y* to
-generate the latent structural zero z_{ij}, though we use the posterior draws.}
+generate the latent structural zero \eqn{z_{ij}}, though we use the posterior draws.}
 
 \item{chol_Sigma_V}{posterior draws of Cholesky decomposition of.}
 

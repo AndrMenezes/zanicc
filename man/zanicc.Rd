@@ -76,6 +76,8 @@ the regression coefficients associated with \code{X_zi}.}
 
 \item{S_prior_betas}{Prior covariance matrix for the regression coefficients
 associated with the count-compositional component.}
+
+\item{...}{Catches unused arguments.}
 }
 \value{
 An R6 object which class depends on the specified \code{model}.

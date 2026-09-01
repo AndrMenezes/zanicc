@@ -2,6 +2,9 @@
 % Please edit documentation in R/posterior_predictive.R
 \name{.ppd_multinomial_batch}
 \alias{.ppd_multinomial_batch}
+\alias{.ppd_mln_batch}
+\alias{.ppd_zanim_batch}
+\alias{.ppd_zanim_ln_batch}
 \title{Internal functions to compute PDP loading the draws of the parameters by batch}
 \usage{
 .ppd_multinomial_batch(
@@ -10,6 +13,43 @@
   n_pred,
   d,
   ndpost,
+  batch_size,
+  relative,
+  printevery
+)
+
+.ppd_mln_batch(
+  n_trials,
+  output_dir,
+  output_dir_chol_V,
+  n_pred,
+  d,
+  ndpost,
+  Bt,
+  batch_size,
+  relative,
+  printevery
+)
+
+.ppd_zanim_batch(
+  n_trials,
+  output_dir,
+  n_pred,
+  d,
+  ndpost,
+  batch_size,
+  relative,
+  printevery
+)
+
+.ppd_zanim_ln_batch(
+  n_trials,
+  output_dir,
+  output_dir_chol_V,
+  n_pred,
+  d,
+  ndpost,
+  Bt,
   batch_size,
   relative,
   printevery
@@ -26,7 +66,14 @@ for models with logistic normal random effect.}
 
 \item{d}{dimension}
 
-\item{batch_size}{size of the bacth to load the predictions}
+\item{ndpost}{Number of valid posterior draws after burnin and thinning.}
+
+\item{batch_size}{size of the batch to load the predictions}
+
+\item{relative}{Logical. If \code{TRUE}, the simulated posterior-predictive
+distribution are given as compositional vectors, i.e., \eqn{y^{(k)}_{ij}/N_i}.}
+
+\item{printevery}{Integer specifying how often progress is printed during sampling.}
 
 \item{Bt}{transpose of contrast matrix used in the identifiable covariance matrix V.}
 }

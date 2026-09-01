@@ -4,13 +4,13 @@
 \alias{.ppd_multinomial}
 \title{Posterior predictive distribution under a multinomial model}
 \usage{
-.ppd_multinomial(n_trials, draws_prob, relative, printevery)
+.ppd_multinomial(n_trials, draws_theta, relative, printevery)
 }
 \arguments{
 \item{n_trials}{Integer vector of length \eqn{n} giving the total number of
 trials for each observation.}
 
-\item{draws_prob}{A 3D array of posterior draws of the multinomial probabilities
+\item{draws_theta}{A 3D array of posterior draws of the multinomial probabilities
 with dimensions \eqn{n \times d \times ndpost}, where \eqn{n} is the number of
 observations, \eqn{d} is the number of categories, and \eqn{ndpost} is the
 number of posterior samples.}
