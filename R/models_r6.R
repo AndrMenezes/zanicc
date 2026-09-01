@@ -12,6 +12,7 @@ ZANIMBART <- R6::R6Class(classname = "ZANIMBART", public = list(
   keep_draws = logical(), save_trees = logical(),
   log_lik_draws = NULL, varcount_theta = NULL,
   varcount_zeta = NULL, sigma_theta_hyperprior = NULL,
+  mppi_theta = NULL, mppi_zeta = NULL,
   initialize = function(Y, X_theta, X_zeta, link_zeta = c("probit", "logit"),
                         shared_trees = FALSE) {
     link_zeta <- match.arg(link_zeta)
@@ -106,6 +107,8 @@ ZANIMBART <- R6::R6Class(classname = "ZANIMBART", public = list(
       # self$draws_phi <- self$cpp_obj$draws_phi
       self$varcount_theta <- self$cpp_obj$varcount_mcmc_theta
       self$varcount_zeta <- self$cpp_obj$varcount_mcmc_zeta
+      self$mppi_theta <- apply(self$cpp_obj$varcount_mcmc_theta > 0, c(1, 2), mean)
+      self$mppi_zeta <- apply(self$cpp_obj$varcount_mcmc_zeta > 0, c(1, 2), mean)
     }
   },
   LogPredictiveLikelihood = function(in_sample = TRUE,
@@ -200,6 +203,7 @@ ZANIMLNBART <- R6::R6Class(classname = "ZANIMLNBART", public = list(
   draws_abundance = NULL, varcount_theta = NULL, varcount_zeta = NULL,
   sigma_theta_hyperprior = NULL,
   keep_draws = logical(), save_trees = logical(),
+  mppi_theta = NULL, mppi_zeta = NULL,
   initialize = function(Y, X_theta, X_zeta) {
     ml <- Rcpp::Module(module = "zanim_ln_bart", PACKAGE = "zanicc")
     self$cpp_obj <- new(ml$ZANIMLNBART, Y, X_theta, X_zeta)
@@ -293,6 +297,8 @@ ZANIMLNBART <- R6::R6Class(classname = "ZANIMLNBART", public = list(
       self$draws_chol_Sigma_V <- self$cpp_obj$draws_chol_Sigma_V
       self$varcount_theta <- self$cpp_obj$varcount_mcmc_theta
       self$varcount_zeta <- self$cpp_obj$varcount_mcmc_zeta
+      self$mppi_theta <- apply(self$cpp_obj$varcount_mcmc_theta > 0, c(1, 2), mean)
+      self$mppi_zeta <- apply(self$cpp_obj$varcount_mcmc_zeta > 0, c(1, 2), mean)
     }
   },
   LogPredictiveLikelihood = function(in_sample = TRUE,
@@ -381,7 +387,7 @@ MultinomialBART <- R6::R6Class(classname = "MultinomialBART", public = list(
   elapsed_time = NULL,  elapsed_time_log_lik = NULL, avg_leaves = NULL,
   avg_depth = NULL, accept_rate = NULL, lpl = NULL, draws_theta = NULL,
   draws_phi = NULL, keep_draws = logical(), save_trees = logical(),
-  varcount = NULL,
+  varcount = NULL, mppi = NULL,
   initialize = function(Y, X, shared_trees = FALSE) {
     self$shared_trees <- shared_trees
     # Call the C++ class in R
@@ -439,6 +445,7 @@ MultinomialBART <- R6::R6Class(classname = "MultinomialBART", public = list(
       self$draws_theta <- self$cpp_obj$draws
       # self$draws_phi <- self$cpp_obj$draws_phi
       self$varcount <- self$cpp_obj$varcount_mcmc
+      self$mppi <- apply(self$cpp_obj$varcount_mcmc > 0, c(1, 2), mean)
     }
   },
   LogPredictiveLikelihood = function(in_sample = TRUE,
@@ -478,6 +485,7 @@ MultinomialLNBART <- R6::R6Class(classname = "MultinomialLNBART", public = list(
   avg_leaves = NULL, avg_depth = NULL, accept_rate = NULL, lpl = NULL, varcount = NULL,
   draws_theta = NULL, draws_abundance = NULL, draws_chol_Sigma_V = NULL,
   draws_phi = NULL, keep_draws = logical(), save_trees = logical(),
+  mppi = NULL,
   initialize = function(Y, X) {
     # Call the C++ class in R
     ml <- Rcpp::Module(module = "multinomial_ln_bart", PACKAGE = "zanicc")
@@ -551,6 +559,7 @@ MultinomialLNBART <- R6::R6Class(classname = "MultinomialLNBART", public = list(
       self$draws_theta <- self$cpp_obj$draws_theta
       self$draws_chol_Sigma_V <- self$cpp_obj$draws_chol_Sigma_V
       self$varcount <- self$cpp_obj$varcount_mcmc
+      self$mppi <- apply(self$cpp_obj$varcount_mcmc > 0, c(1, 2), mean)
       # self$draws_phi <- self$cpp_obj$draws_phi
     }
   },
