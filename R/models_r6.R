@@ -240,6 +240,7 @@ ZANIMLNBART <- R6::R6Class(classname = "ZANIMLNBART", public = list(
                        keep_draws = TRUE, save_trees = FALSE) {
     covariance_type <- match.arg(covariance_type)
     cov_type <- as.integer(which(covariance_type == c("diag", "wishart", "fa", "fa_mgp"))) - 1L
+    if (q_factors == 0) q_factors <- self$d-1
     self$covariance_type <- covariance_type
     self$ntrees_theta <- ntrees_theta
     self$ntrees_zeta <- ntrees_zeta
@@ -272,7 +273,7 @@ ZANIMLNBART <- R6::R6Class(classname = "ZANIMLNBART", public = list(
                          xinfo, forests_dir, as.integer(keep_draws), as.integer(save_trees))
   },
   RunMCMC = function() {
-    ini <- proc.time()
+    ini <- proc.time()if (q_factors == 0) q_factors <- self$d-1
     self$cpp_obj$RunMCMC()
     self$elapsed_time <- proc.time() - ini
     # Average number of leaves for theta and zeta regression trees
@@ -506,6 +507,7 @@ MultinomialLNBART <- R6::R6Class(classname = "MultinomialLNBART", public = list(
 
     covariance_type <- match.arg(covariance_type)
     cov_type <- as.integer(which(covariance_type == c("diag", "wishart", "fa", "fa_mgp"))) - 1L
+    if (q_factors == 0) q_factors <- self$d - 1
     self$covariance_type <- covariance_type
     self$ntrees <- ntrees
     self$ndpost <- ndpost
