@@ -3,7 +3,7 @@
 #' @title Pollen-climate data set
 #'
 #' @description
-#' The data compromises \eqn{7{,}832} samples collected from location across the
+#' The data comprises \eqn{7{,}832} samples collected from locations across the
 #' Northern Hemisphere. It includes compositional pollen counts of of \eqn{28} taxa
 #' together with contemporary climate measurements.
 #'
@@ -11,7 +11,7 @@
 #'
 #' \describe{
 #'
-#' \item{\code{Y}}{A \eqn{7{,}832 \times 28} matrix of pollen compositional counts,
+#' \item{\code{Y}}{A \eqn{7{,}832 \times 28} matrix of compositional pollen counts,
 #' where each row corresponds to a sample and each column to one of the \eqn{28}
 #' pollen taxa.}
 #'
@@ -22,7 +22,7 @@
 #'
 #' \itemize{
 #' \item \code{longitude}: Longitude of the sampling location.
-#' \item \code{latitude}: Latitute of the sampling location.
+#' \item \code{latitude}: Latitude of the sampling location.
 #' \item \code{altitude}: Altitude of the sampling location.
 #' \item \code{gdd0}: Growing degree days above \eqn{0^\circ\mathrm{C}}$,
 #' the annual sum of daily temperatures exceeding this threshold (\eqn{^\circ\mathrm{C}} days).
@@ -36,10 +36,10 @@
 #' }
 #'
 #' @details
-#' This data is typically refer as modern pollen-climate calibration data set, as it
+#' This data is typically referred to as a modern pollen-climate calibration data set, as it is
 #' used in pollen-based palaeoclimate reconstruction methods.
 #' This data set is an expanded version of the RS10 data set described by Allen et al. (2000).
-#' The pollen compositional counts were obtained from the uppermost 5--10mm of lake sediment.
+#' The compositional pollen counts were obtained from the uppermost 5--10mm of lake sediment.
 #' Climate variables were computed from weighted averaging of observations from
 #' nearby weather stations over climatological periods of approximately 30 years.
 #'
@@ -64,9 +64,9 @@
 #' @title Fossil pollen counts from Lago Grande di Monticchio
 #'
 #' @description
-#' The fossil data set contains \eqn{924} samples of compositional counts of same
+#' The fossil data set contains \eqn{924} samples of compositional counts of the same
 #' 28 pollen taxa as in the `pollen_climate` modern data.
-#' The fossil pollen records were extracted from one site in the
+#' The fossil pollen records were extracted from one site at
 #' Lago Grande di Monticchio, situated in the crater of Monte Vulture in Basilicata,
 #' southern Italy.
 #'
@@ -78,7 +78,7 @@
 #' The pollen records has progressively been developed and published as more of
 #' the sediment column has become available for analysis.
 #' Relevant references which study this data set are Allen et al. (2000),
-#' Allen and Huntley (2009), and Parnell et al. (2016) and references cite therein.
+#' Allen and Huntley (2009), and Parnell et al. (2016) and references cited therein.
 #'
 #'
 #' @author
@@ -126,10 +126,10 @@
 #' where each row corresponds to a sample and each column to one of the \eqn{80}
 #' OTU.}
 #'
-#' \item{\code{X_ffq}}{A \eqn{96 \times 108} matrix with covariates relate to
+#' \item{\code{X_ffq}}{A \eqn{96 \times 108} matrix with covariates related to
 #' habitual long-term diet information.}
 #'
-#' \item{\code{X_ffq}}{A \eqn{96 \times 108} matrix with covariates relate to
+#' \item{\code{X_ffq}}{A \eqn{96 \times 108} matrix with covariates related to
 #' recent diet information.}
 #'
 #' \item{\code{BMI}}{A \eqn{96 \times 1} matrix with measures of the body mass index

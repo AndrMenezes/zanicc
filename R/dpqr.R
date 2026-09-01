@@ -3,10 +3,11 @@
 #' @aliases zanim rzanim dzanim_marginal moments_zanim
 #'
 #' @description Random number generation and probability mass function for the
-#' Zero-&-N-Inflated Multinomial distribution. It also contains the
-#' marginal probability mass function and their expected value.
+#' Zero-&-N-Inflated Multinomial distribution. Functions are also provided for the
+#' marginal probability mass function, the first and second marginal moments, and
+#' the covariance between two elements of the count-compositional vector .
 #'
-#' @param x vector. observed vector of compositional counts. It should have the
+#' @param x vector. Observed vector of compositional counts. It should have the
 #' same length as `prob` and `zeta`.
 #' @param n integer. The number of samples to generate.
 #' @param size integer. The trial parameter of the multinomial distribution.
@@ -15,7 +16,7 @@
 #' @param j,h integers. Index corresponding to the component for computing the
 #' marginal PMF of \eqn{Y_j} and for computing the covariance between \eqn{Y_j}
 #' and \eqn{Y_h}.
-#' @param log logical; if \code{TRUE}, probabilities p are given as log(p).
+#' @param log logical; if `TRUE`, probabilities \eqn{p} are given as \eqn{\log(p)}.
 #'
 #' @return
 #' The `rzanim` function returns a matrix of integer counts with `n` rows and
@@ -150,19 +151,20 @@ covariance_zanim <- function(size, prob, zeta, j, h) {
 #'
 #'
 #' @description Random number generation and probability mass function for the
-#' Zero-&-N-Inflated Dirichlet-multinomial distribution. It also contains the
-#' marginal probability mass function and their expected value.
+#' Zero-&-N-Inflated Dirichlet-multinomial distribution. Functions are also provided for the
+#' marginal probability mass function, the first and second marginal moments, and
+#' the covariance between two elements of the count-compositional vector .
 #'
-#' @param x vector. observed vector of compositional counts. It should have
+#' @param x vector. Observed vector of compositional counts. It should have
 #' same length as `alpha` and `zeta`.
 #' @param n integer. The number of samples to generate.
-#' @param size integer. The trial parameter of multinomial distribution.
+#' @param size integer. The trial parameter of the multinomial distribution.
 #' @param alpha numeric vector. Positive real numbers.
 #' @param zeta numeric vector. Excess of zero parameter.
 #' @param j,h integers. Index corresponding to the component for computing the
 #' marginal PMF of \eqn{Y_j} and for computing the covariance between \eqn{Y_j}
 #' and \eqn{Y_h}.
-#' @param log logical; if \code{TRUE}, probabilities p are given as log(p).
+#' @param log logical; if `TRUE`, probabilities \eqn{p} are given as \eqn{\log(p)}.
 #'
 #'
 #' @references Menezes, A. F. B., Parnell, A. C., and Murphy, K. (2025). Finite mixture representations of
@@ -293,12 +295,12 @@ covariance_zanidm <- function(size, alpha, zeta, j, h) {
 #'
 #' @description Random number generation and probability mass function for the
 #' Dirichlet-multinomial distribution.
-#' @param x matrix. observed vector of compositional counts.
+#' @param x matrix. Observed matrix of compositional counts.
 #' @param n integer. The number of samples to generate.
 #' @param sizes vector. The number of trials.
-#' @param alphas matrix. The concentration parameter Positive real numbers. It should have
+#' @param alphas matrix. The concentration parameters, comprising positive real numbers. It should have
 #' same length as `x`.
-#' @param log logical; if \code{TRUE}, probabilities p are given as log(p).
+#' @param log logical; if `TRUE`, probabilities \eqn{p} are given as \eqn{\log(p)}.
 #'
 #' @rdname dm
 #' @export

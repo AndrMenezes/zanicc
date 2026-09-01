@@ -35,30 +35,30 @@ columns.}
 \item{x}{A vector of counts for a single category.}
 
 \item{N}{A vector containing the total counts associated with \code{x}.
-This arguments is specific for the \code{zi_binomial()} function.}
+This argument is required only for the \code{zi_binomial()} function.}
 
-\item{standardise}{Logical. If \code{TRUE}, return the standardized version of the
-binomial zero-inflation index.}
+\item{standardise}{Logical. If \code{TRUE}, return the standardised version of the
+binomial zero-inflation index. Defaults to \code{FALSE}.}
 }
 \value{
-A single numeric value summarizing one aspect of the count-compositional data.
+A single numeric value summarising one aspect of the count-compositional data.
 }
 \description{
-A collection of indices for summarising multivariate compositional count data.
+A collection of indices for summarising multivariate count-compositional data.
 These functions quantify different aspects of the multivariate
 count-compositional distribution, including zero-inflation,
 dispersion, variability, and compositional diversity.
 These indices provide complementary summaries of count-compositional data and
-are useful for exploratory analyses, and posterior predictive checks.
+are useful for exploratory analyses and posterior predictive checks.
 }
 \details{
 Most functions operate on a count-compositional matrix with samples in rows
 and categories in columns.
-The exceptions are the functions \code{zi_poisson()},  \code{zi_neg_bin()}, and \code{zi_binomial()}
+The exceptions are the functions \code{zi_poisson()},  \code{zi_neg_bin()}, and \code{zi_binomial()}, which
 instead operate on a single count vector corresponding to one category.
 The function \code{shannon_entropy()} expects compositional data (each row sums to
-one). If a count-compositional matrix is supplied, the rows are normalized
-before computing the average normalized Shannon entropy.
+one). If a count-compositional matrix is supplied, the rows are normalised
+before computing the average normalised Shannon entropy.
 \subsection{Zero-inflation indices}{
 \itemize{
 \item \code{zi_poisson()}: zero-inflation index relative to the Poisson distribution.
@@ -81,7 +81,7 @@ data relative to the multinomial distribution. See Menezes et al. (2026) for det
 
 \subsection{Diversity indices}{
 \itemize{
-\item \code{shannon_entropy()}: average normalized Shannon entropy.
+\item \code{shannon_entropy()}: average normalised Shannon entropy.
 }
 }
 }

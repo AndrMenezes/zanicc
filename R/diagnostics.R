@@ -4,7 +4,7 @@
 #'
 #' @description
 #' Compute and visualise posterior predictive checks for count-compositional models.
-#' The function `stat_ppc()` evaluates a user-defined diagnostic statistics on both
+#' The function `stat_ppc()` evaluates user-defined diagnostic statistics on both
 #' the observed data and the posterior predictive distribution, while `plot_ppc()`
 #' summarises four built-in diagnostics through density plots.
 #'
@@ -18,9 +18,9 @@
 #' @param stat_fun A function that computes a scalar diagnostic statistic from a
 #' count-compositional matrix.
 #' @param object A fitted model object of class `zanicc` used to generate posterior
-#' predictive samples via the method `ppd()`. Only used when `Y_ppc = NULL`.
+#' predictive samples via the method [ppd()]. Only used when `Y_ppc = NULL`.
 #' @param output Logical. If `TRUE`, return the computed posterior predictive
-#' statistics in addition to producing the plots. Default is `FALSE`.
+#' statistics in addition to producing the plots. The default is `FALSE`.
 #'
 #' @return
 #' `ppc_stat()` returns a list with two elements:
@@ -57,7 +57,7 @@ plot_ppc <- function(Y, Y_ppc = NULL, object = NULL, output = FALSE) {
   res_zero <- stat_ppc(Y = Y, Y_ppc = Y_ppc, stat_fun = function(Y) mean(Y == 0))
   res_zi <- stat_ppc(Y = Y, Y_ppc = Y_ppc, stat_fun = zi_multinomial)
   res_entropy <- stat_ppc(Y = sweep(Y, 1, rowSums(Y), "/"),
-                           Y_ppc = .normalize_composition(Y_ppc),
+                           Y_ppc = .normalise_composition(Y_ppc),
                            stat_fun = shannon_entropy)
 
   # Keep user's graphs options
@@ -105,18 +105,18 @@ plot_ppc <- function(Y, Y_ppc = NULL, object = NULL, output = FALSE) {
 #' @param Y_ppc A three-dimensional array containing the posterior predictive
 #' distribution. The first dimension indexes the posterior samples, while the
 #' remaining dimensions correspond to replicated count-compositional matrices.
-#' If `NULL`, then the `plot_qqplots_ppd` function generates the posterior
+#' If `NULL` (the default), then the `plot_qqplots_ppd` function generates the posterior
 #' predictive distribution from the model `object`.
 #' @param object A fitted model object of class `zanicc` used to generate posterior
 #' predictive samples via `ppd()`. Only used when `Y_ppc = NULL`.
 #' @param relative Logical. If `TRUE`, QQ-plots are computed using relative
-#' compositions instead of counts. Default is `FALSE`.
+#' compositions instead of counts. The default is `FALSE`.
 #' @param output Logical. If `TRUE`, return the data used to construct the
 #' QQ-plots in addition to producing the plots. Default is `FALSE`.
 #' @param len_probs Integer giving the number of equally spaced probabilities
-#' used to compute the quantiles. Default is `100`.
+#' used to compute the quantiles. The default is `100`.
 #' @param mfrow A length-two integer vector passed to `par(mfrow)` specifying
-#' the layout of the QQ-plots. If `NULL` (default), a suitable layout is
+#' the layout of the QQ-plots. If `NULL` (the default), a suitable layout is
 #' computed using `grDevices::n2mfrow()`.
 #' @param yj_ppc Matrix with the posterior predictive distribution for given category
 #' dimension.

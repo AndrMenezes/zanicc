@@ -84,14 +84,14 @@ used when fitting the model.}
 \item{output_dir}{Directory in which the predictions across all posterior draws
 are written. The resulting binary files are named according to the predicted
 quantity, for example \code{theta_ij.bin} for \code{type="theta"} or
-\code{zeta_ij.bin} for \code{type="zeta"}. Default is \code{tempdir()}.}
+\code{zeta_ij.bin} for \code{type="zeta"}. The default is \code{\link[=tempdir]{tempdir()}}.}
 
 \item{load}{Logical indicating whether prediction draws written to binary
 files should be loaded into R memory. Defaults to \code{TRUE}. Set to
 \code{FALSE} when predictions are too large to comfortably fit in memory.}
 
 \item{verbose}{Logical indicating whether progress should be displayed.
-Defaults is \code{TRUE}.}
+The default is \code{TRUE}.}
 
 \item{...}{Catches unused arguments.}
 

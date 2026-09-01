@@ -7,7 +7,7 @@
 .volume_simplices(i, X)
 }
 \arguments{
-\item{i}{An integer matrix with \eqn{p+1} columns indicating the simplicies.
+\item{i}{An integer matrix with \eqn{p+1} columns indicating the simplices.
 Each row contains the row indices of the vertices defining a simplex in \code{X}.}
 
 \item{X}{A numeric \eqn{n \times p} matrix representing a set of points in

@@ -87,8 +87,8 @@ posterior estimates.
 of the parameters.
 }
 
-In the simulation studies conducted in Menezes et al. (2025), we assessed the
-and comparing different models with respect their ability to estimate the
+In the simulation studies conducted in Menezes et al. (2025), we assessed
+and compared different models with respect to their ability to estimate the
 following parameters:
 
 \describe{
@@ -107,7 +107,7 @@ This is implemented in the function \code{compute_kl_simplex()}.
 \item{population-level structural zeros probabilities, \eqn{\zeta_{ij}} }{
 It provides the information on the probability a given observation \eqn{i} of
 category \eqn{j} is structural zero.
-Each \eqn{\zeta_{ij} \in (0, 1)}.
+Each \eqn{\zeta_{ij} \in [0, 1]}.
 
 For these parameters, we use the Kullback-Leibler divergence averaged over
 the observations, implemented in the function \code{compute_kl_prob()}.
@@ -121,9 +121,9 @@ The vector \eqn{\pmb{\vartheta}_{i} = (\vartheta_{i1}, \ldots, \vartheta_{id}) \
 also lie in the continuous simplex space
 \eqn{\mathbb{S}^d=\{\bm{\vartheta}\in\mathbb{R}^d; \vartheta_{ij} \geq 0, \sum_{j=1}^d \vartheta_{ij}=1\}},
 
-However, note that \eqn{\vartheta_{ij}} can be have spikes at zero.
-Because of this, for these parameters we use the Jensen-Shannon divergence
-averaged over the observations, implemented in the function \code{compute_js}.
+However, note that \eqn{\vartheta_{ij}} can have spikes at zero.
+Because of this, we use the Jensen-Shannon divergence
+averaged over the observations for these parameters, implemented in the function \code{compute_js}.
 }
 }
 }

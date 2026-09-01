@@ -1,15 +1,15 @@
 #' Save and load BART-based models
 #'
 #' These functions provide a workflow for saving and loading BART-based models
-#' implemented in `C++` class and expose using the `Rcpp::Module` function.
+#' implemented in `C++` classes and exposed using the `Rcpp::Module` function.
 #' It includes the `C++` classes: `MultinomialBART`, `MultinomialLNBART`,
-#' `ZANIMBARTProbit` and `ZANIMLNBART`.
+#' `ZANIMBARTProbit`, and `ZANIMLNBART`.
 #' It also includes the `C++` classes for the regression-based models
 #' `ZANIDMReg`, and `DMLinearReg`.
 #'
-#' `save_model()` serializes the R object to disk while removing the underlying
-#' C++ object (`cpp_obj`) because external pointers cannot be saved.
-#' `load_model()` reads the saved .rds file and reconstructs a placeholder C++ object.
+#' `save_model()` serialises the R object to disk while removing the underlying
+#' `C++` object (`cpp_obj`) because external pointers cannot be saved.
+#' `load_model()` reads the saved .rds file and reconstructs a placeholder `C++` object.
 #'
 #' @param object An R6 class for the BART-based models object, which contains the
 #' field `$cpp_obj` created from an `Rcpp::Module`.
@@ -18,7 +18,7 @@
 #'
 #' @return
 #' - `save_model()`: Invisibly returns the full path to the saved `.rds` file.
-#' - `load_model()`: Returns the model object with the `$cpp_obj` C++ pointer reinitialized.
+#' - `load_model()`: Returns the model object with the `$cpp_obj` `C++` pointer reinitialised.
 #'
 #' @name save_load
 NULL

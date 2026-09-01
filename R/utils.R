@@ -1,11 +1,12 @@
 #' Multinomial likelihood function
 #'
 #' Computes the multinomial likelihood function and the log-predictive distribution
-#' for multinomial compound models.
+#' for compound multinomial models.
 #'
 #' @param x A matrix of observed count-compositional data.
+#' Rows correspond to observations and columns correspond to categories.
 #' @param prob A vector or matrix of compositional probabilities.
-#' @param log Logical; if `TRUE`, return the log-likelihood, otherwise return the likelihood.
+#' @param log Logical; if `TRUE` (the default), return the log-likelihood, otherwise return the likelihood.
 #' @param draws_prob A three-dimensional array of posterior draws of
 #' the compositional probabilities.
 #' @param printevery Frequency at which to print progress while computing the
@@ -67,8 +68,8 @@ lpd_multinomial <- function(x, draws_prob, printevery = 100L) {
 #' @param m Integer giving the number of MCMC iterations to read.
 #'
 #' @return A numeric array containing the values read from the binary file.
-#' For [load_bin_predictions()], the dimensions are \code{c(n, d, m)}.
-#' For [load_bin_coefficients()], the dimensions are \code{c(p, d, m)}.
+#' For [load_bin_predictions()], the dimensions are `c(n, d, m)`.
+#' For [load_bin_coefficients()], the dimensions are `c(p, d, m)`.
 #' The first dimension indexes observations or model parameters, the second
 #' indexes categories, and the third indexes MCMC iterations.
 #'
@@ -109,7 +110,7 @@ load_bin_coefficients <- function(fname, p, d, m) {
 #' median, and credible interval.
 #'
 #' @param x A matrix or three-dimensional array of posterior draws.
-#' @param prob The probability excluded from the credible interval.
+#' @param prob The probability excluded from the credible interval. Defaults to `0.05`.
 #'
 #' @return A data frame containing posterior summaries for each sample,
 #' optionally by category if `x` is given as a three-dimensional array.
@@ -148,14 +149,14 @@ summarise_draws_3d <- function(x, prob = 0.05) {
 #' Normalise count-compositional matrix
 #'
 #' @description
-#' Transform a count-compositional matrix into a empirical compositional matrix
+#' Transform a count-compositional matrix into an empirical compositional matrix
 #' by dividing the category-specific counts of each sample by their respective
 #' total counts.
 #'
 #' @param x A matrix of multivariate count-compositional data.
 #' Rows correspond to observations and columns correspond to categories.
 #' @return Matrix of empirical composition on the continuous simplex.
-.normalize_composition <- function(x) {
+.normalise_composition <- function(x) {
   x <- sweep(x = x, MARGIN = c(1, 2), STATS = apply(x, c(1, 2), sum), FUN = "/")
   # Rare case when n_trials = 0
   x[is.na(x)] <- 0.0
@@ -202,17 +203,17 @@ summarise_draws_3d <- function(x, prob = 0.05) {
   all_sets
 }
 
-#' Create a rectangle uniform grid inside region of the observed data
+#' Create a rectangular uniform grid inside the region of the observed data
 #' @param X matrix with the observed data. It should have at least two columns.
-#' @param step_size double with the step size to create an exhaustive grid
-#' @param scale_factors vector with double to re-scale the values `X[j]` from 0 to `scale_factor[j]`.
+#' @param step_size double with the step size to create an exhaustive grid.
+#' @param scale_factors vector with double to re-scale the values `X[,j]` from 0 to `scale_factor[j]`.
 #' @description
 #' First, create an exhaustive grid using `seq(0.0, scale_factors[j], by = step_size)`,
 #' then filter each point in this grid checking if at least one observed value of `X`
 #' is inside the grid.
 #'
-create_rectangle_grid <- function(X, step_size = 1.0,
-                                  scale_factors = rep(20, ncol(X))) {
+create_rectangular_grid <- function(X, step_size = 1.0,
+                                    scale_factors = rep(20, ncol(X))) {
 
   p <- ncol(X)
   if (p < 2L) stop("Create uniform grid for p>1 covariates")
@@ -251,17 +252,17 @@ create_rectangle_grid <- function(X, step_size = 1.0,
 }
 
 
-#' Compute the posterior distribution of individual-level probabilities under the ZANIM and ZANIM-LN models
-#' @param thetas array with \eqn{(n \times d \times r)} dimension for the posterior distribution of \eqn{\theta_{ij}^{(r)}}.
-#' @param zetas array with \eqn{(n \times d \times r)} dimension for the posterior distribution of \eqn{\zeta_{ij}^{(r)}}.
-#' @param chol_Sigma_V posterior draws of Cholesky decomposition of.
-#' @param Bt Matrix for the contrast relate to the sum-to-zero constraint.
-#' @param verbose logical to keep track of the posterior draws.
-#' @param printevery integer to print the posterior draws.
-#' TODO: These two functions aren't precise because they are not condition on Y* to
-#' generate the latent structural zero \eqn{z_{ij}}, though we use the posterior draws.
-#'
-#' @rdname compute_vartheta
+# Compute the posterior distribution of individual-level probabilities under the ZANIM and ZANIM-LN models
+# @param thetas array with \eqn{(n \times d \times r)} dimension for the posterior distribution of \eqn{\theta_{ij}^{(r)}}.
+# @param zetas array with \eqn{(n \times d \times r)} dimension for the posterior distribution of \eqn{\zeta_{ij}^{(r)}}.
+# @param chol_Sigma_V posterior draws of Cholesky decomposition of.
+# @param Bt Matrix for the contrast relate to the sum-to-zero constraint.
+# @param verbose logical to keep track of the posterior draws.
+# @param printevery integer to print the posterior draws.
+# TODO: These two functions aren't precise because they are not condition on Y* to
+# generate the latent structural zero \eqn{z_{ij}}, though we use the posterior draws.
+#
+# @rdname compute_vartheta
 compute_vartheta_zanim <- function(thetas, zetas, verbose = FALSE,
                                    printevery = 100L)  {
   n_sample <- dim(thetas)[1L]
@@ -291,9 +292,8 @@ compute_vartheta_zanim <- function(thetas, zetas, verbose = FALSE,
   }
   draws
 }
-#' @rdname compute_vartheta
-compute_vartheta_zanimln <- function(thetas, zetas, chol_Sigma_V, Bt,
-                                     verbose = FALSE, printevery = 100L)  {
+.compute_vartheta_zanimln <- function(thetas, zetas, chol_Sigma_V, Bt,
+                                      verbose = FALSE, printevery = 100L)  {
   n_sample <- dim(thetas)[1L]
   d <- dim(thetas)[2L]
   ndpost <- dim(thetas)[3L]

@@ -10,11 +10,12 @@ dmultinomial(x, prob, log = TRUE)
 lpd_multinomial(x, draws_prob, printevery = 100L)
 }
 \arguments{
-\item{x}{A matrix of observed count-compositional data.}
+\item{x}{A matrix of observed count-compositional data.
+Rows correspond to observations and columns correspond to categories.}
 
 \item{prob}{A vector or matrix of compositional probabilities.}
 
-\item{log}{Logical; if \code{TRUE}, return the log-likelihood, otherwise return the likelihood.}
+\item{log}{Logical; if \code{TRUE} (the default), return the log-likelihood, otherwise return the likelihood.}
 
 \item{draws_prob}{A three-dimensional array of posterior draws of
 the compositional probabilities.}
@@ -30,5 +31,5 @@ observations in columns.
 }
 \description{
 Computes the multinomial likelihood function and the log-predictive distribution
-for multinomial compound models.
+for compound multinomial models.
 }

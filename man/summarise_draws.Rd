@@ -12,7 +12,7 @@ summarise_draws_3d(x, prob = 0.05)
 \arguments{
 \item{x}{A matrix or three-dimensional array of posterior draws.}
 
-\item{prob}{The probability excluded from the credible interval.}
+\item{prob}{The probability excluded from the credible interval. Defaults to \code{0.05}.}
 }
 \value{
 A data frame containing posterior summaries for each sample,

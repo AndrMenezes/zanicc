@@ -5,15 +5,16 @@ if (getRversion() >= "2.15.1")  utils::globalVariables(c("self", "private"))
 #' @title Overview of the \pkg{zanicc} package
 #'
 #' @description
-#' The \pkg{zanicc} R package provides functions to analysis zero-inflated
+#' The \pkg{zanicc} R package provides functions for the analysis of zero-inflated
 #' count-compositional data.
 #'
 #' Count-compositional data are multivariate count data constrained by sample-specific
 #' totals.
-#' This
 #'
-#' The terminology `zani` comes from the fact that in
-#' count-compositional settings it can happen
+#' The terminology `zani` ("zero-and-N-inflation") comes from the fact that, in
+#' multivariate count-compositional settings, it can happen that zeros co-occur in one or more
+#' categories. In the extreme case of N-inflation, when all but one category exhibits a count of
+#' zero, the count for the remaining category coincides with the number of trials.
 #'
 #' @author
 #' André F. B. Menezes \email{andrefelipemaringa@gmail.com}

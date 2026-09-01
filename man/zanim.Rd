@@ -28,10 +28,10 @@ covariance_zanim(size, prob, zeta, j, h)
 
 \item{zeta}{numeric vector. The probability of structural zero for each category.}
 
-\item{x}{vector. observed vector of compositional counts. It should have the
+\item{x}{vector. Observed vector of compositional counts. It should have the
 same length as \code{prob} and \code{zeta}.}
 
-\item{log}{logical; if \code{TRUE}, probabilities p are given as log(p).}
+\item{log}{logical; if \code{TRUE}, probabilities \eqn{p} are given as \eqn{\log(p)}.}
 
 \item{j, h}{integers. Index corresponding to the component for computing the
 marginal PMF of \eqn{Y_j} and for computing the covariance between \eqn{Y_j}
@@ -43,8 +43,9 @@ The \code{rzanim} function returns a matrix of integer counts with \code{n} rows
 }
 \description{
 Random number generation and probability mass function for the
-Zero-&-N-Inflated Multinomial distribution. It also contains the
-marginal probability mass function and their expected value.
+Zero-&-N-Inflated Multinomial distribution. Functions are also provided for the
+marginal probability mass function, the first and second marginal moments, and
+the covariance between two elements of the count-compositional vector .
 }
 \references{
 Menezes, A. F. B., Parnell, A. C., and Murphy, K. (2025). Finite mixture representations of

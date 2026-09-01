@@ -1,4 +1,3 @@
-#' @export
 sim_data_zanim_bspline_curve <- function(n, d, n_trials, dof_bs_theta = 6L,
                                          dof_bs_zeta = 4L,
                                          link_zeta = c("logit", "probit")) {
@@ -45,7 +44,6 @@ sim_data_zanim_bspline_curve <- function(n, d, n_trials, dof_bs_theta = 6L,
        abundance = vartheta_truth)
 }
 
-#' @export
 sim_data_zanim_ln_bspline_curve <- function(n, d = 3L, n_trials, dof_bs_theta = 6L,
                                             dof_bs_zeta = 4L, link_zeta = c("logit", "probit"),
                                             covariance = c("toeplitz", "exponential", "fam"),
@@ -110,7 +108,6 @@ sim_data_zanim_ln_bspline_curve <- function(n, d = 3L, n_trials, dof_bs_theta = 
        abundance = true_abundance, Sigma_U = true_Sigma_U, U = U)
 }
 
-#' @export
 sim_data_zanim_friedman <- function(n, n_trials, p_theta = 10L, p_zeta = 10L,
                                     link = stats::plogis) {
   if (length(n_trials) != n) n_trials <- rep(n_trials[1L], n)
@@ -154,7 +151,6 @@ sim_data_zanim_friedman <- function(n, n_trials, p_theta = 10L, p_zeta = 10L,
 }
 
 
-#' @export
 sim_data_multinomial_bspline_curve <- function(n, d, n_trials, dof_bs = 6L) {
 
   if (length(n_trials) == 1L) n_trials <- rep(n_trials, n)
@@ -180,7 +176,6 @@ sim_data_multinomial_bspline_curve <- function(n, d, n_trials, dof_bs = 6L) {
   list(df = data_sim, Y = Y, X = X, theta = theta_truth)
 }
 
-#' @export
 sim_data_trinomial_friedman <- function(n, n_trials, p = 10L) {
   x <- matrix(stats::runif(n * p), nrow = n)
   # f1 <- sin(pi * x[, 1] * x[,2]) + (x[,3] - 0.5)^3
@@ -207,7 +202,6 @@ sim_data_trinomial_friedman <- function(n, n_trials, p = 10L) {
   list(df = data_sim, Y = Y, X = x)
 }
 
-#' @export
 sim_data_binary_bspline_curve <- function(n, dof_bs = 4L, link = stats::plogis) {
   x <- seq(-1.0, 1.0, length.out = n)
   X_bs <- splines::bs(as.matrix(x), dof_bs)
@@ -218,7 +212,6 @@ sim_data_binary_bspline_curve <- function(n, dof_bs = 4L, link = stats::plogis) 
   data.frame(id = seq_len(n), y = y, x = x, theta = theta)
 }
 
-#' @export
 sim_data_binary_friedman <- function(n, p = 10L, link = stats::plogis) {
   X <- matrix(stats::runif(n * p), nrow = n, ncol = p, byrow = TRUE)
   eta <- sin(pi * X[, 1] * X[, 2]) + (X[, 3] - 0.5)
@@ -227,7 +220,6 @@ sim_data_binary_friedman <- function(n, p = 10L, link = stats::plogis) {
   list(y = y, X = X, theta = theta)
 }
 
-#' @export
 sim_data_multinomial_2d <- function(n_grid = 20, n_sample = n_grid^2, d, n_trials,
                                     region = c("square", "convexhull"),
                                     xmax = 2.0, X_aux) {
@@ -273,7 +265,6 @@ sim_data_multinomial_2d <- function(n_grid = 20, n_sample = n_grid^2, d, n_trial
   list(df = data_sim, Y = Y, X = X, theta = true_theta)
 }
 
-#' @export
 sim_data_zanicc_2d <- function(n_grid = 20, n_sample = n_grid^2, d, n_trials,
                                region = c("square", "convexhull"),
                                xmax = 2.0, X_aux = NULL, random_effects = TRUE,
@@ -377,17 +368,17 @@ sim_data_zanicc_2d <- function(n_grid = 20, n_sample = n_grid^2, d, n_trials,
 
 }
 
-#' Simulate data under ZANIM-(LN) with four categories and one covariate
-#' @description
-#' Simulate data following the scenario 1 of the main paper, which
-#' corresponds to d=4 with cosine, sine, and polynomial predictors as defined in
-#' main paper.
-#'
-#' @param n_sample Number of observations to generate.
-#' @param random_effects Logical, defaulting to \code{TRUE}, indicating whether random effects should (ZANIM-LN) or should not (ZANIM) be incorporated.
-#' @param structural_zero Logical, defaulting to \code{TRUE}, indicating whether structural zeros should (ZANIM / ZANIM-LN) or should not (Multinomial / MLN) be incorporated.
-#' @param seed Random seed governing RNG for reproducibility. Defaults to \code{1212}.
-#' @export
+# Simulate data under ZANIM-(LN) with four categories and one covariate
+# @description
+# Simulate data following the scenario 1 of the main paper, which
+# corresponds to d=4 with cosine, sine, and polynomial predictors as defined in
+# main paper.
+#
+# @param n_sample Number of observations to generate.
+# @param random_effects Logical, defaulting to \code{TRUE}, indicating whether random effects should (ZANIM-LN) or should not (ZANIM) be incorporated.
+# @param structural_zero Logical, defaulting to \code{TRUE}, indicating whether structural zeros should (ZANIM / ZANIM-LN) or should not (Multinomial / MLN) be incorporated.
+# @param seed Random seed governing RNG for reproducibility. Defaults to \code{1212}.
+# @export
 sim_zanim_ln_s1 <- function(n_sample, random_effects = TRUE, structural_zero = TRUE,
                             seed = 1212) {
 
@@ -461,8 +452,8 @@ sim_zanim_ln_s1 <- function(n_sample, random_effects = TRUE, structural_zero = T
        true_varthetas = true_varthetas, U = if (random_effects) U else NULL)
 }
 
-#' Simulate data from ZANIM-LN using GP functional form for the compositional
-#' probabilities
+# Simulate data from ZANIM-LN using GP functional form for the compositional
+# probabilities
 sim_zanim_ln_gp <- function(n, d, n_trials, X_real, len_scale_theta = 2.0,
                             intercept_theta = stats::runif(d, -2.3, 2.3),
                             upper_bound_zeta = rep(0.5, d),

@@ -25,23 +25,23 @@ categories in columns.}
 \item{Y_ppc}{A three-dimensional array containing the posterior predictive
 distribution. The first dimension indexes the posterior samples, while the
 remaining dimensions correspond to replicated count-compositional matrices.
-If \code{NULL}, then the \code{plot_qqplots_ppd} function generates the posterior
+If \code{NULL} (the default), then the \code{plot_qqplots_ppd} function generates the posterior
 predictive distribution from the model \code{object}.}
 
 \item{object}{A fitted model object of class \code{zanicc} used to generate posterior
 predictive samples via \code{ppd()}. Only used when \code{Y_ppc = NULL}.}
 
 \item{relative}{Logical. If \code{TRUE}, QQ-plots are computed using relative
-compositions instead of counts. Default is \code{FALSE}.}
+compositions instead of counts. The default is \code{FALSE}.}
 
 \item{output}{Logical. If \code{TRUE}, return the data used to construct the
 QQ-plots in addition to producing the plots. Default is \code{FALSE}.}
 
 \item{len_probs}{Integer giving the number of equally spaced probabilities
-used to compute the quantiles. Default is \code{100}.}
+used to compute the quantiles. The default is \code{100}.}
 
 \item{mfrow}{A length-two integer vector passed to \code{par(mfrow)} specifying
-the layout of the QQ-plots. If \code{NULL} (default), a suitable layout is
+the layout of the QQ-plots. If \code{NULL} (the default), a suitable layout is
 computed using \code{grDevices::n2mfrow()}.}
 
 \item{yj_ppc}{A matrix containing the posterior predictive samples for a single

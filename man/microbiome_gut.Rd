@@ -13,10 +13,10 @@ A \code{\link{list}} with four matrices:
 where each row corresponds to a sample and each column to one of the \eqn{80}
 OTU.}
 
-\item{\code{X_ffq}}{A \eqn{96 \times 108} matrix with covariates relate to
+\item{\code{X_ffq}}{A \eqn{96 \times 108} matrix with covariates related to
 habitual long-term diet information.}
 
-\item{\code{X_ffq}}{A \eqn{96 \times 108} matrix with covariates relate to
+\item{\code{X_ffq}}{A \eqn{96 \times 108} matrix with covariates related to
 recent diet information.}
 
 \item{\code{BMI}}{A \eqn{96 \times 1} matrix with measures of the body mass index

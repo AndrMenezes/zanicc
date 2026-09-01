@@ -52,7 +52,7 @@
 #' posterior draws of model parameters.
 #'
 #' For BART-based models, the predictions can be written to binary files on
-#' disk. The \code{load} argument controls whether these draws are loaded into
+#' disk. The `load` argument controls whether these draws are loaded into
 #' R memory.
 #'
 #' @param object A fitted model object. Supported classes include
@@ -71,12 +71,12 @@
 #' @param output_dir Directory in which the predictions across all posterior draws
 #' are written. The resulting binary files are named according to the predicted
 #' quantity, for example `theta_ij.bin` for `type="theta"` or
-#' `zeta_ij.bin` for `type="zeta"`. Default is `tempdir()`.
+#' `zeta_ij.bin` for `type="zeta"`. The default is [tempdir()].
 #' @param load Logical indicating whether prediction draws written to binary
 #' files should be loaded into R memory. Defaults to `TRUE`. Set to
 #' `FALSE` when predictions are too large to comfortably fit in memory.
 #' @param verbose Logical indicating whether progress should be displayed.
-#' Defaults is `TRUE`.
+#' The default is `TRUE`.
 #' @param ... Catches unused arguments.
 #'
 #' @return Posterior prediction draws. When `load = TRUE`, the draws are

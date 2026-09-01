@@ -13,9 +13,9 @@ corresponding to each fossil sample.
 data(pollen_monticchio, package = "zanicc")
 }
 \description{
-The fossil data set contains \eqn{924} samples of compositional counts of same
+The fossil data set contains \eqn{924} samples of compositional counts of the same
 28 pollen taxa as in the \code{pollen_climate} modern data.
-The fossil pollen records were extracted from one site in the
+The fossil pollen records were extracted from one site at
 Lago Grande di Monticchio, situated in the crater of Monte Vulture in Basilicata,
 southern Italy.
 }
@@ -23,7 +23,7 @@ southern Italy.
 The pollen records has progressively been developed and published as more of
 the sediment column has become available for analysis.
 Relevant references which study this data set are Allen et al. (2000),
-Allen and Huntley (2009), and Parnell et al. (2016) and references cite therein.
+Allen and Huntley (2009), and Parnell et al. (2016) and references cited therein.
 }
 \references{
 Allen, J. R. M., Watts, W. A., & Huntley, B. (2000).

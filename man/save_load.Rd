@@ -21,19 +21,19 @@ field \verb{$cpp_obj} created from an \code{Rcpp::Module}.}
 \value{
 \itemize{
 \item \code{save_model()}: Invisibly returns the full path to the saved \code{.rds} file.
-\item \code{load_model()}: Returns the model object with the \verb{$cpp_obj} C++ pointer reinitialized.
+\item \code{load_model()}: Returns the model object with the \verb{$cpp_obj} \verb{C++} pointer reinitialised.
 }
 }
 \description{
 These functions provide a workflow for saving and loading BART-based models
-implemented in \verb{C++} class and expose using the \code{Rcpp::Module} function.
+implemented in \verb{C++} classes and exposed using the \code{Rcpp::Module} function.
 It includes the \verb{C++} classes: \code{MultinomialBART}, \code{MultinomialLNBART},
-\code{ZANIMBARTProbit} and \code{ZANIMLNBART}.
+\code{ZANIMBARTProbit}, and \code{ZANIMLNBART}.
 It also includes the \verb{C++} classes for the regression-based models
 \code{ZANIDMReg}, and \code{DMLinearReg}.
 }
 \details{
-\code{save_model()} serializes the R object to disk while removing the underlying
-C++ object (\code{cpp_obj}) because external pointers cannot be saved.
-\code{load_model()} reads the saved .rds file and reconstructs a placeholder C++ object.
+\code{save_model()} serialises the R object to disk while removing the underlying
+\verb{C++} object (\code{cpp_obj}) because external pointers cannot be saved.
+\code{load_model()} reads the saved .rds file and reconstructs a placeholder \verb{C++} object.
 }

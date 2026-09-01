@@ -9,7 +9,7 @@ A \code{\link{list}} with two matrices:
 
 \describe{
 
-\item{\code{Y}}{A \eqn{7{,}832 \times 28} matrix of pollen compositional counts,
+\item{\code{Y}}{A \eqn{7{,}832 \times 28} matrix of compositional pollen counts,
 where each row corresponds to a sample and each column to one of the \eqn{28}
 pollen taxa.}
 
@@ -20,7 +20,7 @@ with the following columns:
 
 \itemize{
 \item \code{longitude}: Longitude of the sampling location.
-\item \code{latitude}: Latitute of the sampling location.
+\item \code{latitude}: Latitude of the sampling location.
 \item \code{altitude}: Altitude of the sampling location.
 \item \code{gdd0}: Growing degree days above \eqn{0^\circ\mathrm{C}}$,
 the annual sum of daily temperatures exceeding this threshold (\eqn{^\circ\mathrm{C}} days).
@@ -37,15 +37,15 @@ the annual sum of daily temperatures exceeding this threshold (\eqn{^\circ\mathr
 data(pollen_climate, package = "zanicc")
 }
 \description{
-The data compromises \eqn{7{,}832} samples collected from location across the
+The data comprises \eqn{7{,}832} samples collected from locations across the
 Northern Hemisphere. It includes compositional pollen counts of of \eqn{28} taxa
 together with contemporary climate measurements.
 }
 \details{
-This data is typically refer as modern pollen-climate calibration data set, as it
+This data is typically referred to as a modern pollen-climate calibration data set, as it is
 used in pollen-based palaeoclimate reconstruction methods.
 This data set is an expanded version of the RS10 data set described by Allen et al. (2000).
-The pollen compositional counts were obtained from the uppermost 5--10mm of lake sediment.
+The compositional pollen counts were obtained from the uppermost 5--10mm of lake sediment.
 Climate variables were computed from weighted averaging of observations from
 nearby weather stations over climatological periods of approximately 30 years.
 }

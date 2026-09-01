@@ -2,7 +2,7 @@
 #'
 #' @description
 #' Carries out Bayesian inference, through efficient Markov chain Monte Carlo algorithms,
-#' for different (non)parametric regression models for analysis of zero-inflated
+#' for different (non)parametric regression models for the analysis of zero-inflated
 #' multivariate count-compositional data.
 #'
 #' @details
@@ -30,18 +30,18 @@
 #'   \item \strong{Nonparametric regression:} Covariates are related to
 #'   category-specific compositional probabilities and, where applicable,
 #'   structural-zero probabilities through independent Bayesian additive
-#'   regression tree (BART) priors. This allows nonlinear and interactions
-#'   covariate effects to be estimated from the data.
+#'   regression tree (BART) priors. This allows nonlinearities and interactions
+#'   in the covariate effects to be estimated from the data.
 #'
 #'   \item \strong{Parametric regression:} Covariates are related to the model
-#'   parameters similar to generalized linear models, with suitable link functions
+#'   parameters similarly to generalised linear models, with suitable link functions
 #'   and a parametric linear predictor.
 #' }
 #' }
 #'
 #' \subsection{Structural zeros}{
 #'
-#' Some models have a mixture-based zero-inflated representation that distinguish
+#' Some models have a mixture-based zero-inflated representation that distinguishes
 #' structural zeros from zeros arising from the sampling distribution.
 #' For these models, a latent indicator
 #' \eqn{z_{ij} \sim \operatorname{Bernoulli}\lbrack 1-\zeta_{ij} \rbrack}
@@ -50,8 +50,8 @@
 #'
 #' The structural-zero probabilities \eqn{\zeta_{ij}} can themselves depend
 #' on covariates.
-#' In nonparametric models they are assigned BART priors through a probit-link
-#' function, whereas in parametric models the probit regression is employed.
+#' In nonparametric models, they are assigned BART priors through a probit-link
+#' function, whereas probit regression is employed for the parametric models.
 #' }
 #'
 #' \subsection{Available models}{
@@ -60,7 +60,7 @@
 #'
 #' \describe{
 #'   \item{`"ml_bart"`}{Multinomial logistic BART model.}
-#'   \item{`"mln_bart"`}{multinomial logistic-normal BART model.}
+#'   \item{`"mln_bart"`}{Multinomial logistic-normal BART model.}
 #'   \item{`"zanim_bart"`}{Zero-and-N-inflated multinomial logistic regression model.}
 #'   \item{`"zanim_ln_bart"`}{Zero-and-N-inflated multinomial logistic-normal BART model.}
 #'   \item{`"dm_reg"`}{Dirichlet-multinomial regression model.}
@@ -74,21 +74,21 @@
 #' Rows correspond to observations and columns correspond to categories.
 #' @param X_count A matrix of covariates used to model the count probabilities.
 #' Rows must correspond to the observations in `Y`.
-#' @param X_zi An optional matrix of covariates used to model structural-zero
-#' probabilities. If `NULL`, `X_count` is used when covariates are required
+#' @param X_zi An optional matrix of covariates used to model the structural zero
+#' probabilities. If `NULL` (the default), `X_count` is used when covariates are required
 #' for the structural-zero component.
 #' @param model A character string specifying the model to fit. One of
 #' `"zanim_bart"`, `"zanim_ln_bart"`, `"ml_bart"`, `"mln_bart"`, `"zanim_reg"`,
-#' `"zanim_ln_reg"`, `"zanidm_reg"`, or `"dm_reg"`.
+#' `"zanim_ln_reg"`, `"zanidm_reg"`, or `"dm_reg"`. Defaults to `"zanim-bart"`.
 #' @param ntrees_theta Number of trees used for the BART prior on the
-#' count probabilities. Default is `ntrees_theta=100`.
+#' count probabilities. The default is `ntrees_theta=100`.
 #' @param ntrees_zeta Number of trees used for the category-specific BART prior on the
-#' structural-zero probabilities. Default is `ntrees_zeta=100`.
-#' @param ndpost Number of posterior MCMC draws to retain.
+#' structural-zero probabilities. The default is `ntrees_zeta=100`.
+#' @param ndpost Number of posterior MCMC draws to retain. The default is `ndpost=5000`.
 #' @param nskip Number of MCMC iterations to discard as burn-in before retaining
-#' posterior draws.
-#' @param keep_draws Logical. Whether to retain posterior draws.
-#' @param save_trees Logical. Whether to save the posterior draws of the BART
+#' posterior draws. The default is `nskip=5000`.
+#' @param keep_draws Logical, defaults to `TRUE`. Governs whether to retain posterior draws.
+#' @param save_trees Logical, defaults to `FALSE`. Governs hether to save the posterior draws of the BART
 #' tree topologies and terminal-node parameters to `.bin` files. For BART-based
 #' models, this creates files named `forests_theta_j.bin` for the
 #' category-specific compositional regression trees and, for zero-inflated
@@ -97,9 +97,11 @@
 #' tree topologies and terminal node parameters across all `ndpost` posterior
 #' draws.
 #' @param forests_dir Character path indicating where to save the
-#' `forests_theta_j.bin` and `forests_zeta_j.bin` files.
+#' `forests_theta_j.bin` and `forests_zeta_j.bin` files. Defaults to [tempdir()].
 #' @param covariance_type Character string specifying the prior on the covariance
-#' matrix for the logistic-normal random effects.
+#' matrix for the logistic-normal random effects. Defaults to `fa_mgp`, for nonparametric factor
+#'  analysis with a multiplicative gamma process shrinkage prior. Other options include `fa` (factor analysis without such a prior),
+#'  `diag` (for a diagonal covariance matrix), and `wishart` (for an inverse Wishart prior).
 #' This is only used for `mln_bart`, `zanim_ln_bart`, and `zanim_ln_reg` models.
 #' @param sd_prior_beta_count Prior standard deviations for the regression
 #' coefficients associated with `X_count`.
@@ -120,7 +122,7 @@ zanicc <- function(Y, X_count, X_zi = NULL,
                    ntrees_theta = 100L, ntrees_zeta = 100L, ndpost = 5000L,
                    nskip = 5000L, keep_draws = TRUE, save_trees = FALSE,
                    forests_dir = tempdir(),
-                   covariance_type = "fa_mgp",
+                   covariance_type = c("fa_mgp", "diag", "wishart", "fa"),
                    sd_prior_beta_count = rep(1.0, ncol(X_count)),
                    sd_prior_beta_zi = diag(1.0, ncol(X_zi)),
                    S_prior_betas = diag(1.0, ncol(X_count)),
