@@ -31,15 +31,17 @@
 rzanim <- function(n, size, prob, zeta) {
   d <- length(prob)
   x <- matrix(data = 0L, nrow = n, ncol = d)
-  if ((length(size) != 1L) & (length(size) != n))
+  if ((length(size) != 1L) & (length(size) != n)) {
     stop("The length of number of trials {size} should be one or the same as {n}.")
+  }
   if (length(size) == 1L) size <- rep(size, n)
   omzeta <- 1 - zeta
   for (i in seq_len(n)) {
     z <- stats::rbinom(n = d, size = 1L, prob = omzeta)
     is_zero <- z == 0L
-    if (all(is_zero)) x[i, ] <- rep(0L, d)
-    else if (sum(is_zero) == d - 1L) {
+    if (all(is_zero)) {
+      x[i, ] <- rep(0L, d)
+    } else if (sum(is_zero) == d - 1L) {
       x[i, ] <- rep(0L, d)
       x[i, !is_zero] <- size
     } else {
@@ -54,7 +56,11 @@ rzanim <- function(n, size, prob, zeta) {
 #' @export
 dzanim <- function(x, prob, zeta, log = TRUE) {
   out <- log_pmf_zanim(x = x, prob = prob, zeta = zeta)
-  if (log) return(out) else return(exp(out))
+  if (log) {
+    return(out)
+  } else {
+    return(exp(out))
+  }
 }
 
 #' @rdname zanim
@@ -93,7 +99,11 @@ dzanim_marginal <- function(x, size, prob, zeta, j = 1L, log = FALSE) {
     }
   }
   out <- .log_sum_exp(out)
-  if (log) return(out) else return(exp(out))
+  if (log) {
+    return(out)
+  } else {
+    return(exp(out))
+  }
 }
 
 #' @rdname zanim
@@ -176,16 +186,18 @@ covariance_zanim <- function(size, prob, zeta, j, h) {
 rzanidm <- function(n, size, alpha, zeta) {
   d <- length(alpha)
   x <- matrix(data = 0L, nrow = n, ncol = d)
-  if ((length(size) != 1L) & (length(size) != n))
+  if ((length(size) != 1L) & (length(size) != n)) {
     stop("The length of number of trials {size} should be one or the same as {n}.")
+  }
   if (length(size) == 1L) size <- rep(size, n)
   omzeta <- 1 - zeta
   for (i in seq_len(n)) {
     ld <- stats::rgamma(n = d, shape = alpha, rate = 1)
     zs <- stats::rbinom(n = d, size = 1, prob = omzeta)
     ld <- ld * zs
-    if (all(ld == 0)) x[i, ] <- 0L
-    else {
+    if (all(ld == 0)) {
+      x[i, ] <- 0L
+    } else {
       x[i, ] <- stats::rmultinom(n = 1L, size = size[i], prob = ld / sum(ld))
     }
   }
@@ -196,7 +208,11 @@ rzanidm <- function(n, size, alpha, zeta) {
 #' @export
 dzanidm <- function(x, alpha, zeta, log = TRUE) {
   out <- log_pmf_zanidm(x = x, alpha = alpha, zeta = zeta)
-  if (log) return(out) else return(exp(out))
+  if (log) {
+    return(out)
+  } else {
+    return(exp(out))
+  }
 }
 
 
@@ -215,8 +231,10 @@ dzanidm_marginal <- function(x, size, alpha, zeta, j = 1L, log = FALSE) {
   } else if (x == size) {
     out[1L] <- log_1mzeta[j] + sum(log_zeta[-j])
   }
-  out[2L] <- sum(log_1mzeta) + .dbetabinomial(x = x, n = size, a = a_, b = b_,
-                                              log = TRUE)
+  out[2L] <- sum(log_1mzeta) + .dbetabinomial(
+    x = x, n = size, a = a_, b = b_,
+    log = TRUE
+  )
   # Compute the contribution of reduced Binomials
   idx <- 1L
   S_sets <- .get_set_S(d = d, j = j)
@@ -226,13 +244,19 @@ dzanidm_marginal <- function(x, size, alpha, zeta, j = 1L, log = FALSE) {
       to_zero <- S_subset[, h]
       b_S <- sum(alpha[-c(j, to_zero)])
       eta_S <- sum(log_1mzeta[-to_zero]) + sum(log_zeta[to_zero])
-      out[idx + 2L] <- eta_S + .dbetabinomial(x = x, n = size, a = a_, b = b_S,
-                                              log = TRUE)
+      out[idx + 2L] <- eta_S + .dbetabinomial(
+        x = x, n = size, a = a_, b = b_S,
+        log = TRUE
+      )
       idx <- idx + 1L
     }
   }
   out <- .log_sum_exp(out)
-  if (log) return(out) else return(exp(out))
+  if (log) {
+    return(out)
+  } else {
+    return(exp(out))
+  }
 }
 
 #' @rdname zanidm
@@ -246,7 +270,7 @@ moments_zanidm <- function(size, alpha, zeta, j) {
   alpha_0_j <- sum(alpha[-j])
   out_var <- eta_j_N * size^2 +
     eta_d * (size * alpha_j * (size * (1 + alpha_j) + alpha_0_j)
-             / ((alpha_j + alpha_0_j) * (1 + alpha_j + alpha_0_j)))
+      / ((alpha_j + alpha_0_j) * (1 + alpha_j + alpha_0_j)))
   S_sets <- .get_set_S(d = d, j = j)
   for (k in seq_len(length(S_sets))) {
     S_subset <- S_sets[[k]]
@@ -257,11 +281,13 @@ moments_zanidm <- function(size, alpha, zeta, j) {
       out_mean <- out_mean + eta_S * alpha_j / (alpha_j + alpha_0_j)
       out_var <- out_var +
         eta_S * (size * alpha_j * (size * (1 + alpha_j) + alpha_0_j)
-                 / ((alpha_j + alpha_0_j) * (1 + alpha_j + alpha_0_j)))
+          / ((alpha_j + alpha_0_j) * (1 + alpha_j + alpha_0_j)))
     }
   }
-  list(mean = size * out_mean,
-       var = out_var - size^2 * out_mean^2)
+  list(
+    mean = size * out_mean,
+    var = out_var - size^2 * out_mean^2
+  )
 }
 
 #' @rdname zanidm
@@ -274,7 +300,7 @@ covariance_zanidm <- function(size, alpha, zeta, j, h) {
   # Compute the multinomial covariance
   eta_d <- prod(1 - zeta)
   a0 <- sum(alpha)
-  a_jh <- alpha[j]*alpha[h]
+  a_jh <- alpha[j] * alpha[h]
   c_jh <- eta_d * a_jh / a0^2 * (size - (size + a0) / (1 + a0))
   R_sets <- .get_set_R(d = d, j = j, h = h)
   for (k in seq_len(length(R_sets))) {
@@ -330,7 +356,11 @@ ddm <- function(x, alphas, log = TRUE) {
   # Constant that depends only the data
   t2 <- lgamma(sum_row_x + 1L) - rowSums(lgamma(x + 1L))
   out <- t0 + t1 + t2
-  if (log) return(out) else return(exp(out))
+  if (log) {
+    return(out)
+  } else {
+    return(exp(out))
+  }
 }
 
 
@@ -345,7 +375,7 @@ ddm <- function(x, alphas, log = TRUE) {
     x <- rep(0L, d)
     x[!is_zero] <- size
   } else {
-    prob_z <- z*prob / sum(z*prob)
+    prob_z <- z * prob / sum(z * prob)
     x <- stats::rmultinom(n = 1L, size = size, prob = prob_z)[, 1L]
   }
   list(x, z)
@@ -360,7 +390,7 @@ ddm <- function(x, alphas, log = TRUE) {
     x[!is_zero] <- size
   } else {
     g <- stats::rgamma(n = d, shape = alpha, rate = 1.0)
-    prob_z <- z*g / sum(z*g)
+    prob_z <- z * g / sum(z * g)
     x <- stats::rmultinom(n = 1L, size = size, prob = prob_z)[, 1L]
   }
   list(x, z)
@@ -378,5 +408,3 @@ ddm <- function(x, alphas, log = TRUE) {
     .rzanidm(size = sizes[i], alpha = alphas[i, ], zeta = zetas[i, ], d = d)[[1L]]
   }, simplify = FALSE))
 }
-
-

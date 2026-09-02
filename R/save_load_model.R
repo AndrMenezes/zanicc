@@ -26,8 +26,9 @@ NULL
 #' @rdname save_load
 #' @export
 save_model <- function(object, model_dir, file_name = "mod.rds") {
-  if (!dir.exists(model_dir))
+  if (!dir.exists(model_dir)) {
     dir.create(model_dir, recursive = TRUE)
+  }
   obj <- object
   obj$cpp_obj <- NULL
   saveRDS(obj, file.path(model_dir, file_name))
@@ -37,17 +38,18 @@ save_model <- function(object, model_dir, file_name = "mod.rds") {
 #' @rdname save_load
 #' @export
 load_model <- function(model_dir, file_name = "mod.rds") {
-  if (!file.exists(file.path(model_dir, file_name)))
+  if (!file.exists(file.path(model_dir, file_name))) {
     stop("Object doesn't exist, check the directory and file name.")
+  }
   obj <- readRDS(file.path(model_dir, file_name))
   ml <- Rcpp::Module(obj$cpp_module_name, PACKAGE = "zanicc")
   obj$cpp_obj <- switch(obj$cpp_module_name,
-    "multinomial_bart" = new(ml$MultinomialBART, matrix(0,1,obj$d), matrix(0,1,obj$p)),
-    "multinomial_ln_bart" = new(ml$MultinomialLNBART, matrix(0,1,obj$d), matrix(0,1,obj$p)),
-    "zanim_bart_probit" = new(ml$ZANIMBARTProbit, matrix(0,1,obj$d), matrix(0,1,obj$p_theta), matrix(0,1,obj$p_zeta)),
-    "zanim_ln_bart" = new(ml$ZANIMLNBART, matrix(0,1,obj$d), matrix(0,1,obj$p_theta), matrix(0,1,obj$p_zeta)),
-    "zanidm_linear_reg" = new(ml$ZANIDMReg, matrix(0,1,obj$d), matrix(0,1,obj$p_alpha), matrix(0,1,obj$p_zeta)),
-    "dm_linear_reg" = new(ml$DMLinearReg, matrix(0,1,obj$d), matrix(0,1,obj$p))
+    "multinomial_bart" = new(ml$MultinomialBART, matrix(0, 1, obj$d), matrix(0, 1, obj$p)),
+    "multinomial_ln_bart" = new(ml$MultinomialLNBART, matrix(0, 1, obj$d), matrix(0, 1, obj$p)),
+    "zanim_bart_probit" = new(ml$ZANIMBARTProbit, matrix(0, 1, obj$d), matrix(0, 1, obj$p_theta), matrix(0, 1, obj$p_zeta)),
+    "zanim_ln_bart" = new(ml$ZANIMLNBART, matrix(0, 1, obj$d), matrix(0, 1, obj$p_theta), matrix(0, 1, obj$p_zeta)),
+    "zanidm_linear_reg" = new(ml$ZANIDMReg, matrix(0, 1, obj$d), matrix(0, 1, obj$p_alpha), matrix(0, 1, obj$p_zeta)),
+    "dm_linear_reg" = new(ml$DMLinearReg, matrix(0, 1, obj$d), matrix(0, 1, obj$p))
   )
   obj
 }

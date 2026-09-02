@@ -104,7 +104,6 @@
 "pollen_monticchio"
 
 
-
 #' @name microbiome_gut
 #'
 #' @title Human gut microbiome data set
@@ -147,9 +146,3 @@
 #' Wu, G., Chen, J., Hoffmann, C., Bittinger, K., Chen, Y.-Y., Keilbaugh, S., Bewtra, M., Knights, D., W.A., W., Knight, R., Sinha, R., Gilroy, E., Gupta, K., Baldassano, R., Nessel, L., Li, H., Bushman, F. and Lewis, J. (2011), ‘Linking long-term dietary patterns with gut microbial enterotypes’, \emph{Science} 334(6052), 105–-108.
 #'
 "microbiome_gut"
-
-
-
-
-
-

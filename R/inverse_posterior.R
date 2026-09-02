@@ -64,7 +64,7 @@
 runifconvexhull <- function(n, X) {
   # Triangulate the points. Indexes into simplices, by row.
   V <- geometry::delaunayn(X, options = "Qt")
-  p_dim <- ncol(V) - 1 #ncol(X) #
+  p_dim <- ncol(V) - 1 # ncol(X) #
   k_simplices <- nrow(V)
   # Sample the component simplices of the triangulation proportional to their volumes
   probs <- abs(.volume_simplices(V, X))
@@ -77,7 +77,6 @@ runifconvexhull <- function(n, X) {
   pts <- sapply(seq_len(n), function(j) wts[j, ] %*% X[V[ind[j], ], ])
   t(pts)
 }
-
 
 
 #' @name inverse_posterior
@@ -157,10 +156,9 @@ inverse_posterior_zanimlnbart <- function(object, Y,
                                           Amat = NULL, bvec = NULL,
                                           lower = NULL, upper = NULL,
                                           eta = 50.0) {
-
   # Some checks
   method <- match.arg(method)
-  if (is.null(n_particles)) n_particles <- if (method == "sir") 1L else  100L
+  if (is.null(n_particles)) n_particles <- if (method == "sir") 1L else 100L
   if (object$d != ncol(Y)) stop("Dimension of Y does not match with forward model")
   if (ndpost > object$ndpost) {
     warning("{ndpost} should be at least {object$ndpost}. Setting {ndpost} to  {object$ndpost}")
@@ -175,8 +173,10 @@ inverse_posterior_zanimlnbart <- function(object, Y,
 
   # Initialise C++ class
   ml <- Rcpp::Module(module = "inverse_posterior", PACKAGE = "zanicc")
-  cpp_obj <- new(ml$InversePosterior, object$d, object$ntrees_theta,
-                 object$ntrees_zeta, object$forests_dir)
+  cpp_obj <- new(
+    ml$InversePosterior, object$d, object$ntrees_theta,
+    object$ntrees_zeta, object$forests_dir
+  )
 
   # Check which method to dispatch
   if (method == "sir") {
@@ -190,10 +190,14 @@ inverse_posterior_zanimlnbart <- function(object, Y,
       cat("files {theta_ij.bin} and {zeta_ij.bin} with the posterior distribution of f^{(c)}(x*) and f^{(0)}(x*) do not exist in the folder {dir_posterior_fx}. Computing such predictions...\n")
       # Compute the posterior distribution of f^{(c)}_j(x*) and f^{(0)}_j(x*) for x*~\pi(x*) and j=1,...,d
       ini <- proc.time()
-      predict(object, newdata = x_proposal, load = FALSE, output_dir = dir_posterior_fx,
-              type = "theta")
-      predict(object, newdata = x_proposal, load = FALSE, output_dir = dir_posterior_fx,
-              type = "zeta")
+      predict(object,
+        newdata = x_proposal, load = FALSE, output_dir = dir_posterior_fx,
+        type = "theta"
+      )
+      predict(object,
+        newdata = x_proposal, load = FALSE, output_dir = dir_posterior_fx,
+        type = "zeta"
+      )
       end_predict <- proc.time() - ini
     }
     # Run SIR
@@ -204,36 +208,42 @@ inverse_posterior_zanimlnbart <- function(object, Y,
     idx_sir <- cpp_obj$indices_sir + 1L
     res <- array(dim = c(ndpost, p, n))
     for (i in seq_len(n)) {
-      indices <- idx_sir[(1 + ndpost*(i - 1L)):(ndpost*i)]
-      res[,,i] <- x_proposal[indices, ]
+      indices <- idx_sir[(1 + ndpost * (i - 1L)):(ndpost * i)]
+      res[, , i] <- x_proposal[indices, ]
     }
     res <- simplify2array(res)
     # save effective sample size
     attr(res, "effsize") <- matrix(cpp_obj$ess_sir, nrow = ndpost)
     if (do_predict) attr(res, "elapsed_time_predict") <- end_predict
   } else if (method %in% c("ess", "cess")) {
-
     if (is.null(mean_prior)) mean_prior <- rep(0.0, object$p_theta)
     if (is.null(S_prior)) S_prior <- diag(1.0, object$p_theta, object$p_theta)
 
     if (p == 1) {
       ini <- proc.time()
       xx <- switch(method,
-                   "ess" = {
-                     if (is.null(X_ini)) X_ini <- stats::rnorm(n = n, mean = mean_prior, sd = S_prior)
-                     cpp_obj$ESS1p(Y, X_ini, ndpost, nburnin, n_particles,
-                                   mean_prior, S_prior, B)
-                   },
-                   "cess" = {
-                     if (is.null(X_ini)) X_ini <- truncnorm::rtruncnorm(n = n, a = lower, b = upper,
-                                                                        mean = mean_prior, sd = S_prior)
-                     cpp_obj$CESS1p(Y, X_ini, ndpost, nburnin, n_particles,
-                                    mean_prior, S_prior, B, lower, upper, eta)
-                   }
+        "ess" = {
+          if (is.null(X_ini)) X_ini <- stats::rnorm(n = n, mean = mean_prior, sd = S_prior)
+          cpp_obj$ESS1p(
+            Y, X_ini, ndpost, nburnin, n_particles,
+            mean_prior, S_prior, B
+          )
+        },
+        "cess" = {
+          if (is.null(X_ini)) {
+            X_ini <- truncnorm::rtruncnorm(
+              n = n, a = lower, b = upper,
+              mean = mean_prior, sd = S_prior
+            )
+          }
+          cpp_obj$CESS1p(
+            Y, X_ini, ndpost, nburnin, n_particles,
+            mean_prior, S_prior, B, lower, upper, eta
+          )
+        }
       )
       elapsed <- proc.time() - ini
-    }
-    else {
+    } else {
       # If there is no initial value sample from the prior
       if (is.null(X_ini)) {
         X_ini <- matrix(nrow = n, ncol = p)
@@ -243,10 +253,14 @@ inverse_posterior_zanimlnbart <- function(object, Y,
 
       ini <- proc.time()
       xx <- switch(method,
-        "ess" = cpp_obj$ESS(Y, X_ini, ndpost, nburnin, n_particles,
-                            mean_prior, S_prior, B),
-        "cess" = cpp_obj$CESS(Y, X_ini, ndpost, nburnin, n_particles,
-                              mean_prior, S_prior, B, Amat, bvec, eta)
+        "ess" = cpp_obj$ESS(
+          Y, X_ini, ndpost, nburnin, n_particles,
+          mean_prior, S_prior, B
+        ),
+        "cess" = cpp_obj$CESS(
+          Y, X_ini, ndpost, nburnin, n_particles,
+          mean_prior, S_prior, B, Amat, bvec, eta
+        )
       )
       elapsed <- proc.time() - ini
     }

@@ -56,9 +56,11 @@ plot_ppc <- function(Y, Y_ppc = NULL, object = NULL, output = FALSE) {
   res_mdi <- stat_ppc(Y = Y, Y_ppc = Y_ppc, stat_fun = mdi)
   res_zero <- stat_ppc(Y = Y, Y_ppc = Y_ppc, stat_fun = function(Y) mean(Y == 0))
   res_zi <- stat_ppc(Y = Y, Y_ppc = Y_ppc, stat_fun = zi_multinomial)
-  res_entropy <- stat_ppc(Y = sweep(Y, 1, rowSums(Y), "/"),
-                           Y_ppc = .normalise_composition(Y_ppc),
-                           stat_fun = shannon_entropy)
+  res_entropy <- stat_ppc(
+    Y = sweep(Y, 1, rowSums(Y), "/"),
+    Y_ppc = .normalise_composition(Y_ppc),
+    stat_fun = shannon_entropy
+  )
 
   # Keep user's graphs options
   oldpar <- par(no.readonly = TRUE)
@@ -66,21 +68,30 @@ plot_ppc <- function(Y, Y_ppc = NULL, object = NULL, output = FALSE) {
 
   # Plotting
   par(mar = c(4, 4, 1, 1), mfrow = c(2, 2))
-  plot(density(res_entropy$t_ppc), main = "Entropy", xlab = "", ylab = "",
-       xlim = range(res_entropy$t_obs, res_entropy$t_ppc))
+  plot(density(res_entropy$t_ppc),
+    main = "Entropy", xlab = "", ylab = "",
+    xlim = range(res_entropy$t_obs, res_entropy$t_ppc)
+  )
   abline(v = res_entropy$t_obs)
-  plot(density(res_mdi$t_ppc), main = "MDI", xlab = "", ylab = "",
-       xlim = range(res_mdi$t_obs, res_mdi$t_ppc))
+  plot(density(res_mdi$t_ppc),
+    main = "MDI", xlab = "", ylab = "",
+    xlim = range(res_mdi$t_obs, res_mdi$t_ppc)
+  )
   abline(v = res_mdi$t_obs)
-  plot(density(res_zero$t_ppc), main = "Prop of zero", xlab = "", ylab = "",
-       xlim = range(res_zero$t_obs, res_zero$t_ppc))
+  plot(density(res_zero$t_ppc),
+    main = "Prop of zero", xlab = "", ylab = "",
+    xlim = range(res_zero$t_obs, res_zero$t_ppc)
+  )
   abline(v = res_zero$t_obs)
-  plot(density(res_zi$t_ppc), main = "ZI", xlab = "", ylab = "",
-       xlim = range(res_zi$t_obs, res_zi$t_ppc))
+  plot(density(res_zi$t_ppc),
+    main = "ZI", xlab = "", ylab = "",
+    xlim = range(res_zi$t_obs, res_zi$t_ppc)
+  )
   abline(v = res_zi$t_obs)
 
-  if (output)
+  if (output) {
     return(list(entropy = res_entropy, mdi = res_mdi, prop_zero = res_zero, zi = res_zi))
+  }
 
   invisible()
 }
@@ -161,18 +172,22 @@ plot_qqplots_ppd <- function(Y, Y_ppc = NULL, object = NULL, relative = FALSE,
   par(mfrow = mfrow, mar = c(4, 4, 1, 1))
   for (j in seq_len(d)) {
     q_obs <- quantile(Y[, j], probs = probs, names = FALSE)
-    q_teo <- marginal_quantiles_ppd(yj_ppc = Y_ppc[,,j], probs = probs)
+    q_teo <- marginal_quantiles_ppd(yj_ppc = Y_ppc[, , j], probs = probs)
     ry <- c(min(q_teo[, 2L]), max(q_teo[, 3L]))
     rx <- range(q_obs)
-    plot(q_teo[, 1L], q_obs, ylim = ry, xlim = rx,
-         main = sprintf("category j=%i", j),
-         xlab = "Theoretical quantiles", ylab = "Empirical quantiles")
+    plot(q_teo[, 1L], q_obs,
+      ylim = ry, xlim = rx,
+      main = sprintf("category j=%i", j),
+      xlab = "Theoretical quantiles", ylab = "Empirical quantiles"
+    )
     lines(q_teo[, 2L], q_obs, lty = "dashed")
     lines(q_teo[, 3L], q_obs, lty = "dashed")
     abline(0, 1, col = "grey60", lty = "dashed")
     if (output) list_data[[j]] <- cbind(q_obs, q_teo)
   }
-  if (output) return(list_data)
+  if (output) {
+    return(list_data)
+  }
   invisible()
 }
 

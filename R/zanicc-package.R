@@ -1,4 +1,4 @@
-if (getRversion() >= "2.15.1")  utils::globalVariables(c("self", "private"))
+if (getRversion() >= "2.15.1") utils::globalVariables(c("self", "private"))
 #' @name zanicc-package
 #' @aliases zanicc-package
 #'

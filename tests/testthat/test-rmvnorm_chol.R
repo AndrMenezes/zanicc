@@ -1,5 +1,4 @@
 test_that("multiplication works", {
-
   devtools::load_all()
   p <- 3
   mu <- c(-2, 1.5, 3)
@@ -12,7 +11,7 @@ test_that("multiplication works", {
 
   n <- 5000L
 
-  rand_norm <- matrix(stats::rnorm(p*n), ncol = p, nrow = n)
+  rand_norm <- matrix(stats::rnorm(p * n), ncol = p, nrow = n)
 
   # R implementation
   x_R <- matrix(nrow = n, ncol = p)
@@ -29,19 +28,23 @@ test_that("multiplication works", {
   x_C3 <- t(x_C3)
 
   # Comparison
-  cbind(sim1 = colMeans(x_R), sim2 = colMeans(x_R2),
-        simC = colMeans(x_C),
-        simC3 = colMeans(x_C3),
-        true = mu)
-  cbind(sim1 = diag(cov(x_R)), sim2 = diag(cov(x_R2)),
-        simC = diag(cov(x_C)),
-        simC3 = diag(cov(x_C3)),
-        true = diag(Sigma))
-  cbind(sim1 = cov(x_R)[lower.tri(cov(x_R))],
-        sim2 = cov(x_R2)[lower.tri(cov(x_R2))],
-        simC = cov(x_C)[lower.tri(cov(x_C))],
-        simC3 = cov(x_C3)[lower.tri(cov(x_C3))],
-        true = Sigma[lower.tri(Sigma)])
-
-
+  cbind(
+    sim1 = colMeans(x_R), sim2 = colMeans(x_R2),
+    simC = colMeans(x_C),
+    simC3 = colMeans(x_C3),
+    true = mu
+  )
+  cbind(
+    sim1 = diag(cov(x_R)), sim2 = diag(cov(x_R2)),
+    simC = diag(cov(x_C)),
+    simC3 = diag(cov(x_C3)),
+    true = diag(Sigma)
+  )
+  cbind(
+    sim1 = cov(x_R)[lower.tri(cov(x_R))],
+    sim2 = cov(x_R2)[lower.tri(cov(x_R2))],
+    simC = cov(x_C)[lower.tri(cov(x_C))],
+    simC3 = cov(x_C3)[lower.tri(cov(x_C3))],
+    true = Sigma[lower.tri(Sigma)]
+  )
 })

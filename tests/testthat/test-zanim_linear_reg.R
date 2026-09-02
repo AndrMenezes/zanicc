@@ -9,14 +9,16 @@ test_that("zanim linear reg", {
   set.seed(6669)
   X <- cbind(1, matrix(stats::rnorm(n_sample * p, sd = 0.5), ncol = p))
   eta_alpha <- eta_zeta <- matrix(nrow = n_sample, ncol = d)
-  true_coef_counts <- rbind(c(0.1, 0.2, 0.3),
-                            c(2.0, -3.0, 1.0)
-                            , c(4.0, -4.0, 3.0)
-                            )
-  true_coef_zi <- rbind(c(-3.0, -3.5, -2.0),
-                        c(-1.0, 2.0, 1.5)
-                        , c(0.5, -1.5, 2.0)
-                        )
+  true_coef_counts <- rbind(
+    c(0.1, 0.2, 0.3),
+    c(2.0, -3.0, 1.0),
+    c(4.0, -4.0, 3.0)
+  )
+  true_coef_zi <- rbind(
+    c(-3.0, -3.5, -2.0),
+    c(-1.0, 2.0, 1.5),
+    c(0.5, -1.5, 2.0)
+  )
   for (j in seq_len(d)) {
     eta_alpha[, j] <- true_coef_counts[1, j] + X[, 2L] * true_coef_counts[2, j] + X[, 3L] * true_coef_counts[3, j]
     eta_zeta[, j] <- true_coef_zi[1, j] + X[, 2L] * true_coef_zi[2, j] + X[, 3L] * true_coef_zi[3, j]
@@ -46,7 +48,7 @@ test_that("zanim linear reg", {
     g <- stats::rgamma(n = d, shape = tau * p_ij, rate = 1.0)
     # g <- alphas[i, ]
     true_thetas[i, ] <- g / sum(g)
-    true_varthetas[i, ] <-  z * g / sum(z * g)
+    true_varthetas[i, ] <- z * g / sum(z * g)
     if (sum(is_zero) == d - 1L) {
       Y[i, ] <- rep(0L, d)
       Y[i, !is_zero] <- n_trials
@@ -79,8 +81,10 @@ test_that("zanim linear reg", {
   true_coef_zi
 
   # Use K. code
-  mod_zidm <- ZIDM::ZIDMbvs_R(Z = Y, X = X[, -1L], X_theta = X[, -1L],
-                              iterations = 40000L, thin = 10L)
+  mod_zidm <- ZIDM::ZIDMbvs_R(
+    Z = Y, X = X[, -1L], X_theta = X[, -1L],
+    iterations = 40000L, thin = 10L
+  )
   # Perform burn-in
   to_rmv <- seq_len(1000L)
   beta_alpha_zidm <- mod_zidm[["beta_gamma"]][, , -to_rmv]
@@ -92,12 +96,13 @@ test_that("zanim linear reg", {
   X_wint <- X # cbind(1, X)
   for (t in seq_len(ndpost_zidm)) {
     for (j in seq_len(d)) {
-      alpha_zidm[,j,t] <- exp(X_wint %*% as.matrix(beta_alpha_zidm[j,,t]))
-      zeta_zidm[,j,t] <- stats::plogis(X_wint %*% as.matrix(beta_zeta_zidm[j,,t]),
-                                       lower.tail = FALSE)
+      alpha_zidm[, j, t] <- exp(X_wint %*% as.matrix(beta_alpha_zidm[j, , t]))
+      zeta_zidm[, j, t] <- stats::plogis(X_wint %*% as.matrix(beta_zeta_zidm[j, , t]),
+        lower.tail = FALSE
+      )
     }
   }
-  psis <- mod_zidm$cc[, ,-to_rmv]
+  psis <- mod_zidm$cc[, , -to_rmv]
   tn <- apply(psis, c(1, 3), sum)
   vartheta_zidm <- sweep(x = psis, MARGIN = c(1, 3), STATS = tn, FUN = "/")
   t(apply(beta_alpha_zidm, c(1, 2), mean))
@@ -107,7 +112,7 @@ test_that("zanim linear reg", {
   apply(mod_zanidm_lr$draws_betas_alpha, c(1, 2), function(x) coda::effectiveSize(coda::as.mcmc(x)))
 
 
-  mod_dm = ZIDM::DMbvs_R(Z = Y, X = X[, -1L], iterations = 40000L, thin = 10L)
+  mod_dm <- ZIDM::DMbvs_R(Z = Y, X = X[, -1L], iterations = 40000L, thin = 10L)
   beta_alpha_m <- mod_dm$beta_gamma[, , -to_rmv]
   t(apply(beta_alpha_m, c(1, 2), mean))
   true_coef_counts
@@ -128,16 +133,19 @@ test_that("zanim linear reg", {
   graphics.off()
 
 
-  par(mfrow  = c(3, 3))
+  par(mfrow = c(3, 3))
   for (j in seq_len(d)) {
     plot(true_varthetas[, j], rowMeans(mod_zanim_lr$draws_abundance[, j, ]),
-         main = paste0("ZANIM ", j), ylab = "posterior mean", xlab = "truth")
+      main = paste0("ZANIM ", j), ylab = "posterior mean", xlab = "truth"
+    )
     abline(0, 1, col = 2)
     plot(true_varthetas[, j], rowMeans(mod_zanidm_lr$draws_abundance[, j, ]),
-         main = paste0("ZANIDM ", j), ylab = "posterior mean", xlab = "truth")
+      main = paste0("ZANIDM ", j), ylab = "posterior mean", xlab = "truth"
+    )
     abline(0, 1, col = 2)
     plot(true_varthetas[, j], rowMeans(vartheta_zidm[, j, ]),
-         main = paste0("ZIDM ", j), ylab = "posterior mean", xlab = "truth")
+      main = paste0("ZIDM ", j), ylab = "posterior mean", xlab = "truth"
+    )
     abline(0, 1, col = 2)
   }
 
@@ -154,14 +162,12 @@ test_that("zanim linear reg", {
   dim(ll_zanim)
   dim(ll_zanidm)
 
-  as.data.frame(loo::loo_compare(list(zanim = loo::loo(ll_zanim),
-                                      zanidm = loo::loo(ll_zanidm))))
+  as.data.frame(loo::loo_compare(list(
+    zanim = loo::loo(ll_zanim),
+    zanidm = loo::loo(ll_zanidm)
+  )))
 
   yrep <- mod_zanim_lr$GetPosteriorPredictive()
   bayesplot::ppc_ecdf_overlay(y = Y[, 1L], yrep = yrep[, , 1L])
   dim(yrep)
-
 })
-
-
-

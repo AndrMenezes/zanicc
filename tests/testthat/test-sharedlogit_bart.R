@@ -23,19 +23,22 @@ test_that("bspline", {
                                 sparse_parms = c(ncol(X), 0.5, 1.0), alpha_sparse = 1.0,
                                 alpha_random = FALSE, xinfo = matrix(),
                                 forests_dir = tempdir()) {
-
     # Call the C++ class in R
     ml <- Rcpp::Module(module = "shared_logit_bart", PACKAGE = "zanicc")
     obj <- new(ml$SharedLogitBART, y, X)
     # Set up MCMC
-    obj$SetMCMC(v0, ntrees, ndpost, nskip, printevery, numcut, power, base,
-                proposals_prob, splitprobs, as.integer(sparse), sparse_parms,
-                alpha_sparse, as.integer(alpha_random), xinfo, forests_dir)
+    obj$SetMCMC(
+      v0, ntrees, ndpost, nskip, printevery, numcut, power, base,
+      proposals_prob, splitprobs, as.integer(sparse), sparse_parms,
+      alpha_sparse, as.integer(alpha_random), xinfo, forests_dir
+    )
     # Run MCMC
     obj$RunMCMC()
     # Save information
-    lt <- list(call = match.call(), mod = obj, forests_dir = forests_dir, ntrees = ntrees,
-               ndpost = ndpost, draws = obj$draws, n = length(y))
+    lt <- list(
+      call = match.call(), mod = obj, forests_dir = forests_dir, ntrees = ntrees,
+      ndpost = ndpost, draws = obj$draws, n = length(y)
+    )
     class(lt) <- "shared_logit_bart"
     lt
   }
@@ -84,22 +87,32 @@ test_that("friedman", {
   quantile(theta_truth)
 
   # BART
-  slogit_bart <- shared_logit_bart(y = y, X = X, path = path_res, ntrees = 100L,
-                                   ndpost = 5000L, nskip = 2000L, sparse = FALSE)
+  slogit_bart <- shared_logit_bart(
+    y = y, X = X, path = path_res, ntrees = 100L,
+    ndpost = 5000L, nskip = 2000L, sparse = FALSE
+  )
 
   # DART fixed concentration parameter at 1.0
-  slogit_dart_1 <- shared_logit_bart(y = y, X = X, path = path_res, ntrees = 100L,
-                                     ndpost = 5000L, nskip = 2000L, sparse = TRUE,
-                                     alpha_sparse = 1.0, alpha_random = TRUE)
+  slogit_dart_1 <- shared_logit_bart(
+    y = y, X = X, path = path_res, ntrees = 100L,
+    ndpost = 5000L, nskip = 2000L, sparse = TRUE,
+    alpha_sparse = 1.0, alpha_random = TRUE
+  )
   slogit_dart_1$mod$alpha_sparse
-  cbind(bart = rowMeans(slogit_bart$mod$varcount_mcmc),
-        dart_1 = rowMeans(slogit_dart_1$mod$varcount_mcmc))
+  cbind(
+    bart = rowMeans(slogit_bart$mod$varcount_mcmc),
+    dart_1 = rowMeans(slogit_dart_1$mod$varcount_mcmc)
+  )
 
-  cbind(bart = rowMeans(slogit_bart$mod$varcount_mcmc > 0),
-        dart_1 = rowMeans(slogit_dart_1$mod$varcount_mcmc > 0))
+  cbind(
+    bart = rowMeans(slogit_bart$mod$varcount_mcmc > 0),
+    dart_1 = rowMeans(slogit_dart_1$mod$varcount_mcmc > 0)
+  )
 
-  cbind(bart = slogit_bart$mod$splitprobs,
-        dart = slogit_dart_1$mod$splitprobs)
+  cbind(
+    bart = slogit_bart$mod$splitprobs,
+    dart = slogit_dart_1$mod$splitprobs
+  )
 
   mean_prob <- rowMeans(slogit_dart_1$draws)
   yhat <- 1L * (mean_prob > 0.5)
@@ -109,10 +122,14 @@ test_that("friedman", {
   #
   prob_bart <- rowMeans(slogit_bart$mod$varcount_mcmc > 0)
   prob_dart <- rowMeans(slogit_dart_1$mod$varcount_mcmc > 0)
-  data_dart <- data.frame(prob = c(prob_dart), covariate = 1:ncol(X),
-                          split_prior = "dirichlet")
-  data_bart <- data.frame(prob = c(prob_bart), covariate = 1:ncol(X),
-                          split_prior = "uniform")
+  data_dart <- data.frame(
+    prob = c(prob_dart), covariate = 1:ncol(X),
+    split_prior = "dirichlet"
+  )
+  data_bart <- data.frame(
+    prob = c(prob_bart), covariate = 1:ncol(X),
+    split_prior = "uniform"
+  )
   data_vc <- rbind(data_bart, data_dart)
   p_vc <- ggplot(data_vc, aes(x = covariate, y = prob, col = split_prior)) +
     geom_point() +
@@ -120,8 +137,10 @@ test_that("friedman", {
     scale_y_continuous(breaks = scales::pretty_breaks(6), limits = c(0, 1)) +
     labs(x = "Covariate k", y = "Prob[k in model]", col = "") +
     ggtitle("Probability of chosen covariate k for different priors on the split prob.")
-  save_plot(filename = file.path(path_res, "prob_vc.png"), plot = p_vc,
-            bg = "white", base_height = 7.0)
+  save_plot(
+    filename = file.path(path_res, "prob_vc.png"), plot = p_vc,
+    bg = "white", base_height = 7.0
+  )
 
   # Remove files
   unlink(x = path_res, recursive = TRUE)

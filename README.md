@@ -16,7 +16,7 @@ trees”](https://arxiv.org/abs/2601.08067) by André F. B. Menezes, Andrew
 C. Parnell, and Keefe Murphy, along with other related models from the
 literature on count-compositional modelling such as the multinomial
 logistic BART and parametric regression models based on the
-Dirichet-multinomial (DM) and zero-and-N-inflated DM distributions.
+Dirichlet-multinomial (DM) and zero-and-N-inflated DM distributions.
 
 Further functionalities are provided which implement the Bayesian
 modular framework for pollen-based palaeoclimate reconstruction

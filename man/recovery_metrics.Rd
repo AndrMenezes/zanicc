@@ -83,7 +83,7 @@ posterior estimates.
 
 \subsection{Posterior uncertainty}{
 \itemize{
-\item \code{compute_coverage()}: Compute the empirical coverage given the crebible inteval
+\item \code{compute_coverage()}: Compute the empirical coverage given the credible interval
 of the parameters.
 }
 

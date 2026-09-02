@@ -31,7 +31,7 @@ dmultinomial <- function(x, prob, log = TRUE) {
     xp <- t(t(x) * log(prob))
   }
   r <- lgamma(N + 1) + matrixStats::rowSums2(xp - lgamma(x + 1), na.rm = TRUE)
-  return( if (log) r else exp(r))
+  return(if (log) r else exp(r))
 }
 
 
@@ -78,13 +78,13 @@ lpd_multinomial <- function(x, draws_prob, printevery = 100L) {
 #' @rdname load_bin
 #' @export
 load_bin_predictions <- function(fname, n, d, m) {
-  array(.load_bin(fname, n*d*m), dim = c(n, d, m))
+  array(.load_bin(fname, n * d * m), dim = c(n, d, m))
 }
 
 #' @rdname load_bin
 #' @export
 load_bin_coefficients <- function(fname, p, d, m) {
-  array(.load_bin(fname, p*d*m), dim = c(p, d, m))
+  array(.load_bin(fname, p * d * m), dim = c(p, d, m))
 }
 
 .load_bin <- function(fname, len) {
@@ -119,9 +119,11 @@ load_bin_coefficients <- function(fname, p, d, m) {
 #' @export
 summarise_draws <- function(x, prob = 0.05) {
   n <- nrow(x)
-  data.frame(id = seq_len(n), mean = rowMeans(x), median = apply(x, 1L, median),
-             ci_lower = apply(x, 1, quantile, prob / 2),
-             ci_upper = apply(x, 1, quantile, 1 - prob / 2))
+  data.frame(
+    id = seq_len(n), mean = rowMeans(x), median = apply(x, 1L, median),
+    ci_lower = apply(x, 1, quantile, prob / 2),
+    ci_upper = apply(x, 1, quantile, 1 - prob / 2)
+  )
 }
 #' @rdname summarise_draws
 #' @export
@@ -129,7 +131,7 @@ summarise_draws_3d <- function(x, prob = 0.05) {
   d <- dim(x)[2L]
   n <- dim(x)[1L]
   l <- vector(mode = "list", length = d)
-  for (j in seq_len(d)) l[[j]] <- cbind(summarise_draws(x[,j,]), category = j)
+  for (j in seq_len(d)) l[[j]] <- cbind(summarise_draws(x[, j, ]), category = j)
   do.call(rbind, l)
 }
 
@@ -137,9 +139,10 @@ summarise_draws_3d <- function(x, prob = 0.05) {
 .plot_fit_curve <- function(data) {
   ggplot2::ggplot(data, aes(x = x, y = theta)) +
     ggplot2::geom_line() +
-    ggplot2::geom_line(aes(y = mean), col = "dodgerblue",  linewidth = 0.8) +
+    ggplot2::geom_line(aes(y = mean), col = "dodgerblue", linewidth = 0.8) +
     ggplot2::geom_ribbon(aes(ymin = ci_lower, ymax = ci_upper),
-                         fill = "dodgerblue", alpha = 0.3)
+      fill = "dodgerblue", alpha = 0.3
+    )
 }
 # Similar as above but faceted by category
 .plot_fit_curve_3d <- function(data) {
@@ -164,12 +167,16 @@ summarise_draws_3d <- function(x, prob = 0.05) {
 }
 
 # Ledermann bound
-.ledermann <- function(q)  floor(q + 0.5 * (1 - sqrt(8L * q + 1L)))
+.ledermann <- function(q) floor(q + 0.5 * (1 - sqrt(8L * q + 1L)))
 
 # pmf of beta-binomial
 .dbetabinomial <- function(x, n, a, b, log = TRUE) {
   out <- lchoose(n, x) + lbeta(x + a, n - x + b) - lbeta(a, b)
-  if (log) return(out) else return(exp(out))
+  if (log) {
+    return(out)
+  } else {
+    return(exp(out))
+  }
 }
 
 # log-sum-exp
@@ -193,7 +200,9 @@ summarise_draws_3d <- function(x, prob = 0.05) {
 # Get the sets \mathcal{R}_{j, h}
 .get_set_R <- function(d, j, h) {
   indexes <- seq_len(d)[-c(j, h)]
-  if (length(indexes) == 1) return(list(matrix(indexes, nrow = 1, ncol = 1)))
+  if (length(indexes) == 1) {
+    return(list(matrix(indexes, nrow = 1, ncol = 1)))
+  }
   all_sets <- vector(mode = "list", length = length(indexes))
   counter <- 1L
   for (k in seq_along(indexes)) {
@@ -214,7 +223,6 @@ summarise_draws_3d <- function(x, prob = 0.05) {
 #'
 create_rectangular_grid <- function(X, step_size = 1.0,
                                     scale_factors = rep(20, ncol(X))) {
-
   p <- ncol(X)
   if (p < 2L) stop("Create uniform grid for p>1 covariates")
 
@@ -230,8 +238,11 @@ create_rectangular_grid <- function(X, step_size = 1.0,
     X_scale[, j] <- scale_factors[j] * (X[, j] - min_[j]) / range_[j]
   }
   # Create an exhaustive grid (TODO: this is inefficient, need to think a better way)
-  X_grid <- expand.grid(lapply(seq_len(p), function(j) seq(0.0, scale_factors[j],
-                                                           by = step_size)))
+  X_grid <- expand.grid(lapply(seq_len(p), function(j) {
+    seq(0.0, scale_factors[j],
+      by = step_size
+    )
+  }))
   X_grid <- as.matrix(X_grid)
   n_grid <- nrow(X_grid)
   # Loop through the exhaustive grid and keep only the points that belongs to observed data +- step_size
@@ -241,7 +252,7 @@ create_rectangular_grid <- function(X, step_size = 1.0,
     keep[i] <- any(rowSums(cond) == p)
   }
   if (sum(keep) == 0) stop("Did not find any points inside the observed data.")
-  cat("Keep" , 100*mean(keep), "% of the ", n_grid, "points in the uniform exhaustive grid.")
+  cat("Keep", 100 * mean(keep), "% of the ", n_grid, "points in the uniform exhaustive grid.")
   # Filter the data and scale the grid into the original scale of X
   X_grid <- X_grid[keep, ]
   for (j in seq_len(p)) {
@@ -264,7 +275,7 @@ create_rectangular_grid <- function(X, step_size = 1.0,
 #
 # @rdname compute_vartheta
 compute_vartheta_zanim <- function(thetas, zetas, verbose = FALSE,
-                                   printevery = 100L)  {
+                                   printevery = 100L) {
   n_sample <- dim(thetas)[1L]
   d <- dim(thetas)[2L]
   ndpost <- dim(thetas)[3L]
@@ -274,26 +285,25 @@ compute_vartheta_zanim <- function(thetas, zetas, verbose = FALSE,
     if (verbose && (k %% printevery == 0L)) cat(k, "of", ndpost, "\n")
     # Generate the z's
     tmp <- lapply(seqn, function(i) {
-      z <- stats::rbinom(n = d, size = 1, prob = 1.0 - zetas[i,,k])
+      z <- stats::rbinom(n = d, size = 1, prob = 1.0 - zetas[i, , k])
       is_zero <- z == 0L
       if (all(is_zero)) {
         vt <- rep(0.0, d)
-      }
-      else if (sum(is_zero) == d - 1L) {
+      } else if (sum(is_zero) == d - 1L) {
         vt <- rep(0.0, d)
         vt[!is_zero] <- 1.0
       } else {
-        vt <- thetas[i,,k] * z
+        vt <- thetas[i, , k] * z
         vt <- vt / sum(vt)
       }
       vt
     })
-    draws[,,k] <- do.call(rbind, tmp)
+    draws[, , k] <- do.call(rbind, tmp)
   }
   draws
 }
 .compute_vartheta_zanimln <- function(thetas, zetas, chol_Sigma_V, Bt,
-                                      verbose = FALSE, printevery = 100L)  {
+                                      verbose = FALSE, printevery = 100L) {
   n_sample <- dim(thetas)[1L]
   d <- dim(thetas)[2L]
   ndpost <- dim(thetas)[3L]
@@ -304,21 +314,18 @@ compute_vartheta_zanim <- function(thetas, zetas, verbose = FALSE,
     if (verbose && (k %% printevery == 0L)) cat(k, "of", ndpost, "\n")
     # Generate the z's
     tmp <- lapply(seqn, function(i) {
-      v <- stats::rnorm(dm1) %*% chol_Sigma_V[,,k]
+      v <- stats::rnorm(dm1) %*% chol_Sigma_V[, , k]
       u <- drop(v %*% Bt)
-      z <- stats::rbinom(n = d, size = 1L, prob = 1.0 - zetas[i,,k])
-      if (all(z == 0L)) p <- rep(0.0, d)
-      else {
-        p <- z * thetas[i,,k] * exp(u)
+      z <- stats::rbinom(n = d, size = 1L, prob = 1.0 - zetas[i, , k])
+      if (all(z == 0L)) {
+        p <- rep(0.0, d)
+      } else {
+        p <- z * thetas[i, , k] * exp(u)
         p <- p / sum(p)
       }
       p
     })
-    draws[,,k] <- do.call(rbind, tmp)
+    draws[, , k] <- do.call(rbind, tmp)
   }
   draws
 }
-
-
-
-

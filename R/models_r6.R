@@ -5,7 +5,7 @@ ZANIMBART <- R6::R6Class(classname = "ZANIMBART", public = list(
   p_zeta = integer(), ntrees_zeta = integer(), ntrees_theta = integer(),
   ndpost = integer(), niter = integer(), nskip = integer(), forests_dir = character(),
   n_pred = integer(), ndpost_pred = integer(), link_zeta = character(),
-  shared_trees = logical(), elapsed_time = NULL,  elapsed_time_log_lik = NULL,
+  shared_trees = logical(), elapsed_time = NULL, elapsed_time_log_lik = NULL,
   avg_leaves_theta = NULL, avg_leaves_zeta = NULL, accept_rate_theta = NULL,
   accept_rate_zeta = NULL, draws_theta = NULL, draws_zeta = NULL,
   draws_abundance = NULL, draws_phi = NULL, y_rep_draws = NULL,
@@ -41,7 +41,6 @@ ZANIMBART <- R6::R6Class(classname = "ZANIMBART", public = list(
     self$p_theta <- ncol(X_theta)
     self$p_zeta <- ncol(X_zeta)
     self$n_trials <- rowSums(Y)
-
   },
   SetupMCMC = function(v0_theta = 1.5 / sqrt(2),
                        k_zeta = if (self$link_zeta == "logit") 3.5 / sqrt(2) else 3.0,
@@ -54,8 +53,10 @@ ZANIMBART <- R6::R6Class(classname = "ZANIMBART", public = list(
                        splitprobs_zi = rep(1 / self$p_zeta, self$p_zeta),
                        splitprobs_mult = rep(1 / self$p_theta, self$p_theta),
                        sparse = c(FALSE, FALSE),
-                       sparse_parms = c(self$p_zeta, 0.5, 1.0,
-                                        self$p_theta, 0.5, 1.0),
+                       sparse_parms = c(
+                         self$p_zeta, 0.5, 1.0,
+                         self$p_theta, 0.5, 1.0
+                       ),
                        alpha_sparse = c(1.0, 1.0), alpha_random = c(FALSE, FALSE),
                        xinfo = matrix(), forests_dir = tempdir(),
                        keep_draws = TRUE, save_trees = FALSE) {
@@ -69,20 +70,23 @@ ZANIMBART <- R6::R6Class(classname = "ZANIMBART", public = list(
     self$save_trees <- save_trees
     alpha_sparse_mult <- alpha_sparse[2L]
     if (!self$shared_trees) {
-      if (!is.list(splitprobs_mult))
+      if (!is.list(splitprobs_mult)) {
         splitprobs_mult <- replicate(self$d, splitprobs_mult, simplify = FALSE)
+      }
       alpha_sparse_mult <- rep(alpha_sparse[2L], self$d)
     }
-    self$cpp_obj$SetMCMC(v0_theta, k_zeta, ntrees_theta, ntrees_zeta, ndpost, nskip,
-                         numcut, power, base, proposals_prob,
-                         as.integer(update_sigma_theta), s0_2_theta, w_ss,
-                         splitprobs_zi, splitprobs_mult,
-                         as.integer(sparse[1L]), as.integer(sparse[2L]),
-                         sparse_parms[1L:3L], sparse_parms[4L:6L],
-                         rep(alpha_sparse[1L], self$d), alpha_sparse_mult,
-                         as.integer(alpha_random[1L]), as.integer(alpha_random[2L]),
-                         xinfo, forests_dir, as.integer(keep_draws),
-                         as.integer(save_trees))
+    self$cpp_obj$SetMCMC(
+      v0_theta, k_zeta, ntrees_theta, ntrees_zeta, ndpost, nskip,
+      numcut, power, base, proposals_prob,
+      as.integer(update_sigma_theta), s0_2_theta, w_ss,
+      splitprobs_zi, splitprobs_mult,
+      as.integer(sparse[1L]), as.integer(sparse[2L]),
+      sparse_parms[1L:3L], sparse_parms[4L:6L],
+      rep(alpha_sparse[1L], self$d), alpha_sparse_mult,
+      as.integer(alpha_random[1L]), as.integer(alpha_random[2L]),
+      xinfo, forests_dir, as.integer(keep_draws),
+      as.integer(save_trees)
+    )
   },
   RunMCMC = function() {
     ini <- proc.time()
@@ -126,8 +130,10 @@ ZANIMBART <- R6::R6Class(classname = "ZANIMBART", public = list(
         ini <- proc.time()
         out <- parallel::mclapply(X = seq_len(ndpost), FUN = function(k) {
           sapply(seq_ind, function(i) {
-            log_pmf_zanim(x = Y[i, ], prob = self$draws_theta[i,,k],
-                          zeta = self$draws_zeta[i,,k])
+            log_pmf_zanim(
+              x = Y[i, ], prob = self$draws_theta[i, , k],
+              zeta = self$draws_zeta[i, , k]
+            )
           })
         }, mc.cores = ncores)
         self$elapsed_time_log_lik <- proc.time() - ini
@@ -137,8 +143,10 @@ ZANIMBART <- R6::R6Class(classname = "ZANIMBART", public = list(
         for (k in seq_len(ndpost)) {
           if (k %% 100L == 0) cat(k, "\n")
           ll[, k] <- sapply(X = seq_len(self$n), FUN = function(i) {
-            log_pmf_zanim(x = Y[i, ], prob = self$draws_theta[i,,k],
-                          zeta = self$draws_zeta[i,,k])
+            log_pmf_zanim(
+              x = Y[i, ], prob = self$draws_theta[i, , k],
+              zeta = self$draws_zeta[i, , k]
+            )
           })
         }
         self$log_lik_draws <- t(ll)
@@ -148,10 +156,12 @@ ZANIMBART <- R6::R6Class(classname = "ZANIMBART", public = list(
       ff_theta <- file.path(output_dir, "theta_ij.bin")
       ff_zeta <- file.path(output_dir, "zeta_ij.bin")
 
-      if (!file.exists(ff_theta))
+      if (!file.exists(ff_theta)) {
         stop("File with the predictions of theta_{ij} does not exist.")
-      if (!file.exists(ff_zeta))
+      }
+      if (!file.exists(ff_zeta)) {
         stop("File with the predictions of zeta_{ij} does not exist.")
+      }
 
       n_zeros <- rowSums(Y == 0)
       n_trials <- rowSums(Y)
@@ -161,13 +171,19 @@ ZANIMBART <- R6::R6Class(classname = "ZANIMBART", public = list(
       ini <- proc.time()
       out <- parallel::mclapply(X = seq_samples, FUN = function(t) {
         # load parameters at iteration t
-        thetas <- .load_bin_batch(fname = ff_theta, n = n_pred, d = self$d, k = t,
-                                  m = 1L, arr = FALSE)
-        zetas <- .load_bin_batch(fname = ff_zeta, n = n_pred,
-                                 d = self$d, k = t, m = 1L, arr = FALSE)
+        thetas <- .load_bin_batch(
+          fname = ff_theta, n = n_pred, d = self$d, k = t,
+          m = 1L, arr = FALSE
+        )
+        zetas <- .load_bin_batch(
+          fname = ff_zeta, n = n_pred,
+          d = self$d, k = t, m = 1L, arr = FALSE
+        )
         # Log-file
-        write.table(x = data.frame(t = t), file = file.path(output_dir, logfile),
-                    append = TRUE, row.names = FALSE, col.names = FALSE)
+        write.table(
+          x = data.frame(t = t), file = file.path(output_dir, logfile),
+          append = TRUE, row.names = FALSE, col.names = FALSE
+        )
         # compute likelihood for each observed data
         sapply(seq_ind, function(i) {
           idx <- seq.int(i, n_pred * self$d, by = n_pred)
@@ -195,7 +211,7 @@ ZANIMLNBART <- R6::R6Class(classname = "ZANIMLNBART", public = list(
   p_zeta = integer(), ntrees_zeta = integer(), ntrees_theta = integer(),
   ndpost = integer(), niter = integer(), nskip = integer(), forests_dir = character(),
   n_pred = integer(), ndpost_pred = integer(), covariance_type = NULL,
-  elapsed_time = NULL,  elapsed_time_log_lik = NULL,
+  elapsed_time = NULL, elapsed_time_log_lik = NULL,
   avg_leaves_theta = NULL, avg_leaves_zeta = NULL, accept_rate_theta = NULL,
   accept_rate_zeta = NULL, y_rep_draws = NULL, log_lik_draws = NULL,
   draws_theta = NULL, Bt = NULL,
@@ -237,14 +253,16 @@ ZANIMLNBART <- R6::R6Class(classname = "ZANIMLNBART", public = list(
                        splitprobs_zi = rep(1 / self$p_zeta, self$p_zeta),
                        splitprobs_mult = rep(1 / self$p_theta, self$p_theta),
                        sparse = c(FALSE, FALSE),
-                       sparse_parms = c(self$p_zeta, 0.5, 1.0,
-                                        self$p_theta, 0.5, 1.0),
+                       sparse_parms = c(
+                         self$p_zeta, 0.5, 1.0,
+                         self$p_theta, 0.5, 1.0
+                       ),
                        alpha_sparse = c(1.0, 1.0), alpha_random = c(FALSE, FALSE),
                        xinfo = matrix(), forests_dir = tempdir(),
                        keep_draws = TRUE, save_trees = FALSE) {
     covariance_type <- match.arg(covariance_type)
     cov_type <- as.integer(which(covariance_type == c("diag", "wishart", "fa", "fa_mgp"))) - 1L
-    if (q_factors == 0) q_factors <- self$d-1
+    if (q_factors == 0) q_factors <- self$d - 1
     self$covariance_type <- covariance_type
     self$ntrees_theta <- ntrees_theta
     self$ntrees_zeta <- ntrees_zeta
@@ -255,30 +273,33 @@ ZANIMLNBART <- R6::R6Class(classname = "ZANIMLNBART", public = list(
     self$keep_draws <- keep_draws
     self$save_trees <- save_trees
     alpha_sparse_mult <- alpha_sparse[2L]
-    if (!is.list(splitprobs_mult))
+    if (!is.list(splitprobs_mult)) {
       splitprobs_mult <- replicate(self$d, splitprobs_mult, simplify = FALSE)
+    }
     alpha_sparse_mult <- rep(alpha_sparse[2L], self$d)
     B <- qr.Q(qr(stats::contr.sum(self$d)))
     self$Bt <- t(B)
-    self$cpp_obj$SetMCMC(v0_theta, k_zeta, ntrees_theta, ntrees_zeta,
-                         B, cov_type,
-                         a_sigma, b_sigma,
-                         Psi_prior, nu_prior,
-                         q_factors, sigma2_gamma, a_psi, b_psi,
-                         shape_lsphis, a1_gs, a2_gs,
-                         ndpost, nskip,
-                         numcut, power, base, proposals_prob,
-                         as.integer(update_sigma_theta), s0_2_theta, w_ss,
-                         splitprobs_zi, splitprobs_mult,
-                         as.integer(sparse[1L]), as.integer(sparse[2L]),
-                         sparse_parms[1L:3L], sparse_parms[4L:6L],
-                         rep(alpha_sparse[1L], self$d), alpha_sparse_mult,
-                         as.integer(alpha_random[1L]), as.integer(alpha_random[2L]),
-                         xinfo, forests_dir, as.integer(keep_draws), as.integer(save_trees))
+    self$cpp_obj$SetMCMC(
+      v0_theta, k_zeta, ntrees_theta, ntrees_zeta,
+      B, cov_type,
+      a_sigma, b_sigma,
+      Psi_prior, nu_prior,
+      q_factors, sigma2_gamma, a_psi, b_psi,
+      shape_lsphis, a1_gs, a2_gs,
+      ndpost, nskip,
+      numcut, power, base, proposals_prob,
+      as.integer(update_sigma_theta), s0_2_theta, w_ss,
+      splitprobs_zi, splitprobs_mult,
+      as.integer(sparse[1L]), as.integer(sparse[2L]),
+      sparse_parms[1L:3L], sparse_parms[4L:6L],
+      rep(alpha_sparse[1L], self$d), alpha_sparse_mult,
+      as.integer(alpha_random[1L]), as.integer(alpha_random[2L]),
+      xinfo, forests_dir, as.integer(keep_draws), as.integer(save_trees)
+    )
   },
   RunMCMC = function() {
     ini <- proc.time()
-    if (q_factors == 0) q_factors <- self$d-1
+    if (q_factors == 0) q_factors <- self$d - 1
     self$cpp_obj$RunMCMC()
     self$elapsed_time <- proc.time() - ini
     # Average number of leaves for theta and zeta regression trees
@@ -318,8 +339,10 @@ ZANIMLNBART <- R6::R6Class(classname = "ZANIMLNBART", public = list(
         ini <- proc.time()
         out <- parallel::mclapply(X = seq_len(ndpost), FUN = function(k) {
           sapply(seq_ind, function(i) {
-            log_pmf_zanim(x = Y[i, ], prob = self$draws_theta[i,,k],
-                          zeta = self$draws_zeta[i,,k])
+            log_pmf_zanim(
+              x = Y[i, ], prob = self$draws_theta[i, , k],
+              zeta = self$draws_zeta[i, , k]
+            )
           })
         }, mc.cores = ncores)
         self$elapsed_time_log_lik <- proc.time() - ini
@@ -329,8 +352,10 @@ ZANIMLNBART <- R6::R6Class(classname = "ZANIMLNBART", public = list(
         for (k in seq_len(ndpost)) {
           if (k %% 100 == 0) cat(k, "\n")
           ll[, k] <- sapply(X = seq_len(nrow(Y)), FUN = function(i) {
-            log_pmf_zanim(x = Y[i, ], prob = self$draws_theta[i,,k],
-                          zeta = self$draws_zeta[i,,k])
+            log_pmf_zanim(
+              x = Y[i, ], prob = self$draws_theta[i, , k],
+              zeta = self$draws_zeta[i, , k]
+            )
           })
         }
         self$log_lik_draws <- t(ll)
@@ -340,10 +365,12 @@ ZANIMLNBART <- R6::R6Class(classname = "ZANIMLNBART", public = list(
       # Path for the file with the predictions
       ff_theta <- file.path(output_dir, "theta_ij.bin")
       ff_zeta <- file.path(output_dir, "zeta_ij.bin")
-      if (!file.exists(ff_theta))
+      if (!file.exists(ff_theta)) {
         stop("File with the predictions of theta_{ij} does not exist.")
-      if (!file.exists(ff_zeta))
+      }
+      if (!file.exists(ff_zeta)) {
         stop("File with the predictions of zeta_{ij} does not exist.")
+      }
       n_zeros <- rowSums(Y == 0)
       n_trials <- rowSums(Y)
       seq_ind <- seq_len(n_pred)
@@ -351,17 +378,23 @@ ZANIMLNBART <- R6::R6Class(classname = "ZANIMLNBART", public = list(
       ini <- proc.time()
       out <- parallel::mclapply(X = seq_samples, FUN = function(t) {
         # load parameters at iteration t
-        thetas <- .load_bin_batch(fname = ff_theta, n = n_pred, d = self$d, k = t,
-                                  m = 1L, arr = FALSE)
-        zetas <- .load_bin_batch(fname = ff_zeta, n = n_pred,
-                                 d = self$d, k = t, m = 1L, arr = FALSE)
+        thetas <- .load_bin_batch(
+          fname = ff_theta, n = n_pred, d = self$d, k = t,
+          m = 1L, arr = FALSE
+        )
+        zetas <- .load_bin_batch(
+          fname = ff_zeta, n = n_pred,
+          d = self$d, k = t, m = 1L, arr = FALSE
+        )
         # Log-file
-        write.table(x = data.frame(t = t), file = file.path(output_dir, logfile),
-                    append = TRUE, row.names = FALSE, col.names = FALSE)
+        write.table(
+          x = data.frame(t = t), file = file.path(output_dir, logfile),
+          append = TRUE, row.names = FALSE, col.names = FALSE
+        )
         # compute likelihood for each observed data
         sapply(seq_ind, function(i) {
           idx <- seq.int(i, n_pred * self$d, by = n_pred)
-            return(log_pmf_zanim(x = Y[i, ], prob = thetas[idx], zeta = zetas[idx]))
+          return(log_pmf_zanim(x = Y[i, ], prob = thetas[idx], zeta = zetas[idx]))
           # if (n_zeros[i] < 18) {
           #   return(log_pmf_zanim(x = Y[i, ], prob = thetas[idx], zeta = zetas[idx]))
           # } else {
@@ -385,7 +418,7 @@ MultinomialBART <- R6::R6Class(classname = "MultinomialBART", public = list(
   n_trials = integer(), n = integer(), d = integer(), p = integer(),
   ntrees = integer(), ndpost = integer(), nskip = integer(), forests_dir = character(),
   n_pred = integer(), ndpost_pred = integer(), shared_trees = logical(),
-  elapsed_time = NULL,  elapsed_time_log_lik = NULL, avg_leaves = NULL,
+  elapsed_time = NULL, elapsed_time_log_lik = NULL, avg_leaves = NULL,
   avg_depth = NULL, accept_rate = NULL, lpl = NULL, draws_theta = NULL,
   draws_phi = NULL, keep_draws = logical(), save_trees = logical(),
   varcount = NULL, mppi = NULL,
@@ -426,18 +459,20 @@ MultinomialBART <- R6::R6Class(classname = "MultinomialBART", public = list(
       alpha_sparse <- rep(alpha_sparse, self$d)
     }
     # Setup
-    self$cpp_obj$SetMCMC(v0, ntrees, ndpost, nskip, numcut, power, base,
-                         proposals_prob, as.integer(update_sigma), s2_0, w_ss,
-                         splitprobs, as.integer(sparse), sparse_parms,
-                         alpha_sparse, as.integer(alpha_random), xinfo, forests_dir,
-                         keep_draws, save_trees)
+    self$cpp_obj$SetMCMC(
+      v0, ntrees, ndpost, nskip, numcut, power, base,
+      proposals_prob, as.integer(update_sigma), s2_0, w_ss,
+      splitprobs, as.integer(sparse), sparse_parms,
+      alpha_sparse, as.integer(alpha_random), xinfo, forests_dir,
+      keep_draws, save_trees
+    )
   },
   RunMCMC = function() {
     ini <- proc.time()
     self$cpp_obj$RunMCMC()
     self$elapsed_time <- proc.time() - ini
     # Keep some tree diagnostics
-    self$avg_leaves <- self$cpp_obj$avg_leaves / (self$ndpost)# + self$nskip
+    self$avg_leaves <- self$cpp_obj$avg_leaves / (self$ndpost) # + self$nskip
     self$avg_depth <- self$cpp_obj$avg_depth / (self$ndpost)
     self$accept_rate <- self$cpp_obj$accept_rate / (self$ndpost + self$nskip) / self$ntrees
     rownames(self$accept_rate) <- c("grow", "prune", "change")
@@ -469,7 +504,7 @@ MultinomialBART <- R6::R6Class(classname = "MultinomialBART", public = list(
     lpl <- matrix(nrow = ndpost, ncol = n_pred)
     for (k in seq_len(ndpost)) {
       if (k %% printevery == 0L) cat(k, "\n")
-      lpl[k, ] <- dmultinomial(x = Y, prob = draws[, ,idx[k]])
+      lpl[k, ] <- dmultinomial(x = Y, prob = draws[, , idx[k]])
     }
     lpl
   }
@@ -513,7 +548,6 @@ MultinomialLNBART <- R6::R6Class(classname = "MultinomialLNBART", public = list(
                        sparse_parms = c(self$p, 0.5, 1.0), alpha_sparse = 1.0,
                        alpha_random = FALSE, xinfo = matrix(), forests_dir = tempdir(),
                        keep_draws = TRUE, save_trees = FALSE) {
-
     covariance_type <- match.arg(covariance_type)
     cov_type <- as.integer(which(covariance_type == c("diag", "wishart", "fa", "fa_mgp"))) - 1L
     if (q_factors == 0) q_factors <- self$d - 1
@@ -525,25 +559,26 @@ MultinomialLNBART <- R6::R6Class(classname = "MultinomialLNBART", public = list(
     self$keep_draws <- keep_draws
     self$save_trees <- save_trees
     if (!is.list(splitprobs)) splitprobs <- replicate(self$d, splitprobs, simplify = FALSE)
-      alpha_sparse <- rep(alpha_sparse, self$d)
+    alpha_sparse <- rep(alpha_sparse, self$d)
 
     B <- qr.Q(qr(stats::contr.sum(self$d)))
     self$Bt <- t(B)
 
     # Setup
-    self$cpp_obj$SetMCMC(v0, ntrees,
-                         B, cov_type,
-                         a_sigma, b_sigma,
-                         Psi_prior, nu_prior,
-                         q_factors, sigma2_gamma,
-                         a_psi, b_psi,
-                         shape_lsphis, a1_gs, a2_gs,
-                         ndpost, nskip, numcut, power, base,
-                         proposals_prob, as.integer(update_sigma), s2_0, w_ss,
-                         splitprobs, as.integer(sparse), sparse_parms,
-                         alpha_sparse, as.integer(alpha_random), xinfo, forests_dir,
-                         as.integer(keep_draws), as.integer(save_trees))
-
+    self$cpp_obj$SetMCMC(
+      v0, ntrees,
+      B, cov_type,
+      a_sigma, b_sigma,
+      Psi_prior, nu_prior,
+      q_factors, sigma2_gamma,
+      a_psi, b_psi,
+      shape_lsphis, a1_gs, a2_gs,
+      ndpost, nskip, numcut, power, base,
+      proposals_prob, as.integer(update_sigma), s2_0, w_ss,
+      splitprobs, as.integer(sparse), sparse_parms,
+      alpha_sparse, as.integer(alpha_random), xinfo, forests_dir,
+      as.integer(keep_draws), as.integer(save_trees)
+    )
   },
   RunMCMC = function() {
     ini <- proc.time()
@@ -579,7 +614,7 @@ MultinomialLNBART <- R6::R6Class(classname = "MultinomialLNBART", public = list(
       lpl <- matrix(nrow = ndpost, ncol = n)
       for (k in seq_len(ndpost)) {
         if (k %% printevery == 0L) cat(k, "\n")
-        lpl[k, ] <- dmultinomial(x = Y, prob = self$draws_abundance[, ,k])
+        lpl[k, ] <- dmultinomial(x = Y, prob = self$draws_abundance[, , k])
       }
     } else if (!conditional && in_sample) {
       # Monte Carlo approximation (this takes time....)
@@ -589,9 +624,9 @@ MultinomialLNBART <- R6::R6Class(classname = "MultinomialLNBART", public = list(
         vals <- sapply(seq_len(MC), function(m) {
           # Generate random effects
           Z <- matrix(data = stats::rnorm(self$d - 1), nrow = n, ncol = self$d - 1)
-          U <- Z %*% (self$draws_chol_Sigma_V[,,k] %*% self$Bt)
+          U <- Z %*% (self$draws_chol_Sigma_V[, , k] %*% self$Bt)
           # Compute the probabilities
-          probs <- self$draws_theta[, ,k] * exp(U)
+          probs <- self$draws_theta[, , k] * exp(U)
           probs <- sweep(probs, 1, rowSums(probs), "/")
           dmultinomial(x = Y, prob = probs)
         }, simplify = "array")
@@ -611,332 +646,353 @@ MultinomialLNBART <- R6::R6Class(classname = "MultinomialLNBART", public = list(
 ZANIMRegression <- R6::R6Class(
   classname = "ZANIMRegression",
   public = list(
-  cpp_obj = NULL, n_trials = integer(), n = integer(), d = integer(),
-  p_theta = integer(), p_zeta = integer(),
-  ndpost = integer(), nskip = integer(), nthin = integer(),
-  n_pred = integer(), ndpost_pred = integer(),
-  draws_theta = NULL, draws_zeta = NULL, draws_phi = NULL,
-  draws_abundance = NULL, draws_betas_theta = NULL, draws_betas_zeta = NULL,
-  y_rep_draws = NULL, log_lik_draws = NULL, elapsed_time = NULL,
-  keep_draws = logical(), keep_draws_coef = logical(),
-  initialize = function(Y, X_theta, X_zeta) {
-    ml <- Rcpp::Module(module = "zanim_linear_reg", PACKAGE = "zanicc")
-    self$cpp_obj <- new(ml$ZANIMReg, Y, X_theta, X_zeta)
-    self$n <- nrow(Y)
-    self$d <- ncol(Y)
-    self$p_theta <- ncol(X_theta)
-    self$p_zeta <- ncol(X_zeta)
-    self$n_trials <- rowSums(Y)
-  },
-  SetupMCMC = function(sd_prior_beta_theta = rep(1.0, self$p_theta),
-                       sd_prior_beta_zeta = diag(1.0, self$p_zeta),
-                       ndpost = 5000L, nskip = 5000L, nthin = 1L,
-                       keep_draws = TRUE, keep_draws_coef = TRUE) {
-    self$ndpost <- ndpost
-    self$nskip <- nskip
-    self$nthin <- nthin
-    self$keep_draws <- keep_draws
-    self$keep_draws_coef <- keep_draws_coef
-    self$cpp_obj$SetMCMC(sd_prior_beta_theta, sd_prior_beta_zeta, ndpost, nskip,
-                         nthin)
-  },
-  RunMCMC = function() {
-    ini <- proc.time()
-    self$cpp_obj$RunMCMC()
-    self$elapsed_time <- proc.time() - ini
-    # Save draws
-    if (self$keep_draws) {
-      # self$draws_abundance <- self$cpp_obj$draws_vartheta
-      self$draws_theta <- self$cpp_obj$draws_thetas
-      self$draws_abundance <- self$cpp_obj$draws_varthetas
-      self$draws_zeta <- stats::pnorm(self$cpp_obj$draws_zetas)
-      # self$draws_phi <- self$cpp_obj$draws_phi
-      if (self$keep_draws_coef) {
-        self$draws_betas_theta <- self$cpp_obj$draws_betas_theta
-        self$draws_betas_zeta <- self$cpp_obj$draws_betas_zeta
+    cpp_obj = NULL, n_trials = integer(), n = integer(), d = integer(),
+    p_theta = integer(), p_zeta = integer(),
+    ndpost = integer(), nskip = integer(), nthin = integer(),
+    n_pred = integer(), ndpost_pred = integer(),
+    draws_theta = NULL, draws_zeta = NULL, draws_phi = NULL,
+    draws_abundance = NULL, draws_betas_theta = NULL, draws_betas_zeta = NULL,
+    y_rep_draws = NULL, log_lik_draws = NULL, elapsed_time = NULL,
+    keep_draws = logical(), keep_draws_coef = logical(),
+    initialize = function(Y, X_theta, X_zeta) {
+      ml <- Rcpp::Module(module = "zanim_linear_reg", PACKAGE = "zanicc")
+      self$cpp_obj <- new(ml$ZANIMReg, Y, X_theta, X_zeta)
+      self$n <- nrow(Y)
+      self$d <- ncol(Y)
+      self$p_theta <- ncol(X_theta)
+      self$p_zeta <- ncol(X_zeta)
+      self$n_trials <- rowSums(Y)
+    },
+    SetupMCMC = function(sd_prior_beta_theta = rep(1.0, self$p_theta),
+                         sd_prior_beta_zeta = diag(1.0, self$p_zeta),
+                         ndpost = 5000L, nskip = 5000L, nthin = 1L,
+                         keep_draws = TRUE, keep_draws_coef = TRUE) {
+      self$ndpost <- ndpost
+      self$nskip <- nskip
+      self$nthin <- nthin
+      self$keep_draws <- keep_draws
+      self$keep_draws_coef <- keep_draws_coef
+      self$cpp_obj$SetMCMC(
+        sd_prior_beta_theta, sd_prior_beta_zeta, ndpost, nskip,
+        nthin
+      )
+    },
+    RunMCMC = function() {
+      ini <- proc.time()
+      self$cpp_obj$RunMCMC()
+      self$elapsed_time <- proc.time() - ini
+      # Save draws
+      if (self$keep_draws) {
+        # self$draws_abundance <- self$cpp_obj$draws_vartheta
+        self$draws_theta <- self$cpp_obj$draws_thetas
+        self$draws_abundance <- self$cpp_obj$draws_varthetas
+        self$draws_zeta <- stats::pnorm(self$cpp_obj$draws_zetas)
+        # self$draws_phi <- self$cpp_obj$draws_phi
+        if (self$keep_draws_coef) {
+          self$draws_betas_theta <- self$cpp_obj$draws_betas_theta
+          self$draws_betas_zeta <- self$cpp_obj$draws_betas_zeta
+        }
       }
+    },
+    PosterioMeanCoef = function(parameter = c("theta", "zeta")) {
+      parameter <- match.arg(parameter)
+      switch(parameter,
+        "zeta" = apply(self$draws_betas_zeta, c(1, 2), mean),
+        "theta" = apply(self$draws_betas_theta, c(1, 2), mean)
+      )
+    },
+    LogPredictiveLikelihood = function(Y = NULL, ndpost = self$ndpost, printevery = 100L) {
+      if (is.null(Y)) stop("Please provide the count matrix in argument {Y}")
+      ll <- matrix(data = 0.0, nrow = self$n, ncol = ndpost)
+      for (k in seq_len(ndpost)) {
+        if (k %% printevery == 0L) cat(k, "\n")
+        ll[, k] <- sapply(X = seq_len(self$n), FUN = function(i) {
+          log_pmf_zanim(
+            x = Y[i, ], prob = self$draws_theta[i, , k],
+            zeta = self$draws_zeta[i, , k]
+          )
+        })
+      }
+      self$log_lik_draws <- t(ll)
+      return(self$log_lik_draws)
     }
-  },
-  PosterioMeanCoef = function(parameter = c("theta", "zeta")) {
-    parameter <- match.arg(parameter)
-    switch(parameter,
-      "zeta" = apply(self$draws_betas_zeta, c(1, 2), mean),
-      "theta" = apply(self$draws_betas_theta, c(1, 2), mean)
-    )
-  },
-  LogPredictiveLikelihood = function(Y = NULL, ndpost = self$ndpost, printevery = 100L) {
-    if (is.null(Y)) stop("Please provide the count matrix in argument {Y}")
-    ll <- matrix(data = 0.0, nrow = self$n, ncol = ndpost)
-    for (k in seq_len(ndpost)) {
-      if (k %% printevery == 0L) cat(k, "\n")
-      ll[, k] <- sapply(X = seq_len(self$n), FUN = function(i) {
-        log_pmf_zanim(x = Y[i, ], prob = self$draws_theta[i,,k],
-                      zeta = self$draws_zeta[i,,k])
-      })
-    }
-    self$log_lik_draws <- t(ll)
-    return(self$log_lik_draws)
-  }
-))
+  )
+)
 
 
 # ZANIDM logistic regression
 ZANIDMRegression <- R6::R6Class(
   classname = "ZANIDMRegression",
   public = list(
-  cpp_obj = NULL,  cpp_module_name = character(),
-  n_trials = integer(), n = integer(), d = integer(),
-  p_alpha = integer(), p_zeta = integer(),
-  ndpost = integer(), nskip = integer(), nthin = integer(),
-  n_pred = integer(), ndpost_pred = integer(),
-  draws_alpha = NULL, draws_zeta = NULL, draws_phi = NULL, draws_theta = NULL,
-  draws_abundance = NULL, draws_betas_alpha = NULL, draws_betas_zeta = NULL,
-  y_rep_draws = NULL, log_lik_draws = NULL, elapsed_time = NULL,
-  keep_draws = logical(), keep_draws_coef = logical(), save_draws = logical(),
-  dir_draws = NULL,
-  initialize = function(Y, X_alpha, X_zeta) {
-    ml <- Rcpp::Module(module = "zanidm_linear_reg", PACKAGE = "zanicc")
-    self$cpp_obj <- new(ml$ZANIDMReg, Y, X_alpha, X_zeta)
-    self$cpp_module_name <- "zanidm_linear_reg"
-    self$n <- nrow(Y)
-    self$d <- ncol(Y)
-    self$p_alpha <- ncol(X_alpha)
-    self$p_zeta <- ncol(X_zeta)
-    self$n_trials <- rowSums(Y)
-  },
-  SetupMCMC = function(sd_prior_beta_alpha = rep(1.0, self$p_alpha),
-                       sd_prior_beta_zeta = diag(1.0, self$p_zeta),
-                       ndpost = 5000L, nskip = 5000L, nthin = 1L,
-                       keep_draws = TRUE, keep_draws_coef = TRUE,
-                       save_draws = FALSE, dir_draws = tempdir()) {
-    self$ndpost <- ndpost
-    self$nskip <- nskip
-    self$nthin <- nthin
-    self$keep_draws <- keep_draws
-    self$keep_draws_coef <- keep_draws_coef
-    self$dir_draws <- dir_draws
-    self$save_draws <- save_draws
-    self$cpp_obj$SetMCMC(sd_prior_beta_alpha, sd_prior_beta_zeta, ndpost, nskip,
-                         nthin, keep_draws, save_draws, dir_draws)
-  },
-  RunMCMC = function() {
-    ini <- proc.time()
-    self$cpp_obj$RunMCMC()
-    self$elapsed_time <- proc.time() - ini
-    # Save draws
-    if (self$keep_draws) {
-      self$draws_abundance <- self$cpp_obj$draws_abundance
-      self$draws_alpha <- self$cpp_obj$draws_alphas
-      self$draws_theta <- sweep(x = self$cpp_obj$draws_alphas, MARGIN = c(1, 3),
-                                STATS = apply(self$cpp_obj$draws_alphas, c(1, 3), sum),
-                                FUN = "/")
-      self$draws_zeta <- stats::pnorm(self$cpp_obj$draws_zetas)
-      # self$draws_phi <- self$cpp_obj$draws_phi
-      if (self$keep_draws_coef) {
-        self$draws_betas_alpha <- self$cpp_obj$draws_betas_alpha
-        self$draws_betas_zeta <- self$cpp_obj$draws_betas_zeta
+    cpp_obj = NULL, cpp_module_name = character(),
+    n_trials = integer(), n = integer(), d = integer(),
+    p_alpha = integer(), p_zeta = integer(),
+    ndpost = integer(), nskip = integer(), nthin = integer(),
+    n_pred = integer(), ndpost_pred = integer(),
+    draws_alpha = NULL, draws_zeta = NULL, draws_phi = NULL, draws_theta = NULL,
+    draws_abundance = NULL, draws_betas_alpha = NULL, draws_betas_zeta = NULL,
+    y_rep_draws = NULL, log_lik_draws = NULL, elapsed_time = NULL,
+    keep_draws = logical(), keep_draws_coef = logical(), save_draws = logical(),
+    dir_draws = NULL,
+    initialize = function(Y, X_alpha, X_zeta) {
+      ml <- Rcpp::Module(module = "zanidm_linear_reg", PACKAGE = "zanicc")
+      self$cpp_obj <- new(ml$ZANIDMReg, Y, X_alpha, X_zeta)
+      self$cpp_module_name <- "zanidm_linear_reg"
+      self$n <- nrow(Y)
+      self$d <- ncol(Y)
+      self$p_alpha <- ncol(X_alpha)
+      self$p_zeta <- ncol(X_zeta)
+      self$n_trials <- rowSums(Y)
+    },
+    SetupMCMC = function(sd_prior_beta_alpha = rep(1.0, self$p_alpha),
+                         sd_prior_beta_zeta = diag(1.0, self$p_zeta),
+                         ndpost = 5000L, nskip = 5000L, nthin = 1L,
+                         keep_draws = TRUE, keep_draws_coef = TRUE,
+                         save_draws = FALSE, dir_draws = tempdir()) {
+      self$ndpost <- ndpost
+      self$nskip <- nskip
+      self$nthin <- nthin
+      self$keep_draws <- keep_draws
+      self$keep_draws_coef <- keep_draws_coef
+      self$dir_draws <- dir_draws
+      self$save_draws <- save_draws
+      self$cpp_obj$SetMCMC(
+        sd_prior_beta_alpha, sd_prior_beta_zeta, ndpost, nskip,
+        nthin, keep_draws, save_draws, dir_draws
+      )
+    },
+    RunMCMC = function() {
+      ini <- proc.time()
+      self$cpp_obj$RunMCMC()
+      self$elapsed_time <- proc.time() - ini
+      # Save draws
+      if (self$keep_draws) {
+        self$draws_abundance <- self$cpp_obj$draws_abundance
+        self$draws_alpha <- self$cpp_obj$draws_alphas
+        self$draws_theta <- sweep(
+          x = self$cpp_obj$draws_alphas, MARGIN = c(1, 3),
+          STATS = apply(self$cpp_obj$draws_alphas, c(1, 3), sum),
+          FUN = "/"
+        )
+        self$draws_zeta <- stats::pnorm(self$cpp_obj$draws_zetas)
+        # self$draws_phi <- self$cpp_obj$draws_phi
+        if (self$keep_draws_coef) {
+          self$draws_betas_alpha <- self$cpp_obj$draws_betas_alpha
+          self$draws_betas_zeta <- self$cpp_obj$draws_betas_zeta
+        }
       }
-    }
-  },
-  PosterioMeanCoef = function(parameter = c("alpha", "zeta")) {
-    parameter <- match.arg(parameter)
-    switch(parameter,
-      "zeta" = apply(self$draws_betas_zeta, c(1, 2), mean),
-      "alpha" = apply(self$draws_betas_alpha, c(1, 2), mean)
-    )
-  },
-  LogPredictiveLikelihood = function(ndpost = self$ndpost, parallel = FALSE,
-                                     ncores = 4L) {
-
-    if (!parallel) {
-      ll <- matrix(data = 0.0, nrow = self$n, ncol = ndpost)
-      for (k in seq_len(ndpost)) {
-        if (k %% 100 == 0) cat(k, "\n")
-        ll[, k] <- sapply(X = seq_len(self$n), FUN = function(i) {
-          log_pmf_zanidm(x = Y[i, ], alpha = self$draws_alpha[i,,k],
-                         zeta = self$draws_zeta[i,,k])
-        })
+    },
+    PosterioMeanCoef = function(parameter = c("alpha", "zeta")) {
+      parameter <- match.arg(parameter)
+      switch(parameter,
+        "zeta" = apply(self$draws_betas_zeta, c(1, 2), mean),
+        "alpha" = apply(self$draws_betas_alpha, c(1, 2), mean)
+      )
+    },
+    LogPredictiveLikelihood = function(ndpost = self$ndpost, parallel = FALSE,
+                                       ncores = 4L) {
+      if (!parallel) {
+        ll <- matrix(data = 0.0, nrow = self$n, ncol = ndpost)
+        for (k in seq_len(ndpost)) {
+          if (k %% 100 == 0) cat(k, "\n")
+          ll[, k] <- sapply(X = seq_len(self$n), FUN = function(i) {
+            log_pmf_zanidm(
+              x = Y[i, ], alpha = self$draws_alpha[i, , k],
+              zeta = self$draws_zeta[i, , k]
+            )
+          })
+        }
+        self$log_lik_draws <- t(ll)
+      } else {
+        seq_n <- seq_len(self$n)
+        ll <- parallel::mclapply(X = seq_len(ndpost), FUN = function(k) {
+          sapply(X = seq_n, FUN = function(i) {
+            log_pmf_zanidm(
+              x = Y[i, ], alpha = self$draws_alpha[i, , k],
+              zeta = self$draws_zeta[i, , k]
+            )
+          })
+        }, mc.cores = ncores)
+        self$log_lik_draws <- do.call(rbind, ll)
       }
-      self$log_lik_draws <- t(ll)
-    } else {
-      seq_n <- seq_len(self$n)
-      ll <- parallel::mclapply(X = seq_len(ndpost), FUN = function(k) {
-        sapply(X = seq_n, FUN = function(i) {
-          log_pmf_zanidm(x = Y[i, ], alpha = self$draws_alpha[i,,k],
-                         zeta = self$draws_zeta[i,,k])
-        })
-      }, mc.cores = ncores)
-      self$log_lik_draws <- do.call(rbind, ll)
+      return(self$log_lik_draws)
     }
-    return(self$log_lik_draws)
-  }
-))
+  )
+)
 
 # ZANIM logistic normal regression
 ZANIMLNRegression <- R6::R6Class(
   classname = "ZANIMLNRegression",
   public = list(
-  cpp_obj = NULL, cpp_module_name = NULL,
-  n_trials = integer(), n = integer(), d = integer(),
-  p_theta = integer(), p_zeta = integer(),
-  ndpost = integer(), nskip = integer(), nthin = integer(),
-  n_pred = integer(), ndpost_pred = integer(),
-  draws_theta = NULL, draws_zeta = NULL, draws_phi = NULL,
-  draws_abundance = NULL, draws_betas_theta = NULL, draws_betas_zeta = NULL,
-  draws_chol_Sigma_V = NULL, Bt = NULL,
-  y_rep_draws = NULL, log_lik_draws = NULL, elapsed_time = NULL,
-  keep_draws = logical(), keep_draws_coef = logical(),
-  initialize = function(Y, X_theta, X_zeta) {
-    ml <- Rcpp::Module(module = "zanim_ln_reg", PACKAGE = "zanicc")
-    self$cpp_obj <- new(ml$ZANIMLNReg, Y, X_theta, X_zeta)
-    self$cpp_module_name <- "zanim_ln_reg"
-    # self$Y <- Y
-    self$n <- nrow(Y)
-    self$d <- ncol(Y)
-    self$p_theta <- ncol(X_theta)
-    self$p_zeta <- ncol(X_zeta)
-    self$n_trials <- rowSums(Y)
-  },
-  SetupMCMC = function(sd_prior_beta_theta = rep(1.0, self$p_theta),
-                       sd_prior_beta_zeta = diag(1.0, self$p_zeta),
-                       ndpost = 5000L, nskip = 5000L, nthin = 1L,
-                       covariance_type = c("diag", "wishart", "fa", "fa_mgp"),
-                       nu_prior = self$d,
-                       Psi_prior = diag(self$d, self$d - 1),
-                       a_sigma = 1.0, b_sigma = 1.0,
-                       q_factors = .ledermann(self$d - 1L), sigma2_gamma = 1.0,
-                       a_psi = 2.5, b_psi = 1.0,
-                       shape_lsphis = 2.0, a1_gs = 1.5, a2_gs = 2.8,
-                       keep_draws = TRUE, keep_draws_coef = TRUE) {
-    covariance_type <- match.arg(covariance_type)
-    cov_type <- as.integer(which(covariance_type == c("diag", "wishart", "fa", "fa_mgp"))) - 1L
-    if (q_factors == 0) q_factors <- 1
+    cpp_obj = NULL, cpp_module_name = NULL,
+    n_trials = integer(), n = integer(), d = integer(),
+    p_theta = integer(), p_zeta = integer(),
+    ndpost = integer(), nskip = integer(), nthin = integer(),
+    n_pred = integer(), ndpost_pred = integer(),
+    draws_theta = NULL, draws_zeta = NULL, draws_phi = NULL,
+    draws_abundance = NULL, draws_betas_theta = NULL, draws_betas_zeta = NULL,
+    draws_chol_Sigma_V = NULL, Bt = NULL,
+    y_rep_draws = NULL, log_lik_draws = NULL, elapsed_time = NULL,
+    keep_draws = logical(), keep_draws_coef = logical(),
+    initialize = function(Y, X_theta, X_zeta) {
+      ml <- Rcpp::Module(module = "zanim_ln_reg", PACKAGE = "zanicc")
+      self$cpp_obj <- new(ml$ZANIMLNReg, Y, X_theta, X_zeta)
+      self$cpp_module_name <- "zanim_ln_reg"
+      # self$Y <- Y
+      self$n <- nrow(Y)
+      self$d <- ncol(Y)
+      self$p_theta <- ncol(X_theta)
+      self$p_zeta <- ncol(X_zeta)
+      self$n_trials <- rowSums(Y)
+    },
+    SetupMCMC = function(sd_prior_beta_theta = rep(1.0, self$p_theta),
+                         sd_prior_beta_zeta = diag(1.0, self$p_zeta),
+                         ndpost = 5000L, nskip = 5000L, nthin = 1L,
+                         covariance_type = c("diag", "wishart", "fa", "fa_mgp"),
+                         nu_prior = self$d,
+                         Psi_prior = diag(self$d, self$d - 1),
+                         a_sigma = 1.0, b_sigma = 1.0,
+                         q_factors = .ledermann(self$d - 1L), sigma2_gamma = 1.0,
+                         a_psi = 2.5, b_psi = 1.0,
+                         shape_lsphis = 2.0, a1_gs = 1.5, a2_gs = 2.8,
+                         keep_draws = TRUE, keep_draws_coef = TRUE) {
+      covariance_type <- match.arg(covariance_type)
+      cov_type <- as.integer(which(covariance_type == c("diag", "wishart", "fa", "fa_mgp"))) - 1L
+      if (q_factors == 0) q_factors <- 1
 
-    self$ndpost <- ndpost
-    self$nskip <- nskip
-    self$nthin <- nthin
-    self$keep_draws <- keep_draws
-    self$keep_draws_coef <- keep_draws_coef
-    B <- qr.Q(qr(stats::contr.sum(self$d)))
-    self$Bt <- t(B)
-    self$cpp_obj$SetMCMC(sd_prior_beta_theta, sd_prior_beta_zeta, ndpost, nskip,
-                         nthin,
-                         B, cov_type,
-                         a_sigma, b_sigma,
-                         Psi_prior, nu_prior,
-                         q_factors, sigma2_gamma,
-                         a_psi, b_psi,
-                         shape_lsphis, a1_gs, a2_gs, keep_draws)
-  },
-  RunMCMC = function() {
-    ini <- proc.time()
-    self$cpp_obj$RunMCMC()
-    self$elapsed_time <- proc.time() - ini
-    # Save draws
-    if (self$keep_draws) {
-      self$draws_theta <- self$cpp_obj$draws_thetas
-      self$draws_abundance <- self$cpp_obj$draws_varthetas
-      self$draws_zeta <- stats::pnorm(self$cpp_obj$draws_zetas)
-      self$draws_chol_Sigma_V <- self$cpp_obj$draws_chol_Sigma_V
-      # self$draws_phi <- self$cpp_obj$draws_phi
-      if (self$keep_draws_coef) {
-        self$draws_betas_theta <- self$cpp_obj$draws_betas_theta
-        self$draws_betas_zeta <- self$cpp_obj$draws_betas_zeta
+      self$ndpost <- ndpost
+      self$nskip <- nskip
+      self$nthin <- nthin
+      self$keep_draws <- keep_draws
+      self$keep_draws_coef <- keep_draws_coef
+      B <- qr.Q(qr(stats::contr.sum(self$d)))
+      self$Bt <- t(B)
+      self$cpp_obj$SetMCMC(
+        sd_prior_beta_theta, sd_prior_beta_zeta, ndpost, nskip,
+        nthin,
+        B, cov_type,
+        a_sigma, b_sigma,
+        Psi_prior, nu_prior,
+        q_factors, sigma2_gamma,
+        a_psi, b_psi,
+        shape_lsphis, a1_gs, a2_gs, keep_draws
+      )
+    },
+    RunMCMC = function() {
+      ini <- proc.time()
+      self$cpp_obj$RunMCMC()
+      self$elapsed_time <- proc.time() - ini
+      # Save draws
+      if (self$keep_draws) {
+        self$draws_theta <- self$cpp_obj$draws_thetas
+        self$draws_abundance <- self$cpp_obj$draws_varthetas
+        self$draws_zeta <- stats::pnorm(self$cpp_obj$draws_zetas)
+        self$draws_chol_Sigma_V <- self$cpp_obj$draws_chol_Sigma_V
+        # self$draws_phi <- self$cpp_obj$draws_phi
+        if (self$keep_draws_coef) {
+          self$draws_betas_theta <- self$cpp_obj$draws_betas_theta
+          self$draws_betas_zeta <- self$cpp_obj$draws_betas_zeta
+        }
       }
+    },
+    PosterioMeanCoef = function(parameter = c("theta", "zeta")) {
+      parameter <- match.arg(parameter)
+      switch(parameter,
+        "zeta" = apply(self$draws_betas_zeta, c(1, 2), mean),
+        "theta" = apply(self$draws_betas_theta, c(1, 2), mean)
+      )
+    },
+    LogPredictiveLikelihood = function(Y) {
+      lpl <- matrix(nrow = self$ndpost, ncol = self$n)
+      for (k in seq_len(self$ndpost)) {
+        if (k %% printevery == 0L) cat(t, "\n")
+        lpl[k, ] <- dmultinomial(x = Y, prob = self$draws_abundance[, , k])
+      }
+      lpl
     }
-  },
-  PosterioMeanCoef = function(parameter = c("theta", "zeta")) {
-    parameter <- match.arg(parameter)
-    switch(parameter,
-      "zeta" = apply(self$draws_betas_zeta, c(1, 2), mean),
-      "theta" = apply(self$draws_betas_theta, c(1, 2), mean)
-    )
-  },
-  LogPredictiveLikelihood = function(Y) {
-    lpl <- matrix(nrow = self$ndpost, ncol = self$n)
-    for (k in seq_len(self$ndpost)) {
-      if (k %% printevery == 0L) cat(t, "\n")
-      lpl[k, ] <- dmultinomial(x = Y, prob = self$draws_abundance[, ,k])
-    }
-    lpl
-  }
-))
+  )
+)
 
 
 # DM-linear regression
 DMRegression <- R6::R6Class(
   classname = "DMRegression",
   public = list(
-  cpp_obj = NULL, cpp_module_name = character(),
-  n_trials = integer(), n = integer(), d = integer(),
-  p = integer(), ndpost = integer(), nskip = integer(), nthin = integer(),
-  n_pred = integer(), ndpost_pred = integer(),
-  draws_alpha = NULL, draws_phi = NULL, draws_theta = NULL,
-  draws_abundance = NULL, draws_betas = NULL,
-  y_rep_draws = NULL, log_lik_draws = NULL, elapsed_time = NULL,
-  keep_draws = logical(), keep_draws_coef = logical(), save_draws = logical(),
-  dir_draws = character(),
-  initialize = function(Y, X) {
-    ml <- Rcpp::Module(module = "dm_linear_reg", PACKAGE = "zanicc")
-    self$cpp_obj <- new(ml$DMLinearReg, Y, X)
-    self$cpp_module_name <- "dm_linear_reg"
-    # self$Y <- Y
-    self$n <- nrow(Y)
-    self$d <- ncol(Y)
-    self$p <- ncol(X)
-    self$n_trials <- rowSums(Y)
-  },
-  SetupMCMC = function(S_prior_betas = diag(1.0, self$p),
-                       ndpost = 5000L, nskip = 5000L, nthin = 1L,
-                       keep_draws = TRUE, keep_draws_coef = TRUE,
-                       save_draws = FALSE, dir_draws = tempdir()) {
-    self$ndpost <- ndpost
-    self$nskip <- nskip
-    self$nthin <- nthin
-    self$keep_draws <- keep_draws
-    self$keep_draws_coef <- keep_draws_coef
-    self$dir_draws <- dir_draws
-    self$save_draws <- save_draws
-    if (is.matrix(S_prior_betas)) {
-      S <- array(0, dim = c(self$p, self$p, self$d))
-      for (j in seq_len(self$d)) S[,,j] <- S_prior_betas
-    }
-    self$cpp_obj$SetMCMC(S, ndpost, nskip, nthin, as.integer(keep_draws),
-                         as.integer(save_draws), dir_draws)
-  },
-  RunMCMC = function() {
-    ini <- proc.time()
-    self$cpp_obj$RunMCMC()
-    self$elapsed_time <- proc.time() - ini
-    # Save draws
-    if (self$keep_draws) {
-      self$draws_abundance <- self$cpp_obj$draws_abundance
-      self$draws_alpha <- self$cpp_obj$draws_alphas
-      self$draws_theta <- sweep(x = self$cpp_obj$draws_alphas, MARGIN = c(1, 3),
-                                STATS = apply(self$cpp_obj$draws_alphas, c(1, 3), sum),
-                                FUN = "/")
-      # self$draws_phi <- self$cpp_obj$draws_phi
-      if (self$keep_draws_coef) self$draws_betas <- self$cpp_obj$draws_betas
-    }
-  },
-  PosterioMeanCoef = function() {
-    if (self$keep_draws) apply(self$draws_betas, c(1, 2), mean)
-  },
-  LogPredictiveLikelihood = function(Y, ndpost = self$ndpost, parallel = FALSE,
-                                     ncores = 4L, printevery = 100L) {
-    if (!parallel) {
-      ll <- matrix(data = 0.0, nrow = self$n, ncol = ndpost)
-      for (k in seq_len(ndpost)) {
-        if (k %% printevery == 0L) cat(k, "\n")
-        ll[, k] <- ddm(x = Y, alphas = self$draws_alpha[, , k], log = TRUE)
+    cpp_obj = NULL, cpp_module_name = character(),
+    n_trials = integer(), n = integer(), d = integer(),
+    p = integer(), ndpost = integer(), nskip = integer(), nthin = integer(),
+    n_pred = integer(), ndpost_pred = integer(),
+    draws_alpha = NULL, draws_phi = NULL, draws_theta = NULL,
+    draws_abundance = NULL, draws_betas = NULL,
+    y_rep_draws = NULL, log_lik_draws = NULL, elapsed_time = NULL,
+    keep_draws = logical(), keep_draws_coef = logical(), save_draws = logical(),
+    dir_draws = character(),
+    initialize = function(Y, X) {
+      ml <- Rcpp::Module(module = "dm_linear_reg", PACKAGE = "zanicc")
+      self$cpp_obj <- new(ml$DMLinearReg, Y, X)
+      self$cpp_module_name <- "dm_linear_reg"
+      # self$Y <- Y
+      self$n <- nrow(Y)
+      self$d <- ncol(Y)
+      self$p <- ncol(X)
+      self$n_trials <- rowSums(Y)
+    },
+    SetupMCMC = function(S_prior_betas = diag(1.0, self$p),
+                         ndpost = 5000L, nskip = 5000L, nthin = 1L,
+                         keep_draws = TRUE, keep_draws_coef = TRUE,
+                         save_draws = FALSE, dir_draws = tempdir()) {
+      self$ndpost <- ndpost
+      self$nskip <- nskip
+      self$nthin <- nthin
+      self$keep_draws <- keep_draws
+      self$keep_draws_coef <- keep_draws_coef
+      self$dir_draws <- dir_draws
+      self$save_draws <- save_draws
+      if (is.matrix(S_prior_betas)) {
+        S <- array(0, dim = c(self$p, self$p, self$d))
+        for (j in seq_len(self$d)) S[, , j] <- S_prior_betas
       }
-      self$log_lik_draws <- t(ll)
-    } else {
-      ll <- parallel::mclapply(X = seq_len(ndpost), FUN = function(k) {
-        ddm(x = Y, alphas = self$draws_alpha[, , k], log = TRUE)
-      }, mc.cores = ncores)
-      self$log_lik_draws <- do.call(rbind, ll)
+      self$cpp_obj$SetMCMC(
+        S, ndpost, nskip, nthin, as.integer(keep_draws),
+        as.integer(save_draws), dir_draws
+      )
+    },
+    RunMCMC = function() {
+      ini <- proc.time()
+      self$cpp_obj$RunMCMC()
+      self$elapsed_time <- proc.time() - ini
+      # Save draws
+      if (self$keep_draws) {
+        self$draws_abundance <- self$cpp_obj$draws_abundance
+        self$draws_alpha <- self$cpp_obj$draws_alphas
+        self$draws_theta <- sweep(
+          x = self$cpp_obj$draws_alphas, MARGIN = c(1, 3),
+          STATS = apply(self$cpp_obj$draws_alphas, c(1, 3), sum),
+          FUN = "/"
+        )
+        # self$draws_phi <- self$cpp_obj$draws_phi
+        if (self$keep_draws_coef) self$draws_betas <- self$cpp_obj$draws_betas
+      }
+    },
+    PosterioMeanCoef = function() {
+      if (self$keep_draws) apply(self$draws_betas, c(1, 2), mean)
+    },
+    LogPredictiveLikelihood = function(Y, ndpost = self$ndpost, parallel = FALSE,
+                                       ncores = 4L, printevery = 100L) {
+      if (!parallel) {
+        ll <- matrix(data = 0.0, nrow = self$n, ncol = ndpost)
+        for (k in seq_len(ndpost)) {
+          if (k %% printevery == 0L) cat(k, "\n")
+          ll[, k] <- ddm(x = Y, alphas = self$draws_alpha[, , k], log = TRUE)
+        }
+        self$log_lik_draws <- t(ll)
+      } else {
+        ll <- parallel::mclapply(X = seq_len(ndpost), FUN = function(k) {
+          ddm(x = Y, alphas = self$draws_alpha[, , k], log = TRUE)
+        }, mc.cores = ncores)
+        self$log_lik_draws <- do.call(rbind, ll)
+      }
+      return(self$log_lik_draws)
     }
-    return(self$log_lik_draws)
-  }
-))
+  )
+)

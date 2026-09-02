@@ -52,7 +52,7 @@ posterior draws. The default is \code{nskip=5000}.}
 
 \item{keep_draws}{Logical, defaults to \code{TRUE}. Governs whether to retain posterior draws.}
 
-\item{save_trees}{Logical, defaults to \code{FALSE}. Governs hether to save the posterior draws of the BART
+\item{save_trees}{Logical, defaults to \code{FALSE}. Governs whether to save the posterior draws of the BART
 tree topologies and terminal-node parameters to \code{.bin} files. For BART-based
 models, this creates files named \code{forests_theta_j.bin} for the
 category-specific compositional regression trees and, for zero-inflated

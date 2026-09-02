@@ -103,7 +103,7 @@ mdi <- function(Y) {
 mcv <- function(Y) {
   m <- colMeans(Y)
   v <- cov(Y)
-  drop( sqrt( (crossprod(m, v) %*% m) / sum(m^2) ))
+  drop(sqrt((crossprod(m, v) %*% m) / sum(m^2)))
 }
 
 #' @rdname count_composition_indices
@@ -113,7 +113,8 @@ shannon_entropy <- function(Y) {
   if (!all(N == 1.0)) {
     warning(
       "The rows of `Y` do not sum to one and are therefore not compositional vectors.\n",
-      "Rows will be normalized before computing the Shannon entropy.")
+      "Rows will be normalized before computing the Shannon entropy."
+    )
     Y <- .normalise_composition(Y)
   }
   n <- nrow(Y)
@@ -127,7 +128,9 @@ shannon_entropy <- function(Y) {
 #' @export
 zi_neg_bin <- function(x) {
   p0 <- mean(x == 0)
-  if (p0 == 0.0) return(0.0)
+  if (p0 == 0.0) {
+    return(0.0)
+  }
   s2 <- var(x)
   m <- mean(x)
   1.0 + (s2 - m) * log(p0) / (m^2 * (log(s2) - log(m)))
@@ -137,7 +140,9 @@ zi_neg_bin <- function(x) {
 #' @export
 zi_poisson <- function(x) {
   p0 <- mean(x == 0)
-  if (p0 == 0.0) return(0.0)
+  if (p0 == 0.0) {
+    return(0.0)
+  }
   1.0 + log(p0) / mean(x)
 }
 
@@ -205,7 +210,7 @@ zi_binomial <- function(x, N, standardise = FALSE) {
 #'
 #' ## Posterior uncertainty
 #'
-#' * `compute_coverage()`: Compute the empirical coverage given the crebible inteval
+#' * `compute_coverage()`: Compute the empirical coverage given the credible interval
 #' of the parameters.
 #'
 #' In the simulation studies conducted in Menezes et al. (2025), we assessed
@@ -287,7 +292,7 @@ compute_kl_simplex <- function(true_values, estimates, ep = 1.0) {
   log_ratio[log_ratio == -Inf] <- 0.0
   # log(0/0) = 0:
   log_ratio[is.na(log_ratio)] <- 0.0
-  kl_terms <- true_values*log_ratio
+  kl_terms <- true_values * log_ratio
   mean(rowSums(kl_terms))
 }
 #' @rdname recovery_metrics
@@ -303,7 +308,7 @@ compute_kl_prob <- function(true_values, estimates) {
     lr_1p <- log1p(-true_curr) - log1p(-est_curr)
     lr_1p[lr_1p == -Inf] <- 0.0
     lr_1p[is.na(lr_1p)] <- 0.0
-    kl_terms <- kl_terms  + (1 - true_curr) * lr_1p
+    kl_terms <- kl_terms + (1 - true_curr) * lr_1p
     kl[j] <- mean(kl_terms)
   }
   kl
@@ -311,9 +316,9 @@ compute_kl_prob <- function(true_values, estimates) {
 #' @rdname recovery_metrics
 #' @export
 compute_js <- function(true_values, estimates) {
-  t1 <- estimates*log(2.0*estimates / (estimates + true_values))
+  t1 <- estimates * log(2.0 * estimates / (estimates + true_values))
   t1[is.na(t1)] <- 0.0
-  t2 <- true_values*log(2.0*true_values / (estimates + true_values))
+  t2 <- true_values * log(2.0 * true_values / (estimates + true_values))
   t2[is.na(t2)] <- 0.0
   mean(rowSums(t1 + t2))
 }
@@ -321,7 +326,7 @@ compute_js <- function(true_values, estimates) {
 #' @rdname recovery_metrics
 #' @export
 compute_hellinger <- function(true_values, estimates) {
-  1.0 / sqrt(2)*mean(rowSums((sqrt(true_values) - sqrt(estimates))^2))
+  1.0 / sqrt(2) * mean(rowSums((sqrt(true_values) - sqrt(estimates))^2))
 }
 
 # d <- 4
@@ -333,7 +338,6 @@ compute_hellinger <- function(true_values, estimates) {
 # estimates <- matrix(rexp(n*d), ncol = d, nrow = n)
 # estimates[1, 1] <- 0.0
 # estimates <- sweep(estimates, 1, rowSums(estimates), "/")
-
 
 
 #' @name posterior_chain_metrics
@@ -392,14 +396,14 @@ compute_frob_chain <- function(reference_values, draws) {
 }
 #' @rdname posterior_chain_metrics
 #' @export
-compute_kl_simplex_chain <-  function(reference_values, draws, ep = 1.0) {
+compute_kl_simplex_chain <- function(reference_values, draws, ep = 1.0) {
   d <- dim(draws)[2]
   ndpost <- dim(draws)[3]
   # Fixing critical case: true_values > 0 and draws == 0
   for (k in seq_len(ndpost)) {
     for (j in seq_len(d)) {
-      idx <- which((reference_values[, j] > 0) & (draws[,j,k] == 0))
-      draws[idx,j,k] <- ep
+      idx <- which((reference_values[, j] > 0) & (draws[, j, k] == 0))
+      draws[idx, j, k] <- ep
     }
   }
   # Compute the ratio
@@ -423,7 +427,7 @@ compute_kl_prob_chain <- function(reference_values, draws) {
     true_curr <- matrix(reference_values[, j], nrow = n, ncol = ndpost)
     draws_curr <- draws[, j, ]
     kl_terms <- true_curr * log(true_curr / draws_curr)
-    kl_terms <- kl_terms  + (1 - true_curr) * (log1p(-true_curr) - log1p(-draws_curr))
+    kl_terms <- kl_terms + (1 - true_curr) * (log1p(-true_curr) - log1p(-draws_curr))
     kl[, j] <- colMeans(kl_terms)
   }
   kl
@@ -435,9 +439,14 @@ compute_kl_prob_chain <- function(reference_values, draws) {
 .is_inside <- function(interval, x) {
   p <- length(x)
   isin <- logical(p)
-  for (j in seq_len(p))
-    isin[j] <- x[j] >= interval[j, 1]  && x[j] <= interval[j, 2]
-  if (all(isin)) return(1L) else return(0L)
+  for (j in seq_len(p)) {
+    isin[j] <- x[j] >= interval[j, 1] && x[j] <= interval[j, 2]
+  }
+  if (all(isin)) {
+    return(1L)
+  } else {
+    return(0L)
+  }
 }
 
 # Compute the mode using kernel density estimates
@@ -465,11 +474,12 @@ compute_prediction_metrics <- function(x, draws) {
   n <- nrow(x)
   stopifnot(n == dim(draws)[3L])
   l <- lapply(seq_len(n), function(i) {
-    post <- as.matrix(draws[,,i])
+    post <- as.matrix(draws[, , i])
     mu <- colMeans(post)
     md <- apply(post, 2, median)
     mo <- .get_mode(post)
-    c(mae = sum(abs(x[i, ] - md)),
+    c(
+      mae = sum(abs(x[i, ] - md)),
       msep = sum((x[i, ] - mu)^2),
       dmode = sum((x[i, ] - mo)^2),
       crps = scoringRules::crps_sample(y = x[i, ], dat = t(post)),
@@ -504,8 +514,7 @@ compute_classification_metrics <- function(truth, estimated) {
   fn <- sum(not_selected %in% included)
   sensitivity <- tp / (fn + tp)
   specificity <- tn / (fp + tn)
-  mcc <- (tp * tn - fp * fn)/(sqrt(tp + fp) * sqrt(tp + fn) * sqrt(tn + fp) * sqrt(tn + fn))
+  mcc <- (tp * tn - fp * fn) / (sqrt(tp + fp) * sqrt(tp + fn) * sqrt(tn + fp) * sqrt(tn + fn))
   f1 <- 2 * tp / (2 * tp + fn + fp)
   c(sens = sensitivity, spec = specificity, mcc = mcc, f1 = f1)
 }
-

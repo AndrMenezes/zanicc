@@ -52,8 +52,10 @@
   for (k in seq_len(ndpost)) {
     if (k %% printevery == 0L) cat(k, "\n")
     for (i in seq_len(n_sample)) {
-      y_rep[k,i,] <- stats::rmultinom(n = 1L, size = n_trials[i],
-                                      prob = draws_theta[i, ,k])
+      y_rep[k, i, ] <- stats::rmultinom(
+        n = 1L, size = n_trials[i],
+        prob = draws_theta[i, , k]
+      )
     }
   }
   if (relative) y_rep <- .normalise_composition(y_rep)
@@ -138,15 +140,16 @@
 # n_trials <- sample(20:50, n, replace = TRUE)
 # y_rep <- ppd_zanim(n_trials, probs, zetas)
 .ppd_zanim <- function(n_trials, draws_theta, draws_zeta, relative = TRUE, printevery = 100L) {
-
   d <- dim(draws_theta)[2L]
   ndpost <- dim(draws_theta)[3L]
   n_sample <- dim(draws_theta)[1L]
   y_rep <- array(0L, dim = c(ndpost, n_sample, d))
   for (k in seq_len(ndpost)) {
     if (k %% printevery == 0L) cat(k, "\n")
-    y_rep[k,,] <- .rzanim_vec(n = n_sample, sizes = n_trials, probs = draws_theta[,,k],
-                              zetas = draws_zeta[,,k], d = d)
+    y_rep[k, , ] <- .rzanim_vec(
+      n = n_sample, sizes = n_trials, probs = draws_theta[, , k],
+      zetas = draws_zeta[, , k], d = d
+    )
   }
   if (relative) y_rep <- .normalise_composition(y_rep)
   return(y_rep)
@@ -154,23 +157,23 @@
 
 # TODO: document
 .ppd_zanidm <- function(n_trials, draws_alpha, draws_zeta, relative = TRUE, printevery = 100L) {
-
   d <- dim(draws_alpha)[2L]
   ndpost <- dim(draws_alpha)[3L]
   n_sample <- dim(draws_alpha)[1L]
   y_rep <- array(0L, dim = c(ndpost, n_sample, d))
   for (k in seq_len(ndpost)) {
     if (k %% printevery == 0L) cat(k, "\n")
-    y_rep[k,,] <- .rzanidm_vec(n = n_sample, sizes = n_trials,
-                               alphas = draws_alpha[,,k],
-                               zetas = draws_zeta[,,k], d = d)
+    y_rep[k, , ] <- .rzanidm_vec(
+      n = n_sample, sizes = n_trials,
+      alphas = draws_alpha[, , k],
+      zetas = draws_zeta[, , k], d = d
+    )
   }
   if (relative) y_rep <- .normalise_composition(y_rep)
   return(y_rep)
 }
 .ppd_zanim_ln <- function(n_trials, draws_theta, draws_zeta, draws_chol_Sigma_V, Bt,
                           relative = TRUE, printevery = 100L) {
-
   d <- dim(draws_theta)[2L]
   dm1 <- d - 1L
   ndpost <- dim(draws_theta)[3L]
@@ -180,12 +183,12 @@
   for (k in seq_len(ndpost)) {
     if (k %% printevery == 0L) cat(k, "\n")
     for (i in seq_len(n_sample)) {
-      v <- stats::rnorm(dm1) %*% draws_chol_Sigma_V[,,k]
+      v <- stats::rnorm(dm1) %*% draws_chol_Sigma_V[, , k]
       u <- drop(v %*% Bt)
-      z <- stats::rbinom(n = d, size = 1L, prob = 1.0 - draws_zeta[i,,k])
+      z <- stats::rbinom(n = d, size = 1L, prob = 1.0 - draws_zeta[i, , k])
       if (all(z == 0L)) next
-      p <- z * draws_theta[i,,k] * exp(u)
-      y_rep[k,i,] <- stats::rmultinom(n = 1L, size = n_trials[i], prob = p / sum(p))
+      p <- z * draws_theta[i, , k] * exp(u)
+      y_rep[k, i, ] <- stats::rmultinom(n = 1L, size = n_trials[i], prob = p / sum(p))
     }
   }
   if (relative) y_rep <- .normalise_composition(y_rep)
@@ -193,7 +196,6 @@
 }
 .ppd_mln <- function(n_trials, draws_theta, draws_chol_Sigma_V, Bt, relative = TRUE,
                      printevery = 100L) {
-
   d <- dim(draws_theta)[2L]
   dm1 <- d - 1L
   ndpost <- dim(draws_theta)[3L]
@@ -203,24 +205,23 @@
   for (k in seq_len(ndpost)) {
     if (k %% printevery == 0L) cat(k, "\n")
     for (i in seq_len(n_sample)) {
-      v <- stats::rnorm(dm1) %*% draws_chol_Sigma_V[,,k]
+      v <- stats::rnorm(dm1) %*% draws_chol_Sigma_V[, , k]
       u <- drop(v %*% Bt)
-      p <- draws_theta[i,,k] * exp(u)
-      y_rep[k,i,] <- stats::rmultinom(n = 1L, size = n_trials[i], prob = p / sum(p))
+      p <- draws_theta[i, , k] * exp(u)
+      y_rep[k, i, ] <- stats::rmultinom(n = 1L, size = n_trials[i], prob = p / sum(p))
     }
   }
   if (relative) y_rep <- .normalise_composition(y_rep)
   return(y_rep)
 }
 .ppd_dm <- function(n_trials, draws_alpha, relative = TRUE, printevery = 100L) {
-
   d <- dim(draws_alpha)[2L]
   ndpost <- dim(draws_alpha)[3L]
   n_sample <- dim(draws_alpha)[1L]
   y_rep <- array(0L, dim = c(ndpost, n_sample, d))
   for (k in seq_len(ndpost)) {
     if (k %% printevery == 0L) cat(k, "\n")
-    y_rep[k,,] <- rdm(n = n_sample, sizes = n_trials, alphas = draws_alpha[,, k])
+    y_rep[k, , ] <- rdm(n = n_sample, sizes = n_trials, alphas = draws_alpha[, , k])
   }
   if (relative) y_rep <- .normalise_composition(y_rep)
   return(y_rep)
@@ -228,8 +229,10 @@
 
 # Wrapper function for conditional
 .ppd_conditional <- function(object, relative = TRUE, printevery = 100L) {
-  .ppd_multinomial(n_trials = object$n_trials, draws_theta = object$draws_abundance,
-                   relative = relative, printevery = printevery)
+  .ppd_multinomial(
+    n_trials = object$n_trials, draws_theta = object$draws_abundance,
+    relative = relative, printevery = printevery
+  )
 }
 
 # Internal functions to compute PDP loading the draws of the parameters by batch
@@ -257,13 +260,17 @@
   for (l in seq_len(length(look_head))) {
     shift <- look_head[l] - 1L
     # Load \theta_ij
-    draws_theta <- .load_bin_batch(fname = ff_theta, n = n_pred, d = d,
-                                  k = look_head[l], m = batch_size)
+    draws_theta <- .load_bin_batch(
+      fname = ff_theta, n = n_pred, d = d,
+      k = look_head[l], m = batch_size
+    )
     for (k in seq_len(batch_size)) {
       if ((shift + k) %% printevery == 0L) cat(shift + k, "\n")
       for (i in seq_len(n_pred)) {
-        y_rep[shift + k, i, ] <- stats::rmultinom(1L, size = n_trials[i],
-                                                  prob = draws_theta[i, , k])
+        y_rep[shift + k, i, ] <- stats::rmultinom(1L,
+          size = n_trials[i],
+          prob = draws_theta[i, , k]
+        )
       }
     }
   }
@@ -284,18 +291,22 @@
   for (l in seq_len(length(look_head))) {
     shift <- look_head[l] - 1L
     # Load \theta_ij
-    draws_theta <- .load_bin_batch(fname = ff_theta, n = n_pred, d = d,
-                                  k = look_head[l], m = batch_size)
+    draws_theta <- .load_bin_batch(
+      fname = ff_theta, n = n_pred, d = d,
+      k = look_head[l], m = batch_size
+    )
     # Load draws of chol(Sigma_V)
-    draws_chol_Sigma_V <- .load_bin_batch(fname = ff_chol_Sigma_V, n = dm1, d = dm1,
-                                          k = look_head[l], m = batch_size)
+    draws_chol_Sigma_V <- .load_bin_batch(
+      fname = ff_chol_Sigma_V, n = dm1, d = dm1,
+      k = look_head[l], m = batch_size
+    )
     # Simulating
     for (k in seq_len(batch_size)) {
       if ((shift + k) %% printevery == 0L) cat(shift + k, "\n")
       for (i in seq_len(n_pred)) {
-        v <- stats::rnorm(dm1) %*% draws_chol_Sigma_V[,,k]
+        v <- stats::rnorm(dm1) %*% draws_chol_Sigma_V[, , k]
         u <- drop(v %*% Bt)
-        p <- draws_theta[i,,k] * exp(u)
+        p <- draws_theta[i, , k] * exp(u)
         y_rep[shift + k, i, ] <- stats::rmultinom(1L, size = n_trials[i], prob = p / sum(p))
       }
     }
@@ -316,16 +327,22 @@
   for (l in seq_len(length(look_head))) {
     shift <- look_head[l] - 1L
     # Load \theta_ij
-    thetas <- .load_bin_batch(fname = ff_theta, n = n_pred, d = d, k = look_head[l],
-                              m = batch_size)
+    thetas <- .load_bin_batch(
+      fname = ff_theta, n = n_pred, d = d, k = look_head[l],
+      m = batch_size
+    )
     # Load \zeta_{ij}
-    zetas <- .load_bin_batch(fname = ff_zeta, n = n_pred, d = d, k = look_head[l],
-                             m = batch_size)
+    zetas <- .load_bin_batch(
+      fname = ff_zeta, n = n_pred, d = d, k = look_head[l],
+      m = batch_size
+    )
     for (k in seq_len(batch_size)) {
       if ((shift + k) %% printevery == 0L) cat(shift + k, "\n")
-      y_rep[shift + k,,] <- .rzanim_vec(n = n_pred, sizes = n_trials,
-                                        probs = thetas[, , k], zetas = zetas[, , k],
-                                        d = d)
+      y_rep[shift + k, , ] <- .rzanim_vec(
+        n = n_pred, sizes = n_trials,
+        probs = thetas[, , k], zetas = zetas[, , k],
+        d = d
+      )
     }
   }
   if (relative) y_rep <- .normalise_composition(y_rep)
@@ -346,22 +363,28 @@
   for (l in seq_len(length(look_head))) {
     shift <- look_head[l] - 1L
     # Load \theta_ij and \zeta_{ij}
-    draws_theta <- .load_bin_batch(fname = ff_theta, n = n_pred, d = d,
-                                  k = look_head[l], m = batch_size)
-    draws_zeta <- .load_bin_batch(fname = ff_zeta, n = n_pred, d = d,
-                                  k = look_head[l], m = batch_size)
+    draws_theta <- .load_bin_batch(
+      fname = ff_theta, n = n_pred, d = d,
+      k = look_head[l], m = batch_size
+    )
+    draws_zeta <- .load_bin_batch(
+      fname = ff_zeta, n = n_pred, d = d,
+      k = look_head[l], m = batch_size
+    )
     # Load draws of chol(Sigma_V)
-    draws_chol_Sigma_V <- .load_bin_batch(fname = ff_chol_Sigma_V, n = dm1, d = dm1,
-                                          k = look_head[l], m = batch_size)
+    draws_chol_Sigma_V <- .load_bin_batch(
+      fname = ff_chol_Sigma_V, n = dm1, d = dm1,
+      k = look_head[l], m = batch_size
+    )
     # Simulating
     for (k in seq_len(batch_size)) {
       if ((shift + k) %% printevery == 0L) cat(shift + k, "\n")
       for (i in seq_len(n_pred)) {
-        v <- stats::rnorm(dm1) %*% draws_chol_Sigma_V[,,k]
+        v <- stats::rnorm(dm1) %*% draws_chol_Sigma_V[, , k]
         u <- drop(v %*% Bt)
-        z <- stats::rbinom(n = d, size = 1L, prob = 1.0 - draws_zeta[i,,k])
+        z <- stats::rbinom(n = d, size = 1L, prob = 1.0 - draws_zeta[i, , k])
         if (all(z == 0L)) next
-        p <- z * draws_theta[i,,k] * exp(u)
+        p <- z * draws_theta[i, , k] * exp(u)
         y_rep[shift + k, i, ] <- stats::rmultinom(1L, size = n_trials[i], prob = p / sum(p))
       }
     }
@@ -369,7 +392,6 @@
   if (relative) y_rep <- .normalise_composition(y_rep)
   y_rep
 }
-
 
 
 # Dispatch methods for different models
@@ -389,25 +411,32 @@ ppd.MultinomialBART <- function(object, relative = TRUE,
                                 batch_size = 50L,
                                 printevery = 100L, ...) {
   if (in_sample) {
-    return(.ppd_multinomial(n_trials = object$n_trials, draws_theta = object$draws_theta,
-                            relative = relative, printevery = printevery))
+    return(.ppd_multinomial(
+      n_trials = object$n_trials, draws_theta = object$draws_theta,
+      relative = relative, printevery = printevery
+    ))
   }
-  if (is.null(n_trials))
+  if (is.null(n_trials)) {
     stop("{n_trials} must be provided for out-of-sample predictions.")
+  }
   if (!is.null(draws_theta)) {
-    return(.ppd_multinomial(n_trials = n_trials, draws_theta = draws_theta,
-                            relative = relative, printevery = printevery))
+    return(.ppd_multinomial(
+      n_trials = n_trials, draws_theta = draws_theta,
+      relative = relative, printevery = printevery
+    ))
   } else {
     # Check if file exist before call the function
-    if (!file.exists(file.path(output_dir, "theta_ij.bin")))
+    if (!file.exists(file.path(output_dir, "theta_ij.bin"))) {
       stop("file with the posterior predictions of theta_{ij} does not exist.")
+    }
     # Compute PPD loading the prediction by batch
-    return(.ppd_multinomial_batch(n_trials = n_trials, output_dir = output_dir,
-                                  n_pred = n_pred, d = object$d, ndpost = ndpost,
-                                  batch_size = batch_size, relative = relative,
-                                  printevery = printevery))
+    return(.ppd_multinomial_batch(
+      n_trials = n_trials, output_dir = output_dir,
+      n_pred = n_pred, d = object$d, ndpost = ndpost,
+      batch_size = batch_size, relative = relative,
+      printevery = printevery
+    ))
   }
-
 }
 #' @export
 ppd.MultinomialLNBART <- function(object, relative = TRUE, conditional = FALSE,
@@ -416,33 +445,41 @@ ppd.MultinomialLNBART <- function(object, relative = TRUE, conditional = FALSE,
                                   n_trials = NULL, n_pred = NULL,
                                   ndpost = object$ndpost, batch_size = 50L,
                                   printevery = 100L, ...) {
-
-
   if (in_sample) {
-    if (conditional) return(.ppd_conditional(object, relative, printevery))
-    return(.ppd_mln(n_trials = object$n_trials, draws_theta = object$draws_theta,
-                    draws_chol_Sigma_V = object$draws_chol_Sigma_V, Bt = object$Bt,
-                    relative = relative, printevery = printevery))
+    if (conditional) {
+      return(.ppd_conditional(object, relative, printevery))
+    }
+    return(.ppd_mln(
+      n_trials = object$n_trials, draws_theta = object$draws_theta,
+      draws_chol_Sigma_V = object$draws_chol_Sigma_V, Bt = object$Bt,
+      relative = relative, printevery = printevery
+    ))
   }
-  if (is.null(n_trials))
+  if (is.null(n_trials)) {
     stop("{n_trials} must be provided for out-of-sample predictions.")
-  if (!is.null(draws_theta) && !is.null(draws_chol_Sigma_V)) {
-    return(.ppd_mln(n_trials = n_trials, draws_theta = draws_theta,
-                    draws_chol_Sigma_V = draws_chol_Sigma_V, Bt = object$Bt,
-                    relative = relative, printevery = printevery))
-  } else {
-    if (!file.exists(file.path(output_dir, "theta_ij.bin")))
-      stop("file with the posterior predictions of theta_{ij} does not exist.")
-    if (!file.exists(file.path(object$forests_dir, "chol_Sigma_V.bin")))
-      stop("file with the posterior draws of chol(Sigma_V) does not exist.")
-    # Compute PPD loading the prediction by batch
-    return(.ppd_mln_batch(n_trials = n_trials, output_dir = output_dir,
-                          output_dir_chol_V = object$forests_dir,
-                          n_pred = n_pred, d = object$d, Bt = object$Bt,
-                          ndpost = ndpost, batch_size = batch_size,
-                          relative = relative, printevery = printevery))
   }
-
+  if (!is.null(draws_theta) && !is.null(draws_chol_Sigma_V)) {
+    return(.ppd_mln(
+      n_trials = n_trials, draws_theta = draws_theta,
+      draws_chol_Sigma_V = draws_chol_Sigma_V, Bt = object$Bt,
+      relative = relative, printevery = printevery
+    ))
+  } else {
+    if (!file.exists(file.path(output_dir, "theta_ij.bin"))) {
+      stop("file with the posterior predictions of theta_{ij} does not exist.")
+    }
+    if (!file.exists(file.path(object$forests_dir, "chol_Sigma_V.bin"))) {
+      stop("file with the posterior draws of chol(Sigma_V) does not exist.")
+    }
+    # Compute PPD loading the prediction by batch
+    return(.ppd_mln_batch(
+      n_trials = n_trials, output_dir = output_dir,
+      output_dir_chol_V = object$forests_dir,
+      n_pred = n_pred, d = object$d, Bt = object$Bt,
+      ndpost = ndpost, batch_size = batch_size,
+      relative = relative, printevery = printevery
+    ))
+  }
 }
 #' @export
 ppd.ZANIMBART <- function(object, relative = TRUE, conditional = FALSE,
@@ -450,33 +487,41 @@ ppd.ZANIMBART <- function(object, relative = TRUE, conditional = FALSE,
                           output_dir = NULL, n_trials = NULL, n_pred = NULL,
                           ndpost = object$ndpost, batch_size = 50L,
                           printevery = 100L, ...) {
-
   if (in_sample) {
-    if (conditional) return(.ppd_conditional(object, relative, printevery))
-    return(.ppd_zanim(n_trials = object$n_trials, draws_theta = object$draws_theta,
-                      draws_zeta = object$draws_zeta, relative = relative,
-                      printevery = printevery))
+    if (conditional) {
+      return(.ppd_conditional(object, relative, printevery))
+    }
+    return(.ppd_zanim(
+      n_trials = object$n_trials, draws_theta = object$draws_theta,
+      draws_zeta = object$draws_zeta, relative = relative,
+      printevery = printevery
+    ))
   }
 
-  if (is.null(n_trials))
+  if (is.null(n_trials)) {
     stop("{n_trials} must be provided for out-of-sample predictions.")
-  if (!is.null(draws_theta) && !is.null(draws_zeta)) {
-    return(.ppd_zanim(n_trials = n_trials, draws_theta = draws_theta,
-                      draws_zeta = draws_zeta, relative = relative,
-                      printevery = printevery))
-  } else {
-    if (!file.exists(file.path(output_dir, "theta_ij.bin")))
-      stop("file with the posterior predictions of theta_{ij} does not exist.")
-    if (!file.exists(file.path(output_dir, "zeta_ij.bin")))
-      stop("file with the posterior draws of theta_{ij} does not exist.")
-    # Compute PPD loading the prediction by batch
-    return(.ppd_zanim_batch(n_trials = n_trials, output_dir = output_dir,
-                            n_pred = n_pred, d = object$d,
-                            ndpost = ndpost, batch_size = batch_size,
-                            relative = relative, printevery = printevery))
   }
-
-
+  if (!is.null(draws_theta) && !is.null(draws_zeta)) {
+    return(.ppd_zanim(
+      n_trials = n_trials, draws_theta = draws_theta,
+      draws_zeta = draws_zeta, relative = relative,
+      printevery = printevery
+    ))
+  } else {
+    if (!file.exists(file.path(output_dir, "theta_ij.bin"))) {
+      stop("file with the posterior predictions of theta_{ij} does not exist.")
+    }
+    if (!file.exists(file.path(output_dir, "zeta_ij.bin"))) {
+      stop("file with the posterior draws of theta_{ij} does not exist.")
+    }
+    # Compute PPD loading the prediction by batch
+    return(.ppd_zanim_batch(
+      n_trials = n_trials, output_dir = output_dir,
+      n_pred = n_pred, d = object$d,
+      ndpost = ndpost, batch_size = batch_size,
+      relative = relative, printevery = printevery
+    ))
+  }
 }
 #' @export
 ppd.ZANIMLNBART <- function(object, relative = TRUE, conditional = FALSE,
@@ -484,55 +529,72 @@ ppd.ZANIMLNBART <- function(object, relative = TRUE, conditional = FALSE,
                             draws_chol_Sigma_V = NULL, output_dir = NULL,
                             n_trials = NULL, n_pred = NULL, ndpost = object$ndpost,
                             batch_size = 50L, printevery = 100L, ...) {
-
   if (in_sample) {
-    if (conditional) return(.ppd_conditional(object, relative, printevery))
-    return(.ppd_zanim_ln(n_trials = object$n_trials, draws_theta = object$draws_theta,
-                         draws_zeta = object$draws_zeta,
-                         draws_chol_Sigma_V = object$draws_chol_Sigma_V, Bt = object$Bt,
-                         relative = relative, printevery = printevery))
+    if (conditional) {
+      return(.ppd_conditional(object, relative, printevery))
+    }
+    return(.ppd_zanim_ln(
+      n_trials = object$n_trials, draws_theta = object$draws_theta,
+      draws_zeta = object$draws_zeta,
+      draws_chol_Sigma_V = object$draws_chol_Sigma_V, Bt = object$Bt,
+      relative = relative, printevery = printevery
+    ))
   }
 
-  if (is.null(n_trials))
+  if (is.null(n_trials)) {
     stop("{n_trials} must be provided for out-of-sample predictions.")
-  if (!is.null(draws_theta) && !is.null(draws_zeta) && !is.null(draws_chol_Sigma_V)) {
-    return(.ppd_zanim_ln(n_trials = n_trials, draws_theta = draws_theta,
-                         draws_zeta = draws_zeta,
-                         draws_chol_Sigma_V = draws_chol_Sigma_V, Bt = object$Bt,
-                         relative = relative, printevery = printevery))
-  } else {
-    if (!file.exists(file.path(output_dir, "theta_ij.bin")))
-      stop("file with the posterior predictions of theta_{ij} does not exist.")
-    if (!file.exists(file.path(output_dir, "zeta_ij.bin")))
-      stop("file with the posterior draws of zeta_{ij} does not exist.")
-    if (!file.exists(file.path(object$forests_dir, "chol_Sigma_V.bin")))
-      stop("file with the posterior draws of chol(Sigma_V) does not exist.")
-    # Compute PPD loading the prediction by batch
-    return(.ppd_zanim_ln_batch(n_trials = n_trials, output_dir = output_dir,
-                               output_dir_chol_V = object$forests_dir,
-                               n_pred = n_pred, d = object$d, Bt = object$Bt,
-                               ndpost = ndpost, batch_size = batch_size,
-                               relative = relative, printevery = printevery))
   }
-
-
+  if (!is.null(draws_theta) && !is.null(draws_zeta) && !is.null(draws_chol_Sigma_V)) {
+    return(.ppd_zanim_ln(
+      n_trials = n_trials, draws_theta = draws_theta,
+      draws_zeta = draws_zeta,
+      draws_chol_Sigma_V = draws_chol_Sigma_V, Bt = object$Bt,
+      relative = relative, printevery = printevery
+    ))
+  } else {
+    if (!file.exists(file.path(output_dir, "theta_ij.bin"))) {
+      stop("file with the posterior predictions of theta_{ij} does not exist.")
+    }
+    if (!file.exists(file.path(output_dir, "zeta_ij.bin"))) {
+      stop("file with the posterior draws of zeta_{ij} does not exist.")
+    }
+    if (!file.exists(file.path(object$forests_dir, "chol_Sigma_V.bin"))) {
+      stop("file with the posterior draws of chol(Sigma_V) does not exist.")
+    }
+    # Compute PPD loading the prediction by batch
+    return(.ppd_zanim_ln_batch(
+      n_trials = n_trials, output_dir = output_dir,
+      output_dir_chol_V = object$forests_dir,
+      n_pred = n_pred, d = object$d, Bt = object$Bt,
+      ndpost = ndpost, batch_size = batch_size,
+      relative = relative, printevery = printevery
+    ))
+  }
 }
 #' @export
 ppd.ZANIMLNRegression <- function(object, relative = TRUE, conditional = FALSE,
                                   printevery = 100L, ...) {
-  if (conditional) return(.ppd_conditional(object, relative, printevery))
-  .ppd_zanim_ln(n_trials = object$n_trials, draws_theta = object$draws_theta,
-                draws_zeta = object$draws_zeta,
-                draws_chol_Sigma_V = object$draws_chol_Sigma_V, Bt = object$Bt,
-                relative = relative, printevery = printevery)
+  if (conditional) {
+    return(.ppd_conditional(object, relative, printevery))
+  }
+  .ppd_zanim_ln(
+    n_trials = object$n_trials, draws_theta = object$draws_theta,
+    draws_zeta = object$draws_zeta,
+    draws_chol_Sigma_V = object$draws_chol_Sigma_V, Bt = object$Bt,
+    relative = relative, printevery = printevery
+  )
 }
 #' @export
 ppd.ZANIMRegression <- function(object, relative = TRUE, conditional = FALSE,
                                 printevery = 100L, ...) {
-  if (conditional) return(.ppd_conditional(object, relative, printevery))
-  .ppd_zanim(n_trials = object$n_trials, draws_theta = object$draws_theta,
-             draws_zeta = object$draws_zeta, relative = relative,
-             printevery = printevery)
+  if (conditional) {
+    return(.ppd_conditional(object, relative, printevery))
+  }
+  .ppd_zanim(
+    n_trials = object$n_trials, draws_theta = object$draws_theta,
+    draws_zeta = object$draws_zeta, relative = relative,
+    printevery = printevery
+  )
 }
 #' @export
 ppd.ZANIDMRegression <- function(object, relative = TRUE, conditional = FALSE,
@@ -540,19 +602,25 @@ ppd.ZANIDMRegression <- function(object, relative = TRUE, conditional = FALSE,
                                  draws_zeta = NULL, n_trials = NULL,
                                  ndpost = object$ndpost,
                                  printevery = 100L, ...) {
-
   if (in_sample) {
-    if (conditional) return(.ppd_conditional(object, relative, printevery))
-    return(.ppd_zanidm(n_trials = object$n_trials, draws_alpha = object$draws_alpha,
-                       draws_zeta = object$draws_zeta, relative = relative,
-                       printevery = printevery))
+    if (conditional) {
+      return(.ppd_conditional(object, relative, printevery))
+    }
+    return(.ppd_zanidm(
+      n_trials = object$n_trials, draws_alpha = object$draws_alpha,
+      draws_zeta = object$draws_zeta, relative = relative,
+      printevery = printevery
+    ))
   }
-  if (is.null(n_trials))
+  if (is.null(n_trials)) {
     stop("{n_trials} must be provided for out-of-sample predictions.")
+  }
   if (!is.null(draws_alpha) && !is.null(draws_zeta)) {
-    return(.ppd_zanidm(n_trials = object$n_trials, draws_alpha = draws_alpha,
-                       draws_zeta = draws_zeta, relative = relative,
-                       printevery = printevery))
+    return(.ppd_zanidm(
+      n_trials = object$n_trials, draws_alpha = draws_alpha,
+      draws_zeta = draws_zeta, relative = relative,
+      printevery = printevery
+    ))
   }
 }
 #' @export
@@ -561,21 +629,22 @@ ppd.DMRegression <- function(object, relative = TRUE, conditional = FALSE,
                              n_trials = NULL,
                              ndpost = object$ndpost,
                              printevery = 100L, ...) {
-
   if (in_sample) {
-    if (conditional) return(.ppd_conditional(object, relative, printevery))
-    return(.ppd_dm(n_trials = object$n_trials, draws_alpha = object$draws_alpha,
-                   relative = relative, printevery = printevery))
+    if (conditional) {
+      return(.ppd_conditional(object, relative, printevery))
+    }
+    return(.ppd_dm(
+      n_trials = object$n_trials, draws_alpha = object$draws_alpha,
+      relative = relative, printevery = printevery
+    ))
   }
-  if (is.null(n_trials))
+  if (is.null(n_trials)) {
     stop("{n_trials} must be provided for out-of-sample predictions.")
+  }
   if (!is.null(draws_alpha)) {
-    return(.ppd_dm(n_trials = n_trials, draws_alpha = draws_alpha,
-                   relative = relative, printevery = printevery))
+    return(.ppd_dm(
+      n_trials = n_trials, draws_alpha = draws_alpha,
+      relative = relative, printevery = printevery
+    ))
   }
 }
-
-
-
-
-
