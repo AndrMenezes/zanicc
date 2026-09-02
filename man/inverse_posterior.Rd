@@ -59,7 +59,7 @@ for the climate variables used for the \code{ess} and \code{cess} methods.}
 \item{X_ini}{Initial climate values used to initialise the ESS/CESS samplers. The default is \code{NULL},
 which then uses a sample from the prior.}
 
-\item{Amat, bvec}{H-representation of the convex hull.}
+\item{Amat, bvec}{Halfspace representation of the convex hull, typically obtained via the output of \code{\link[geometry:convhulln]{geometry::convhulln()}} with the flag \code{output.options="n"}.}
 
 \item{lower, upper}{Integers giving the lower and upper limits to constrain the
 past climate.}

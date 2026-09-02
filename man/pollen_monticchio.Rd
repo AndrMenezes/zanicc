@@ -39,7 +39,4 @@ Parnell, A. C., Haslett, J., Sweeney, J., Doan, T. K., Allen, J. R. M. and Huntl
 Joint palaeoclimate reconstruction from pollen data via forward models and climate histories,
 \emph{Quaternary Science Reviews} \strong{151}, 111--126.
 }
-\author{
-André F. B. Menezes
-}
 \keyword{datasets}

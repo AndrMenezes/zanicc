@@ -46,11 +46,11 @@ void DMLinearReg::SetMCMC(arma::cube V_prior_betas_, int ndpost_, int nskip_,
   ep = arma::zeros<arma::rowvec>(p);
   nu = arma::zeros<arma::vec>(p);
 
-  // for (int k=0;k<10;k++) std::cout << rng.normal() << "\n";
+  // for (int k=0;k<10;k++) Rcpp::Rcout << rng.normal() << "\n";
   //
-  // std::cout << rng.normal(2, 0.001) << "\n";
-  // std::cout << rng.uniform() << "\n";
-  // std::cout << rng.gamma(1.0, 1.0) << "\n";
+  // Rcpp::Rcout << rng.normal(2, 0.001) << "\n";
+  // Rcpp::Rcout << rng.uniform() << "\n";
+  // Rcpp::Rcout << rng.gamma(1.0, 1.0) << "\n";
 
   // chol_V_prior.print();
 
@@ -58,7 +58,7 @@ void DMLinearReg::SetMCMC(arma::cube V_prior_betas_, int ndpost_, int nskip_,
   phi = arma::zeros<arma::vec>(n);
   // for (int i = 0; i < n; i++) phi(i) = R::rgamma(n_trials(i), 1.0);
   for (int i = 0; i < n; i++) phi(i) = rng.gamma(n_trials(i), 1.0);
-  // std::cout << "passou" << '\n';
+  // Rcpp::Rcout << "passou" << '\n';
 
   // First draw for the latent variable \lambda_{ij} ~ Gamma[\alpha_{ij} + y_{ij}, 1 + \phi_i]
   for (int j = 0; j < d; j++) {
@@ -67,7 +67,7 @@ void DMLinearReg::SetMCMC(arma::cube V_prior_betas_, int ndpost_, int nskip_,
       lambdas(i, j) = rng.gamma(Y(i, j) + 1.0, 1.0);
     }
   }
-  std::cout << "DM-reg model set up! \n\n";
+  Rcpp::Rcout << "DM-reg model set up! \n\n";
 }
 
 double DMLinearReg::LogTargetBetas(arma::vec &beta_cur, int &j) {
@@ -104,7 +104,7 @@ arma::vec DMLinearReg::UpdateBetasESS(int &j) {
     // TODO: IF LL = -inf, then don't evaluate the loop
     double ll = LogTargetBetas(beta_star, j);
     // beta_star.print();
-    // std::cout << "prop " << ll << " cur " << ll_cur << "\n";
+    // Rcpp::Rcout << "prop " << ll << " cur " << ll_cur << "\n";
     if (LogTargetBetas(beta_star, j) > u_s) break;
     if (theta < 0) theta_min = theta;
     else theta_max = theta;
@@ -142,7 +142,7 @@ void DMLinearReg::RunMCMC() {
   }
 
   // Start MCMC
-  std::cout << "Doing the warm-up (burn-in) of " << nskip << "\n\n";
+  Rcpp::Rcout << "Doing the warm-up (burn-in) of " << nskip << "\n\n";
   double progress = 0;
   for (int k=0; k < nskip; k++) {
     progress = (double) 100 * k / nskip;
@@ -161,7 +161,7 @@ void DMLinearReg::RunMCMC() {
   std::ofstream ff(dir_draws + "/draws_betas.bin", std::ios::binary | std::ios::app);
 
   // Run the post-burn in iterations
-  std::cout << "Starting post-burn-in iterations of " << ndpost << "\n\n";
+  Rcpp::Rcout << "Starting post-burn-in iterations of " << ndpost << "\n\n";
   progress = 0;
 
 

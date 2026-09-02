@@ -55,7 +55,4 @@ Weichselian palynostratigraphy, palaeovegetation and palaeoenvironment:
 the record from Lago Grande di Monticchio, southern Italy.
 \emph{Quaternary International}, \strong{73--74}, 91--110.
 }
-\author{
-André F. B. Menezes
-}
 \keyword{datasets}

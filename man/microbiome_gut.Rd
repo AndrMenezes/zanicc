@@ -38,7 +38,4 @@ resulting in \eqn{80} genera.
 \references{
 Wu, G., Chen, J., Hoffmann, C., Bittinger, K., Chen, Y.-Y., Keilbaugh, S., Bewtra, M., Knights, D., W.A., W., Knight, R., Sinha, R., Gilroy, E., Gupta, K., Baldassano, R., Nessel, L., Li, H., Bushman, F. and Lewis, J. (2011), ‘Linking long-term dietary patterns with gut microbial enterotypes’, \emph{Science} 334(6052), 105–-108.
 }
-\author{
-André F. B. Menezes
-}
 \keyword{datasets}

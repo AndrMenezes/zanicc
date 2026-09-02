@@ -2,12 +2,15 @@
 % Please edit documentation in R/utils.R
 \name{summarise_draws}
 \alias{summarise_draws}
-\alias{summarise_draws_3d}
+\alias{summarise_draws.matrix}
+\alias{summarise_draws.array}
 \title{Summarise posterior draws}
 \usage{
 summarise_draws(x, prob = 0.05)
 
-summarise_draws_3d(x, prob = 0.05)
+\method{summarise_draws}{matrix}(x, prob = 0.05)
+
+\method{summarise_draws}{array}(x, prob = 0.05)
 }
 \arguments{
 \item{x}{A matrix or three-dimensional array of posterior draws.}

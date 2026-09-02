@@ -174,8 +174,8 @@ std::vector<double> InversePosterior::UpdateESS(
   // Start slice
   do {
     // double ll_prop = log_pmf_zanim_ln(n_particles, y, theta, zeta, chol_Sigma_V, B);
-    // std::cout << " ll_cur=" << ll_cur << " ll_prop=" << ll_prop << "\n";
-    // std::cout << " theta1=" << theta[0] << " theta2=" << theta[1] << " theta3=" << theta[2]<< " theta4=" << theta[3]
+    // Rcpp::Rcout << " ll_cur=" << ll_cur << " ll_prop=" << ll_prop << "\n";
+    // Rcpp::Rcout << " theta1=" << theta[0] << " theta2=" << theta[1] << " theta3=" << theta[2]<< " theta4=" << theta[3]
     //           << " zeta1=" << zeta[0] << " zeta2=" << zeta[1] << " zeta3=" << zeta[2]<< " zeta4=" << zeta[3] <<"\n";
     if (log_pmf_zanim_ln(n_particles, y, theta, zeta, chol_Sigma_V, B) > lr) break;
     if (counter > 1000) break;
@@ -244,7 +244,7 @@ std::vector<double> InversePosterior::ESS(arma::umat Y,
 
   // Iterate over posterior draws of forward model
   for (int t=0; t < ndpost; t++) {
-    // std::cout << t << "\n";
+    // Rcpp::Rcout << t << "\n";
     progress = (double) 100 * t / ndpost;
     Rprintf("%3.2f%% Sampling completed", progress);
     Rprintf("\r");
@@ -409,7 +409,7 @@ std::vector<double> InversePosterior::CESS(arma::umat Y, arma::mat X_ini,
 
   // Iterate over posterior draws of forward model
   for (int t=0; t < ndpost; t++) {
-    // std::cout << t << "\n";
+    // Rcpp::Rcout << t << "\n";
     progress = (double) 100 * t / ndpost;
     Rprintf("%3.2f%% Sampling completed", progress);
     Rprintf("\r");
@@ -569,7 +569,7 @@ std::vector<double> InversePosterior::ESS1p(arma::umat Y, std::vector<double> X_
 
   // Iterate over posterior draws of forward model
   for (int t=0; t < ndpost; t++) {
-    // std::cout << t << "\n";
+    // Rcpp::Rcout << t << "\n";
     progress = (double) 100 * t / ndpost;
     Rprintf("%3.2f%% Sampling completed", progress);
     Rprintf("\r");
@@ -719,7 +719,7 @@ std::vector<double> InversePosterior::CESS1p(arma::umat Y, std::vector<double> X
 
   // Iterate over posterior draws of forward model
   for (int t=0; t < ndpost; t++) {
-    // std::cout << t << "\n";
+    // Rcpp::Rcout << t << "\n";
     progress = (double) 100 * t / ndpost;
     Rprintf("%3.2f%% Sampling completed", progress);
     Rprintf("\r");

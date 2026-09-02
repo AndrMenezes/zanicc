@@ -118,6 +118,11 @@ load_bin_coefficients <- function(fname, p, d, m) {
 #' @rdname summarise_draws
 #' @export
 summarise_draws <- function(x, prob = 0.05) {
+  UseMethod("summarise_draws")
+}
+#' @rdname summarise_draws
+#' @export
+summarise_draws.matrix <- function(x, prob = 0.05) {
   n <- nrow(x)
   data.frame(
     id = seq_len(n), mean = rowMeans(x), median = apply(x, 1L, stats::median),
@@ -127,7 +132,7 @@ summarise_draws <- function(x, prob = 0.05) {
 }
 #' @rdname summarise_draws
 #' @export
-summarise_draws_3d <- function(x, prob = 0.05) {
+summarise_draws.array <- function(x, prob = 0.05) {
   d <- dim(x)[2L]
   n <- dim(x)[1L]
   l <- vector(mode = "list", length = d)

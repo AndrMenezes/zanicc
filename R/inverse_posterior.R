@@ -117,7 +117,7 @@ runifconvexhull <- function(n, X) {
 #' for the climate variables used for the `ess` and `cess` methods.
 #' @param X_ini Initial climate values used to initialise the ESS/CESS samplers. The default is `NULL`,
 #' which then uses a sample from the prior.
-#' @param Amat,bvec H-representation of the convex hull.
+#' @param Amat,bvec Halfspace representation of the convex hull, typically obtained via the output of [geometry::convhulln()] with the flag `output.options="n"`.
 #' @param lower,upper Integers giving the lower and upper limits to constrain the
 #' past climate.
 #' @param eta Tuning parameter using in the `cess` algorithm related to the logistic

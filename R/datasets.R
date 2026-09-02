@@ -43,10 +43,6 @@
 #' Climate variables were computed from weighted averaging of observations from
 #' nearby weather stations over climatological periods of approximately 30 years.
 #'
-#'
-#' @author
-#' André F. B. Menezes
-#'
 #' @usage
 #' data(pollen_climate, package = "zanicc")
 #'
@@ -79,10 +75,6 @@
 #' the sediment column has become available for analysis.
 #' Relevant references which study this data set are Allen et al. (2000),
 #' Allen and Huntley (2009), and Parnell et al. (2016) and references cited therein.
-#'
-#'
-#' @author
-#' André F. B. Menezes
 #'
 #' @usage
 #' data(pollen_monticchio, package = "zanicc")
@@ -135,9 +127,6 @@
 #' of each individual.}
 #'
 #' }
-#'
-#' @author
-#' André F. B. Menezes
 #'
 #' @usage
 #' data(microbiome_gut, package = "zanicc")

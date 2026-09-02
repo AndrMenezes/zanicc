@@ -172,7 +172,7 @@ double ZANIMLNReg::LogTargetBetasTheta(arma::vec &beta_cur, int &j) {
   double t1 = arma::sum(Y.col(j) % eta);
   double t2 = arma::sum(e_eta_phi_u);
 
-  // std::cout << "t1 " << t1 << " t2 " << t2 << "\n";
+  // Rcpp::Rcout << "t1 " << t1 << " t2 " << t2 << "\n";
 
   // Remove the contribution of zero counts such that z_{ij} = 0
   for (int k = 0; k < sum_col_zeros_Y(j); k++) {
@@ -270,7 +270,7 @@ void ZANIMLNReg::UpdateLatentVariables() {
   for (int i=0; i < n; i++) {
     if (n_trials(i) == 0) phi(i) = 0.0;
     else phi(i) = R::rgamma(n_trials(i), 1.0) / rt(i);
-    // std::cout << phi(i) << "\n";
+    // Rcpp::Rcout << phi(i) << "\n";
   }
 
 }
@@ -305,7 +305,7 @@ arma::vec ZANIMLNReg::ESSDiag(arma::vec &v, arma::uvec &y, arma::vec &sigmas,
   arma::vec u = B * v;
   logy += LogTargetU(u, y, z, alpha);
   // alpha.print();
-  // std::cout << "\n\n";
+  // Rcpp::Rcout << "\n\n";
   // Draw an angle
   double theta = R::unif_rand() * PI_2;
   double theta_max = theta;
@@ -315,7 +315,7 @@ arma::vec ZANIMLNReg::ESSDiag(arma::vec &v, arma::uvec &y, arma::vec &sigmas,
   arma::vec u_prop = B * v_prop;
   do {
     // double l=LogTargetU(u_prop, y, z, alpha);
-    // std::cout << l << " " << LogTargetU(u, y, z, alpha) << "\n";
+    // Rcpp::Rcout << l << " " << LogTargetU(u, y, z, alpha) << "\n";
     if (LogTargetU(u_prop, y, z, alpha) > logy) break;
     if (theta < 0) theta_min = theta;
     else theta_max = theta;
@@ -527,7 +527,7 @@ void ZANIMLNReg::UpdatePsis() {
 
 void ZANIMLNReg::RunMCMC() {
 
-  std::cout << "Doing the warm-up (burn-in) of " << nskip << "\n\n";
+  Rcpp::Rcout << "Doing the warm-up (burn-in) of " << nskip << "\n\n";
   double progress = 0;
   for (int t=0; t < nskip; t++) {
     progress = (double) 100 * t / nskip;
@@ -570,7 +570,7 @@ void ZANIMLNReg::RunMCMC() {
   }
 
   // Run the post-burn in iterations
-  std::cout << "Starting post-burn-in iterations of " << ndpost << "\n\n";
+  Rcpp::Rcout << "Starting post-burn-in iterations of " << ndpost << "\n\n";
   progress = 0;
 
   for (int t=0; t < ndpost; t++) {

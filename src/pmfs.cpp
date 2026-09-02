@@ -76,9 +76,9 @@ double log_pmf_zanim(std::vector<int> x, std::vector<double> prob,
           cur_indices_z[i - 1] = id_zero;
           eta_K += logzeta[id_zero];
           sum_prob += prob[id_zero];
-          //std::cout << id_zero << " ";
+          //Rcpp::Rcout << id_zero << " ";
         }
-        //std::cout << "\n";
+        //Rcpp::Rcout << "\n";
         idk = 0;
         for (int k = 0; k < d; k++) {
           if (std::find(cur_indices_z.begin(), cur_indices_z.end(), k) == cur_indices_z.end()) {
@@ -279,9 +279,9 @@ double log_pmf_zanidm(std::vector<int> x, std::vector<double> alpha,
           id_zero = indices_zeros[c[i]];
           cur_indices_z[i - 1L] = id_zero;
           eta_K += logzeta[id_zero];
-          //std::cout << id_zero << " ";
+          //Rcpp::Rcout << id_zero << " ";
         }
-        //std::cout << "\n";
+        //Rcpp::Rcout << "\n";
         idk = 0L;
         for (int k = 0; k < d; k++) {
           if (std::find(cur_indices_z.begin(), cur_indices_z.end(), k) == cur_indices_z.end()) {
@@ -323,14 +323,14 @@ double log_pmf_zanim_conditional(std::vector<int> x, std::vector<double> prob,
     s += vartheta[j];
   }
 
-  // std::cout << s << "\n";
+  // Rcpp::Rcout << s << "\n";
 
-  // std::cout << "All zeros: " << s << "\n";
+  // Rcpp::Rcout << "All zeros: " << s << "\n";
   if (s == 0.0) return 0.0;
 
   // for(auto &p : vartheta) p /= s;
 
-  //std::cout << "vartheta: " << vartheta[0]/s << " " << vartheta[1]/s << " " << vartheta[2]/s << "\n";
+  //Rcpp::Rcout << "vartheta: " << vartheta[0]/s << " " << vartheta[1]/s << " " << vartheta[2]/s << "\n";
 
   double out = std::lgamma(std::accumulate(x.begin(), x.end(), 0.0) + 1.0);
   for (int j = 0; j < d; j++) {
