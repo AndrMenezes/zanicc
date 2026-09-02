@@ -233,7 +233,7 @@ ZANIMLNBART <- R6::R6Class(classname = "ZANIMLNBART", public = list(
   SetupMCMC = function(v0_theta = 1.5 / sqrt(2), k_zeta = 3.0,
                        ntrees_theta = 50L, ntrees_zeta = 100L,
                        ndpost = 1000L, nskip = 1000L,
-                       covariance_type = c("fa_mgp", "diag", "wishart", "fa"),
+                       covariance_type = c("diag", "wishart", "fa", "fa_mgp"),
                        #### Related to the covariance
                        # Inv-Wishart or indep. Gammas
                        nu_prior = self$d,
@@ -299,7 +299,6 @@ ZANIMLNBART <- R6::R6Class(classname = "ZANIMLNBART", public = list(
   },
   RunMCMC = function() {
     ini <- proc.time()
-    if (q_factors == 0) q_factors <- self$d - 1
     self$cpp_obj$RunMCMC()
     self$elapsed_time <- proc.time() - ini
     # Average number of leaves for theta and zeta regression trees
