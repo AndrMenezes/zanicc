@@ -264,7 +264,6 @@ zi_binomial <- function(x, N, standardise = FALSE) {
 #' posterior estimates; smaller values indicate better recovery, while coverage
 #' values closer to the nominal credible level indicate better calibration.
 #'
-#'
 
 
 #' @rdname recovery_metrics
@@ -502,7 +501,7 @@ compute_prediction_metrics <- function(x, draws) {
 #' @param truth A vector of true binary class labels, coded as `0` and `1`.
 #' @param estimated A vector of estimated binary class labels, coded as `0` and `1`.
 #'
-#' @return A named vector containing sensitivity (`sens`), specificity (`spec`),
+#' @return A named vector containing `precision`, `recall`, `specificity`,
 #' Matthews correlation coefficient (`mcc`), and F1 score (`f1`).
 #'
 #' @export
@@ -515,9 +514,17 @@ compute_classification_metrics <- function(truth, estimated) {
   tn <- sum(not_selected %in% excluded)
   fp <- sum(select %in% excluded)
   fn <- sum(not_selected %in% included)
-  sensitivity <- tp / (fn + tp)
-  specificity <- tn / (fp + tn)
+
+  rcl <- tp / (tp + fn) # sensitivity
+  prc <- tp / (tp + fp)
+  spec <- tn / (fp + tn)
   mcc <- (tp * tn - fp * fn) / (sqrt(tp + fp) * sqrt(tp + fn) * sqrt(tn + fp) * sqrt(tn + fn))
-  f1 <- 2 * tp / (2 * tp + fn + fp)
-  c(sens = sensitivity, spec = specificity, mcc = mcc, f1 = f1)
+  if (is.na(mcc)) mcc <- 0.0
+  # f1 <- 2 * tp / (2 * tp + fn + fp)
+  f1 <- 2 * prc * rcl / (prc + rcl)
+  c(precision = prc, recall = rcl, specificity = spec, mcc = mcc, f1 = f1)
 }
+
+
+
+
