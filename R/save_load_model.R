@@ -35,6 +35,7 @@ save_model <- function(object, model_dir, file_name = "mod.rds") {
   invisible(file.path(model_dir, file_name))
 }
 
+#' @importFrom Rcpp "Module"
 #' @rdname save_load
 #' @export
 load_model <- function(model_dir, file_name = "mod.rds") {
@@ -44,12 +45,12 @@ load_model <- function(model_dir, file_name = "mod.rds") {
   obj <- readRDS(file.path(model_dir, file_name))
   ml <- Rcpp::Module(obj$cpp_module_name, PACKAGE = "zanicc")
   obj$cpp_obj <- switch(obj$cpp_module_name,
-    "multinomial_bart" = new(ml$MultinomialBART, matrix(0, 1, obj$d), matrix(0, 1, obj$p)),
-    "multinomial_ln_bart" = new(ml$MultinomialLNBART, matrix(0, 1, obj$d), matrix(0, 1, obj$p)),
-    "zanim_bart_probit" = new(ml$ZANIMBARTProbit, matrix(0, 1, obj$d), matrix(0, 1, obj$p_theta), matrix(0, 1, obj$p_zeta)),
-    "zanim_ln_bart" = new(ml$ZANIMLNBART, matrix(0, 1, obj$d), matrix(0, 1, obj$p_theta), matrix(0, 1, obj$p_zeta)),
-    "zanidm_linear_reg" = new(ml$ZANIDMReg, matrix(0, 1, obj$d), matrix(0, 1, obj$p_alpha), matrix(0, 1, obj$p_zeta)),
-    "dm_linear_reg" = new(ml$DMLinearReg, matrix(0, 1, obj$d), matrix(0, 1, obj$p))
+    "multinomial_bart" = methods::new(ml$MultinomialBART, matrix(0, 1, obj$d), matrix(0, 1, obj$p)),
+    "multinomial_ln_bart" = methods::new(ml$MultinomialLNBART, matrix(0, 1, obj$d), matrix(0, 1, obj$p)),
+    "zanim_bart_probit" = methods::new(ml$ZANIMBARTProbit, matrix(0, 1, obj$d), matrix(0, 1, obj$p_theta), matrix(0, 1, obj$p_zeta)),
+    "zanim_ln_bart" = methods::new(ml$ZANIMLNBART, matrix(0, 1, obj$d), matrix(0, 1, obj$p_theta), matrix(0, 1, obj$p_zeta)),
+    "zanidm_linear_reg" = methods::new(ml$ZANIDMReg, matrix(0, 1, obj$d), matrix(0, 1, obj$p_alpha), matrix(0, 1, obj$p_zeta)),
+    "dm_linear_reg" = methods::new(ml$DMLinearReg, matrix(0, 1, obj$d), matrix(0, 1, obj$p))
   )
   obj
 }

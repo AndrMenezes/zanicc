@@ -23,14 +23,14 @@
 dmultinomial <- function(x, prob, log = TRUE) {
   x <- x + 0.5
   # storage.mode(x) <- "integer"
-  N <- matrixStats::rowSums2(x)
+  N <- rowSums(x)
   N <- if (length(unique(N)) == 1) N[1L] else N
   if (is.matrix(prob)) {
     xp <- x * log(prob)
   } else {
     xp <- t(t(x) * log(prob))
   }
-  r <- lgamma(N + 1) + matrixStats::rowSums2(xp - lgamma(x + 1), na.rm = TRUE)
+  r <- lgamma(N + 1) + rowSums(xp - lgamma(x + 1), na.rm = TRUE)
   return(if (log) r else exp(r))
 }
 
@@ -120,9 +120,9 @@ load_bin_coefficients <- function(fname, p, d, m) {
 summarise_draws <- function(x, prob = 0.05) {
   n <- nrow(x)
   data.frame(
-    id = seq_len(n), mean = rowMeans(x), median = apply(x, 1L, median),
-    ci_lower = apply(x, 1, quantile, prob / 2),
-    ci_upper = apply(x, 1, quantile, 1 - prob / 2)
+    id = seq_len(n), mean = rowMeans(x), median = apply(x, 1L, stats::median),
+    ci_lower = apply(x, 1, stats::quantile, prob / 2),
+    ci_upper = apply(x, 1, stats::quantile, 1 - prob / 2)
   )
 }
 #' @rdname summarise_draws
@@ -137,10 +137,10 @@ summarise_draws_3d <- function(x, prob = 0.05) {
 
 # Aux functions to plot posterior predictive against one covariate
 .plot_fit_curve <- function(data) {
-  ggplot2::ggplot(data, aes(x = x, y = theta)) +
+  ggplot2::ggplot(data, ggplot2::aes(x = x, y = theta)) +
     ggplot2::geom_line() +
-    ggplot2::geom_line(aes(y = mean), col = "dodgerblue", linewidth = 0.8) +
-    ggplot2::geom_ribbon(aes(ymin = ci_lower, ymax = ci_upper),
+    ggplot2::geom_line(ggplot2::aes(y = mean), col = "dodgerblue", linewidth = 0.8) +
+    ggplot2::geom_ribbon(ggplot2::aes(ymin = ci_lower, ymax = ci_upper),
       fill = "dodgerblue", alpha = 0.3
     )
 }

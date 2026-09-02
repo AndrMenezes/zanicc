@@ -60,6 +60,7 @@
 #' A numeric \eqn{n \times p} matrix containing independent samples uniformly
 #' distributed over the convex hull of the points in `X`.
 #'
+#' @importFrom geometry "delaunayn"
 #' @export
 runifconvexhull <- function(n, X) {
   # Triangulate the points. Indexes into simplices, by row.
@@ -142,6 +143,7 @@ runifconvexhull <- function(n, X) {
 #'
 #' This function is a high-level interface to an efficient `C++` implementation.
 #'
+#' @importFrom truncnorm "rtruncnorm"
 #' @rdname inverse_posterior
 #' @export
 inverse_posterior_zanimlnbart <- function(object, Y,
@@ -173,7 +175,7 @@ inverse_posterior_zanimlnbart <- function(object, Y,
 
   # Initialise C++ class
   ml <- Rcpp::Module(module = "inverse_posterior", PACKAGE = "zanicc")
-  cpp_obj <- new(
+  cpp_obj <- methods::new(
     ml$InversePosterior, object$d, object$ntrees_theta,
     object$ntrees_zeta, object$forests_dir
   )
@@ -190,11 +192,11 @@ inverse_posterior_zanimlnbart <- function(object, Y,
       cat("files {theta_ij.bin} and {zeta_ij.bin} with the posterior distribution of f^{(c)}(x*) and f^{(0)}(x*) do not exist in the folder {dir_posterior_fx}. Computing such predictions...\n")
       # Compute the posterior distribution of f^{(c)}_j(x*) and f^{(0)}_j(x*) for x*~\pi(x*) and j=1,...,d
       ini <- proc.time()
-      predict(object,
+      stats::predict(object,
         newdata = x_proposal, load = FALSE, output_dir = dir_posterior_fx,
         type = "theta"
       )
-      predict(object,
+      stats::predict(object,
         newdata = x_proposal, load = FALSE, output_dir = dir_posterior_fx,
         type = "zeta"
       )

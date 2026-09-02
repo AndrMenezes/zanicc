@@ -20,10 +20,11 @@ Imports:
     coda,
     geometry,
     ggplot2,
-    matrixStats,
+    methods,
     R6,
     Rcpp,
     scoringRules,
+    splines,
     truncnorm
 Suggests: 
     rmarkdown,

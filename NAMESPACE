@@ -63,5 +63,16 @@ export(zi_multinomial)
 export(zi_neg_bin)
 export(zi_poisson)
 importFrom(R6,"R6Class")
-importFrom(Rcpp,sourceCpp)
+importFrom(Rcpp,
+  "Module",
+  sourceCpp
+)
+importFrom(coda,
+  "HPDinterval",
+  "as.mcmc"
+)
+importFrom(geometry,"delaunayn")
+importFrom(scoringRules,"crps_sample")
+importFrom(splines,"bs")
+importFrom(truncnorm,"rtruncnorm")
 useDynLib(zanicc, .registration = TRUE)

@@ -63,31 +63,31 @@ plot_ppc <- function(Y, Y_ppc = NULL, object = NULL, output = FALSE) {
   )
 
   # Keep user's graphs options
-  oldpar <- par(no.readonly = TRUE)
-  on.exit(par(oldpar))
+  oldpar <- graphics::par(no.readonly = TRUE)
+  on.exit(graphics::par(oldpar))
 
   # Plotting
-  par(mar = c(4, 4, 1, 1), mfrow = c(2, 2))
-  plot(density(res_entropy$t_ppc),
+  graphics::par(mar = c(4, 4, 1, 1), mfrow = c(2, 2))
+  plot(stats::density(res_entropy$t_ppc),
     main = "Entropy", xlab = "", ylab = "",
     xlim = range(res_entropy$t_obs, res_entropy$t_ppc)
   )
-  abline(v = res_entropy$t_obs)
-  plot(density(res_mdi$t_ppc),
+  graphics::abline(v = res_entropy$t_obs)
+  plot(stats::density(res_mdi$t_ppc),
     main = "MDI", xlab = "", ylab = "",
     xlim = range(res_mdi$t_obs, res_mdi$t_ppc)
   )
-  abline(v = res_mdi$t_obs)
-  plot(density(res_zero$t_ppc),
+  graphics::abline(v = res_mdi$t_obs)
+  plot(stats::density(res_zero$t_ppc),
     main = "Prop of zero", xlab = "", ylab = "",
     xlim = range(res_zero$t_obs, res_zero$t_ppc)
   )
-  abline(v = res_zero$t_obs)
-  plot(density(res_zi$t_ppc),
+  graphics::abline(v = res_zero$t_obs)
+  plot(stats::density(res_zi$t_ppc),
     main = "ZI", xlab = "", ylab = "",
     xlim = range(res_zi$t_obs, res_zi$t_ppc)
   )
-  abline(v = res_zi$t_obs)
+  graphics::abline(v = res_zi$t_obs)
 
   if (output) {
     return(list(entropy = res_entropy, mdi = res_mdi, prop_zero = res_zero, zi = res_zi))
@@ -157,21 +157,21 @@ plot_qqplots_ppd <- function(Y, Y_ppc = NULL, object = NULL, relative = FALSE,
     Y_ppc <- ppd(object, relative = FALSE)
   }
   if (relative) {
-    Y_ppc <- .normalize_composition(Y_ppc)
+    Y_ppc <- .normalise_composition(Y_ppc)
     Y <- sweep(Y, 1, rowSums(Y), "/")
   }
   # Probabilities for the quantiles
   probs <- seq(0.0, 1.0, length.out = len_probs)
   # Keep user's graphs options
-  oldpar <- par(no.readonly = TRUE)
-  on.exit(par(oldpar))
+  oldpar <- graphics::par(no.readonly = TRUE)
+  on.exit(graphics::par(oldpar))
   d <- ncol(Y)
   if (output) list_data <- vector(mode = "list", length = d)
   if (is.null(mfrow)) mfrow <- grDevices::n2mfrow(d)
   # Plotting
-  par(mfrow = mfrow, mar = c(4, 4, 1, 1))
+  graphics::par(mfrow = mfrow, mar = c(4, 4, 1, 1))
   for (j in seq_len(d)) {
-    q_obs <- quantile(Y[, j], probs = probs, names = FALSE)
+    q_obs <- stats::quantile(Y[, j], probs = probs, names = FALSE)
     q_teo <- marginal_quantiles_ppd(yj_ppc = Y_ppc[, , j], probs = probs)
     ry <- c(min(q_teo[, 2L]), max(q_teo[, 3L]))
     rx <- range(q_obs)
@@ -180,9 +180,9 @@ plot_qqplots_ppd <- function(Y, Y_ppc = NULL, object = NULL, relative = FALSE,
       main = sprintf("category j=%i", j),
       xlab = "Theoretical quantiles", ylab = "Empirical quantiles"
     )
-    lines(q_teo[, 2L], q_obs, lty = "dashed")
-    lines(q_teo[, 3L], q_obs, lty = "dashed")
-    abline(0, 1, col = "grey60", lty = "dashed")
+    graphics::lines(q_teo[, 2L], q_obs, lty = "dashed")
+    graphics::lines(q_teo[, 3L], q_obs, lty = "dashed")
+    graphics::abline(0, 1, col = "grey60", lty = "dashed")
     if (output) list_data[[j]] <- cbind(q_obs, q_teo)
   }
   if (output) {
@@ -194,9 +194,9 @@ plot_qqplots_ppd <- function(Y, Y_ppc = NULL, object = NULL, relative = FALSE,
 #' @rdname marginal_qqplots_ppd
 #' @export
 marginal_quantiles_ppd <- function(yj_ppc, probs) {
-  qs_ppc <- apply(yj_ppc, 1, quantile, probs = probs, names = FALSE)
-  q_med <- apply(qs_ppc, 1, median)
-  q_lo <- apply(qs_ppc, 1, quantile, probs = 0.025)
-  q_up <- apply(qs_ppc, 1, quantile, probs = 0.975)
+  qs_ppc <- apply(yj_ppc, 1, stats::quantile, probs = probs, names = FALSE)
+  q_med <- apply(qs_ppc, 1, stats::median)
+  q_lo <- apply(qs_ppc, 1, stats::quantile, probs = 0.025)
+  q_up <- apply(qs_ppc, 1, stats::quantile, probs = 0.975)
   cbind(q_med, q_lo, q_up)
 }

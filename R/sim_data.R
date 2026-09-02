@@ -1,3 +1,4 @@
+#' @importFrom splines "bs"
 sim_data_zanim_bspline_curve <- function(n, d, n_trials, dof_bs_theta = 6L,
                                          dof_bs_zeta = 4L,
                                          link_zeta = c("logit", "probit")) {
@@ -65,7 +66,7 @@ sim_data_zanim_ln_bspline_curve <- function(n, d = 3L, n_trials, dof_bs_theta = 
   # Generate covariance matrix
   if (covariance == "exponential") {
     x <- stats::runif(d)
-    true_Sigma_U <- s2 * exp(-as.matrix(dist(x)) / lg)
+    true_Sigma_U <- s2 * exp(-as.matrix(stats::dist(x)) / lg)
   } else if (covariance == "toeplitz") {
     true_Sigma_U <- matrix(0, d, d)
     true_Sigma_U <- rho^abs(row(true_Sigma_U) - col(true_Sigma_U))
@@ -298,7 +299,7 @@ sim_data_zanicc_2d <- function(n_grid = 20, n_sample = n_grid^2, d, n_trials,
   region <- match.arg(region)
   if (region == "convexhull") {
     if (is.null(X_aux)) {
-      X_aux <- pollen_data$X[, c("gdd5", "mtco")]
+      X_aux <- zanicc::pollen_climate$X[, c("gdd5", "mtco")]
       X_aux <- scale(X_aux)
     }
     X <- suppressWarnings(runifconvexhull(n = n_sample, X = X_aux))
@@ -407,6 +408,7 @@ sim_data_zanicc_2d <- function(n_grid = 20, n_sample = n_grid^2, d, n_trials,
 sim_zanim_ln_s1 <- function(n_sample, random_effects = TRUE, structural_zero = TRUE,
                             seed = 1212) {
   set.seed(seed)
+  d <- 4
 
   n_trials <- sample(seq.int(100L, 500L), n_sample, replace = TRUE)
   X <- as.matrix(seq(-1, 1, length.out = n_sample))

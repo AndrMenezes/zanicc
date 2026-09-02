@@ -85,7 +85,7 @@ zi_multinomial <- function(Y) {
 #' @export
 gdi <- function(Y) {
   m <- colMeans(Y)
-  cv <- cov(Y)
+  cv <- stats::cov(Y)
   drop((crossprod(sqrt(m), cv) %*% sqrt(m)) / crossprod(m))
 }
 
@@ -93,7 +93,7 @@ gdi <- function(Y) {
 #' @export
 mdi <- function(Y) {
   m <- colMeans(Y)
-  v <- diag(cov(Y))
+  v <- diag(stats::cov(Y))
   di <- v / m
   drop(sum(m^2 * di) / crossprod(m))
 }
@@ -102,7 +102,7 @@ mdi <- function(Y) {
 #' @export
 mcv <- function(Y) {
   m <- colMeans(Y)
-  v <- cov(Y)
+  v <- stats::cov(Y)
   drop(sqrt((crossprod(m, v) %*% m) / sum(m^2)))
 }
 
@@ -131,7 +131,7 @@ zi_neg_bin <- function(x) {
   if (p0 == 0.0) {
     return(0.0)
   }
-  s2 <- var(x)
+  s2 <- stats::var(x)
   m <- mean(x)
   1.0 + (s2 - m) * log(p0) / (m^2 * (log(s2) - log(m)))
 }
@@ -150,6 +150,7 @@ zi_poisson <- function(x) {
 #' @export
 zi_binomial <- function(x, N, standardise = FALSE) {
   sum_N <- sum(N)
+  n <- nrow(x)
   p0 <- mean(x == 0)
   p_hat <- sum(x) / sum_N
   p0_teo <- mean((1 - p_hat)^N)
@@ -450,9 +451,9 @@ compute_kl_prob_chain <- function(reference_values, draws) {
 }
 
 # Compute the mode using kernel density estimates
-.get_mode <- function(X) {
+.get_mode <- function(X, ...) {
   apply(X, 2, function(x) {
-    dd <- density(x)
+    dd <- stats::density(x, ...)
     dd$x[which.max(dd$y)]
   })
 }
@@ -470,13 +471,15 @@ compute_kl_prob_chain <- function(reference_values, draws) {
 #' continuous ranked probability score (`crps`), and 95\% and 50\% empirical
 #' coverage of the highest posterior interval (`coverage_95` and `coverage_50`).
 #' @export
+#' @importFrom coda "as.mcmc" "HPDinterval"
+#' @importFrom scoringRules "crps_sample"
 compute_prediction_metrics <- function(x, draws) {
   n <- nrow(x)
   stopifnot(n == dim(draws)[3L])
   l <- lapply(seq_len(n), function(i) {
     post <- as.matrix(draws[, , i])
     mu <- colMeans(post)
-    md <- apply(post, 2, median)
+    md <- apply(post, 2, stats::median)
     mo <- .get_mode(post)
     c(
       mae = sum(abs(x[i, ] - md)),
