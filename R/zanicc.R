@@ -1,4 +1,4 @@
-#' Bayesian (non)parametric regression models zero-inflated multivariate count-compositional data
+#' Bayesian (non)parametric regression models for zero-inflated multivariate count-compositional data
 #'
 #' @description
 #' Carries out Bayesian inference, through efficient Markov chain Monte Carlo algorithms,
