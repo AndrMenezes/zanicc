@@ -9,13 +9,15 @@ test_that("zanim linear reg", {
   set.seed(6669)
   X <- cbind(1, matrix(stats::rnorm(n_sample * p, sd = 0.5), ncol = p))
   eta_alpha <- eta_zeta <- matrix(nrow = n_sample, ncol = d)
-  true_coef_counts <- rbind(c(0.1, 0.2, 0.3),
-                            c(2.0, -3.0, 1.0)
-                            , c(4.0, -4.0, 3.0)
+  true_coef_counts <- rbind(
+    c(0.1, 0.2, 0.3),
+    c(2.0, -3.0, 1.0),
+    c(4.0, -4.0, 3.0)
   )
-  true_coef_zi <- rbind(c(-2.0, -1.5, -1.0),
-                        c(-1.0, 2.0, 1.5)
-                        , c(0.5, -1.5, 2.0)
+  true_coef_zi <- rbind(
+    c(-2.0, -1.5, -1.0),
+    c(-1.0, 2.0, 1.5),
+    c(0.5, -1.5, 2.0)
   )
   rownames(true_coef_counts) <- rownames(true_coef_zi) <- c("intercept", "x1", "x2")
   for (j in seq_len(d)) {
@@ -47,8 +49,11 @@ test_that("zanim linear reg", {
     g <- stats::rgamma(n = d, shape = tau * p_ij, rate = 1.0)
     # g <- alphas[i, ]
     true_thetas[i, ] <- g / sum(g)
-    true_varthetas[i, ] <-  z * g / sum(z * g)
-    if (all(is_zero)) {Y[i, ] <- 0L; true_varthetas[i, ] <- 0.0}
+    true_varthetas[i, ] <- z * g / sum(z * g)
+    if (all(is_zero)) {
+      Y[i, ] <- 0L
+      true_varthetas[i, ] <- 0.0
+    }
     if (sum(is_zero) == d - 1L) {
       Y[i, ] <- rep(0L, d)
       Y[i, !is_zero] <- n_trials
@@ -57,7 +62,7 @@ test_that("zanim linear reg", {
     }
     Z[i, ] <- z
   }
-  cbind(all=colMeans(Y==0), structural=colMeans(Z==0), sampling=colMeans(Y==0) - colMeans(Z==0))
+  cbind(all = colMeans(Y == 0), structural = colMeans(Z == 0), sampling = colMeans(Y == 0) - colMeans(Z == 0))
   # Fit ZANIM-linear reg
 
   # devtools::load_all()
@@ -78,14 +83,18 @@ test_that("zanim linear reg", {
   plot(mod_zanim_reg$draws_betas_theta[3L, 3L, ], type = "l")
 
   coda::effectiveSize(coda::as.mcmc(compute_frob_chain(
-    true_values = true_varthetas, draws = mod_zanim_reg$draws_abundance)))
+    true_values = true_varthetas, draws = mod_zanim_reg$draws_abundance
+  )))
   coda::effectiveSize(coda::as.mcmc(compute_frob_chain(
-    true_values = true_thetas, draws = mod_zanim_reg$draws_theta)))
+    true_values = true_thetas, draws = mod_zanim_reg$draws_theta
+  )))
 
   # devtools::load_all()
   mod_zanim_ln_reg <- ZANIMLNRegression$new(Y = Y, X_theta = X, X_zeta = X)
-  mod_zanim_ln_reg$SetupMCMC(sd_prior_beta_theta = rep(1, p + 1),
-                             covariance_type = "wishart", ndpost = 5000, nskip = 30000)
+  mod_zanim_ln_reg$SetupMCMC(
+    sd_prior_beta_theta = rep(1, p + 1),
+    covariance_type = "wishart", ndpost = 5000, nskip = 30000
+  )
   mod_zanim_ln_reg$RunMCMC()
   mod_zanim_ln_reg$PosterioMeanCoef(parameter = "theta")
   true_coef_counts
@@ -102,36 +111,47 @@ test_that("zanim linear reg", {
   plot(mod_zanim_ln_reg$draws_betas_theta[2L, 3L, ], type = "l")
 
   coda::effectiveSize(coda::as.mcmc(compute_frob_chain(
-    true_values = true_varthetas, draws = mod_zanim_ln_reg$draws_abundance)))
+    true_values = true_varthetas, draws = mod_zanim_ln_reg$draws_abundance
+  )))
   coda::effectiveSize(coda::as.mcmc(compute_frob_chain(
-    true_values = true_thetas, draws = mod_zanim_ln_reg$draws_theta)))
+    true_values = true_thetas, draws = mod_zanim_ln_reg$draws_theta
+  )))
 
 
-  c(zanim_reg = compute_frob(true_values = true_varthetas,
-                             estimates = apply(mod_zanim_reg$draws_abundance, c(1, 2), mean)),
-    zanim_ln_reg = compute_frob(true_values = true_varthetas,
-                                estimates = apply(mod_zanim_ln_reg$draws_abundance, c(1, 2), mean))
+  c(
+    zanim_reg = compute_frob(
+      true_values = true_varthetas,
+      estimates = apply(mod_zanim_reg$draws_abundance, c(1, 2), mean)
+    ),
+    zanim_ln_reg = compute_frob(
+      true_values = true_varthetas,
+      estimates = apply(mod_zanim_ln_reg$draws_abundance, c(1, 2), mean)
+    )
   )
-  c(zanim_reg = compute_frob(true_values = true_thetas,
-                             estimates = apply(mod_zanim_reg$draws_theta, c(1, 2), mean)),
-    zanim_ln_reg = compute_frob(true_values = true_thetas,
-                                estimates = apply(mod_zanim_ln_reg$draws_theta, c(1, 2), mean))
+  c(
+    zanim_reg = compute_frob(
+      true_values = true_thetas,
+      estimates = apply(mod_zanim_reg$draws_theta, c(1, 2), mean)
+    ),
+    zanim_ln_reg = compute_frob(
+      true_values = true_thetas,
+      estimates = apply(mod_zanim_ln_reg$draws_theta, c(1, 2), mean)
+    )
   )
   c(
     zanim_reg = coda::effectiveSize(coda::as.mcmc(compute_frob_chain(
-      true_values = true_varthetas, draws = mod_zanim_reg$draws_abundance))),
+      true_values = true_varthetas, draws = mod_zanim_reg$draws_abundance
+    ))),
     zanim_ln_reg = coda::effectiveSize(coda::as.mcmc(compute_frob_chain(
-      true_values = true_varthetas, draws = mod_zanim_reg$draws_abundance)))
+      true_values = true_varthetas, draws = mod_zanim_reg$draws_abundance
+    )))
   )
   c(
     zanim_reg = coda::effectiveSize(coda::as.mcmc(compute_kl_simplex_chain(
-      true_values = true_thetas, draws = mod_zanim_reg$draws_theta))),
+      true_values = true_thetas, draws = mod_zanim_reg$draws_theta
+    ))),
     zanim_ln_reg = coda::effectiveSize(coda::as.mcmc(compute_kl_simplex_chain(
-      true_values = true_thetas, draws = mod_zanim_reg$draws_theta)))
+      true_values = true_thetas, draws = mod_zanim_reg$draws_theta
+    )))
   )
-
-
 })
-
-
-

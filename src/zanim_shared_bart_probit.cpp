@@ -40,7 +40,7 @@ void ZANIMSharedBARTProbit::SetMCMC(double v0_theta, double k_zeta,
                               int alpha_random_mult_,
                               arma::mat xinfo, std::string path_out_,
                               int keep_draws_, int save_trees_) {
-  Rcpp::RNGScope scope;                              
+  Rcpp::RNGScope scope;
   ntrees_theta = ntrees_theta_;
   ntrees_zeta = ntrees_zeta_;
   path_out = path_out_;
@@ -156,7 +156,7 @@ void ZANIMSharedBARTProbit::SetMCMC(double v0_theta, double k_zeta,
   accept_rate_theta = arma::zeros<arma::uvec>(3);
   accept_rate_zeta = arma::zeros<arma::umat>(3, d);
 
-  std::cout << "ZANIM BART set up!! \n\n";
+  Rcpp::Rcout << "ZANIM BART set up!! \n\n";
 }
 
 void ZANIMSharedBARTProbit::BackFitMultinomial(int &t) {
@@ -164,7 +164,7 @@ void ZANIMSharedBARTProbit::BackFitMultinomial(int &t) {
     // Back-fit
   fit_h = f_mu - bart_mult->g_trees.slice(t);
 
-  // std::cout << f_mu(0, j) << "\n";
+  // Rcpp::Rcout << f_mu(0, j) << "\n";
 
   bart_mult->fit_h_phi = exp(fit_h);
   bart_mult->fit_h_phi.each_col() %= bart_mult->phi;
@@ -288,7 +288,7 @@ void ZANIMSharedBARTProbit::RunMCMC() {
   // Aux to compute sum(log(splitprobs))
   double slp = 0.0;
 
-  std::cout << "Doing the warm-up (burn-in) of " << nskip << "\n\n";
+  Rcpp::Rcout << "Doing the warm-up (burn-in) of " << nskip << "\n\n";
   double progress = 0;
   for (int i = 0; i < nskip; i++) {
     progress = (double) 100 * i / nskip;
@@ -319,7 +319,7 @@ void ZANIMSharedBARTProbit::RunMCMC() {
   }
 
   // Run the actual posterior samples
-  std::cout << "Starting post-burn-in iterations...\n\n";
+  Rcpp::Rcout << "Starting post-burn-in iterations...\n\n";
   progress = 0;
   for (int i = 0; i < ndpost; i++) {
     progress = (double) 100 * i / ndpost;
@@ -427,12 +427,12 @@ void ZANIMSharedBARTProbit::ComputePredictProb(arma::mat &X_, int n_samples,
     for (int h = 0; h < ntrees; h++) {
       // Import tree
       Node *tree = deserialise_tree(is, d);
-      // std::cout << tree->NLeaves() << "\n\n";
+      // Rcpp::Rcout << tree->NLeaves() << "\n\n";
       // Do the predictions
       for (int i = 0; i < n_; i++) {
         const arma::rowvec &xi = X_.row(i);
         f_pred.row(i) += GetMu(tree, xi).t();
-        //std::cout << "j=" << j << " h=" << h << " mu_ij=" << mu << "\n";
+        //Rcpp::Rcout << "j=" << j << " h=" << h << " mu_ij=" << mu << "\n";
       }
       delete tree;
     }
@@ -470,7 +470,7 @@ void ZANIMSharedBARTProbit::ComputePredictProbZero(arma::mat &X_, int n_samples,
       progress = (double) 100 * t / n_samples;
       Rprintf("\r");
       Rprintf("%3.2f%% Completed", progress);
-      // std::cout << "Posterior draw " << t << " of " << n_samples << "\n";
+      // Rcpp::Rcout << "Posterior draw " << t << " of " << n_samples << "\n";
     }
     // Iterate over categories
     for (int j = 0; j < d; j++) {
@@ -516,7 +516,7 @@ arma::ucube ZANIMSharedBARTProbit::GetVarCount(int n_samples, int ntrees,
 
   // Iterate over categories (this can be done in parallel)
   for (int j = 0; j < d; j++) {
-    std::cout << "Computing varcount for " << j << "\n";
+    Rcpp::Rcout << "Computing varcount for " << j << "\n";
     // Open file of category j
     std::ifstream is(path + "/forests_" + parm_name + "_" + std::to_string(j) + ".bin");
     // Iterate over the mcmc samples

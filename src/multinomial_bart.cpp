@@ -208,7 +208,7 @@ double MultinomialBART::UpdateSigmaPrior() {
   if (L < 0.0) L = 0.0;
   while (target_sigma_prior(R, m_bh, s_log_lambda, s_lambda, s2_0) > y) R += w_ss;
   double x_star = L + R::unif_rand() * (R - L);
-  // std::cout << "Start SS \n";
+  // Rcpp::Rcout << "Start SS \n";
   // Repeat until create an acceptable proposal
   do {
     x_star = L + R::unif_rand() * (R - L);
@@ -249,7 +249,7 @@ double MultinomialBART::UpdateSigmaPrior(int j) {
   if (L < 0.0) L = 0.0;
   while (target_sigma_prior(R, m_bh, s_log_lambda, s_lambda, s2_0) > y) R += w_ss;
   double x_star = L + R::unif_rand() * (R - L);
-  // std::cout << "Start SS \n";
+  // Rcpp::Rcout << "Start SS \n";
   // Repeat until create an acceptable proposal
   do {
     x_star = L + R::unif_rand() * (R - L);
@@ -319,10 +319,10 @@ void MultinomialBART::SetMCMC(double v0, int ntrees_, int ndpost_, int nskip_,
   // First draw for the latent variable phi
   phi = arma::zeros<arma::vec>(n);
   for (int i = 0; i < n; i++) {
-    //std::cout << i  << " " << n_trials(i) << " " << R::rgamma((double)n_trials(i), 1.0) << "\n";
+    //Rcpp::Rcout << i  << " " << n_trials(i) << " " << R::rgamma((double)n_trials(i), 1.0) << "\n";
     phi(i) = R::rgamma((double)n_trials(i), 1.0); //n_trials(i)
     // phi(i) = rng.gamma((double)n_trials(i), 1.0);
-    //std::cout << phi(i) << "\n";
+    //Rcpp::Rcout << phi(i) << "\n";
   }
 
   // Initialize the trees
@@ -447,7 +447,7 @@ void MultinomialBART::RunMCMC() {
   f_mu = arma::zeros<arma::mat>(n, d);
   f_lambda = arma::zeros<arma::mat>(n, d);
 
-  std::cout << "Doing the warm-up (burn-in) of " << nskip << "\n\n";
+  Rcpp::Rcout << "Doing the warm-up (burn-in) of " << nskip << "\n\n";
   double progress = 0.0;
   for (int i = 0; i < nskip; i++) {
     progress = (double) 100 * i / nskip;
@@ -497,7 +497,7 @@ void MultinomialBART::RunMCMC() {
   }
 
 
-  std::cout << "Starting post-burn-in iterations of " << ndpost << "\n\n";
+  Rcpp::Rcout << "Starting post-burn-in iterations of " << ndpost << "\n\n";
   progress = 0.0;
   for (int i=0; i < ndpost; i++) {
     progress = (double) 100 * i / ndpost;

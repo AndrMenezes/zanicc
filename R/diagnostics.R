@@ -4,7 +4,7 @@
 #'
 #' @description
 #' Compute and visualise posterior predictive checks for count-compositional models.
-#' The function `stat_ppc()` evaluates a user-defined diagnostic statistics on both
+#' The function `stat_ppc()` evaluates user-defined diagnostic statistics on both
 #' the observed data and the posterior predictive distribution, while `plot_ppc()`
 #' summarises four built-in diagnostics through density plots.
 #'
@@ -18,9 +18,9 @@
 #' @param stat_fun A function that computes a scalar diagnostic statistic from a
 #' count-compositional matrix.
 #' @param object A fitted model object of class `zanicc` used to generate posterior
-#' predictive samples via the method `ppd()`. Only used when `Y_ppc = NULL`.
+#' predictive samples via the method [ppd()]. Only used when `Y_ppc = NULL`.
 #' @param output Logical. If `TRUE`, return the computed posterior predictive
-#' statistics in addition to producing the plots. Default is `FALSE`.
+#' statistics in addition to producing the plots. The default is `FALSE`.
 #'
 #' @return
 #' `ppc_stat()` returns a list with two elements:
@@ -56,31 +56,42 @@ plot_ppc <- function(Y, Y_ppc = NULL, object = NULL, output = FALSE) {
   res_mdi <- stat_ppc(Y = Y, Y_ppc = Y_ppc, stat_fun = mdi)
   res_zero <- stat_ppc(Y = Y, Y_ppc = Y_ppc, stat_fun = function(Y) mean(Y == 0))
   res_zi <- stat_ppc(Y = Y, Y_ppc = Y_ppc, stat_fun = zi_multinomial)
-  res_entropy <- stat_ppc(Y = sweep(Y, 1, rowSums(Y), "/"),
-                           Y_ppc = .normalize_composition(Y_ppc),
-                           stat_fun = shannon_entropy)
+  res_entropy <- stat_ppc(
+    Y = sweep(Y, 1, rowSums(Y), "/"),
+    Y_ppc = .normalise_composition(Y_ppc),
+    stat_fun = shannon_entropy
+  )
 
   # Keep user's graphs options
-  oldpar <- par(no.readonly = TRUE)
-  on.exit(par(oldpar))
+  oldpar <- graphics::par(no.readonly = TRUE)
+  on.exit(graphics::par(oldpar))
 
   # Plotting
-  par(mar = c(4, 4, 1, 1), mfrow = c(2, 2))
-  plot(density(res_entropy$t_ppc), main = "Entropy", xlab = "", ylab = "",
-       xlim = range(res_entropy$t_obs, res_entropy$t_ppc))
-  abline(v = res_entropy$t_obs)
-  plot(density(res_mdi$t_ppc), main = "MDI", xlab = "", ylab = "",
-       xlim = range(res_mdi$t_obs, res_mdi$t_ppc))
-  abline(v = res_mdi$t_obs)
-  plot(density(res_zero$t_ppc), main = "Prop of zero", xlab = "", ylab = "",
-       xlim = range(res_zero$t_obs, res_zero$t_ppc))
-  abline(v = res_zero$t_obs)
-  plot(density(res_zi$t_ppc), main = "ZI", xlab = "", ylab = "",
-       xlim = range(res_zi$t_obs, res_zi$t_ppc))
-  abline(v = res_zi$t_obs)
+  graphics::par(mar = c(4, 4, 1, 1), mfrow = c(2, 2))
+  plot(stats::density(res_entropy$t_ppc),
+    main = "Entropy", xlab = "", ylab = "",
+    xlim = range(res_entropy$t_obs, res_entropy$t_ppc)
+  )
+  graphics::abline(v = res_entropy$t_obs)
+  plot(stats::density(res_mdi$t_ppc),
+    main = "MDI", xlab = "", ylab = "",
+    xlim = range(res_mdi$t_obs, res_mdi$t_ppc)
+  )
+  graphics::abline(v = res_mdi$t_obs)
+  plot(stats::density(res_zero$t_ppc),
+    main = "Prop of zero", xlab = "", ylab = "",
+    xlim = range(res_zero$t_obs, res_zero$t_ppc)
+  )
+  graphics::abline(v = res_zero$t_obs)
+  plot(stats::density(res_zi$t_ppc),
+    main = "ZI", xlab = "", ylab = "",
+    xlim = range(res_zi$t_obs, res_zi$t_ppc)
+  )
+  graphics::abline(v = res_zi$t_obs)
 
-  if (output)
+  if (output) {
     return(list(entropy = res_entropy, mdi = res_mdi, prop_zero = res_zero, zi = res_zi))
+  }
 
   invisible()
 }
@@ -105,18 +116,18 @@ plot_ppc <- function(Y, Y_ppc = NULL, object = NULL, output = FALSE) {
 #' @param Y_ppc A three-dimensional array containing the posterior predictive
 #' distribution. The first dimension indexes the posterior samples, while the
 #' remaining dimensions correspond to replicated count-compositional matrices.
-#' If `NULL`, then the `plot_qqplots_ppd` function generates the posterior
+#' If `NULL` (the default), then the `plot_qqplots_ppd` function generates the posterior
 #' predictive distribution from the model `object`.
 #' @param object A fitted model object of class `zanicc` used to generate posterior
 #' predictive samples via `ppd()`. Only used when `Y_ppc = NULL`.
 #' @param relative Logical. If `TRUE`, QQ-plots are computed using relative
-#' compositions instead of counts. Default is `FALSE`.
+#' compositions instead of counts. The default is `FALSE`.
 #' @param output Logical. If `TRUE`, return the data used to construct the
 #' QQ-plots in addition to producing the plots. Default is `FALSE`.
 #' @param len_probs Integer giving the number of equally spaced probabilities
-#' used to compute the quantiles. Default is `100`.
+#' used to compute the quantiles. The default is `100`.
 #' @param mfrow A length-two integer vector passed to `par(mfrow)` specifying
-#' the layout of the QQ-plots. If `NULL` (default), a suitable layout is
+#' the layout of the QQ-plots. If `NULL` (the default), a suitable layout is
 #' computed using `grDevices::n2mfrow()`.
 #' @param yj_ppc Matrix with the posterior predictive distribution for given category
 #' dimension.
@@ -146,42 +157,46 @@ plot_qqplots_ppd <- function(Y, Y_ppc = NULL, object = NULL, relative = FALSE,
     Y_ppc <- ppd(object, relative = FALSE)
   }
   if (relative) {
-    Y_ppc <- .normalize_composition(Y_ppc)
+    Y_ppc <- .normalise_composition(Y_ppc)
     Y <- sweep(Y, 1, rowSums(Y), "/")
   }
   # Probabilities for the quantiles
   probs <- seq(0.0, 1.0, length.out = len_probs)
   # Keep user's graphs options
-  oldpar <- par(no.readonly = TRUE)
-  on.exit(par(oldpar))
+  oldpar <- graphics::par(no.readonly = TRUE)
+  on.exit(graphics::par(oldpar))
   d <- ncol(Y)
   if (output) list_data <- vector(mode = "list", length = d)
   if (is.null(mfrow)) mfrow <- grDevices::n2mfrow(d)
   # Plotting
-  par(mfrow = mfrow, mar = c(4, 4, 1, 1))
+  graphics::par(mfrow = mfrow, mar = c(4, 4, 1, 1))
   for (j in seq_len(d)) {
-    q_obs <- quantile(Y[, j], probs = probs, names = FALSE)
-    q_teo <- marginal_quantiles_ppd(yj_ppc = Y_ppc[,,j], probs = probs)
+    q_obs <- stats::quantile(Y[, j], probs = probs, names = FALSE)
+    q_teo <- marginal_quantiles_ppd(yj_ppc = Y_ppc[, , j], probs = probs)
     ry <- c(min(q_teo[, 2L]), max(q_teo[, 3L]))
     rx <- range(q_obs)
-    plot(q_teo[, 1L], q_obs, ylim = ry, xlim = rx,
-         main = sprintf("category j=%i", j),
-         xlab = "Theoretical quantiles", ylab = "Empirical quantiles")
-    lines(q_teo[, 2L], q_obs, lty = "dashed")
-    lines(q_teo[, 3L], q_obs, lty = "dashed")
-    abline(0, 1, col = "grey60", lty = "dashed")
+    plot(q_teo[, 1L], q_obs,
+      ylim = ry, xlim = rx,
+      main = sprintf("category j=%i", j),
+      xlab = "Theoretical quantiles", ylab = "Empirical quantiles"
+    )
+    graphics::lines(q_teo[, 2L], q_obs, lty = "dashed")
+    graphics::lines(q_teo[, 3L], q_obs, lty = "dashed")
+    graphics::abline(0, 1, col = "grey60", lty = "dashed")
     if (output) list_data[[j]] <- cbind(q_obs, q_teo)
   }
-  if (output) return(list_data)
+  if (output) {
+    return(list_data)
+  }
   invisible()
 }
 
 #' @rdname marginal_qqplots_ppd
 #' @export
 marginal_quantiles_ppd <- function(yj_ppc, probs) {
-  qs_ppc <- apply(yj_ppc, 1, quantile, probs = probs, names = FALSE)
-  q_med <- apply(qs_ppc, 1, median)
-  q_lo <- apply(qs_ppc, 1, quantile, probs = 0.025)
-  q_up <- apply(qs_ppc, 1, quantile, probs = 0.975)
+  qs_ppc <- apply(yj_ppc, 1, stats::quantile, probs = probs, names = FALSE)
+  q_med <- apply(qs_ppc, 1, stats::median)
+  q_lo <- apply(qs_ppc, 1, stats::quantile, probs = 0.025)
+  q_up <- apply(qs_ppc, 1, stats::quantile, probs = 0.975)
   cbind(q_med, q_lo, q_up)
 }

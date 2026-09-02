@@ -39,14 +39,14 @@ Node* deserialise_tree(std::istream &is, int &d) {
 // Aux function to print the tree as an array
 void print_tree(Node* node) {
   if (!node) {
-    std::cout << "# ";
+    Rcpp::Rcout << "# ";
     return;
   }
-  std::cout << node->is_leaf << " ";
+  Rcpp::Rcout << node->is_leaf << " ";
   if (node->is_leaf) {
-    std::cout << node->mu << " ";
+    Rcpp::Rcout << node->mu << " ";
   } else {
-    std::cout << node->predictor << " " << node->cutoff << " ";
+    Rcpp::Rcout << node->predictor << " " << node->cutoff << " ";
   }
   print_tree(node->left);
   print_tree(node->right);

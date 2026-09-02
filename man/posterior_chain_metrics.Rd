@@ -24,9 +24,9 @@ Rows correspond to observations and columns correspond to categories.}
 samples.}
 
 \item{ep}{A small positive constant used in
-\code{compute_kl_simplex_chain()} to avoid undefined logarithms when a
+\code{\link[=compute_kl_simplex_chain]{compute_kl_simplex_chain()}} to avoid undefined logarithms when a
 reference probability is positive but the corresponding posterior draw is
-zero.}
+zero. Defaults to \code{1.0}.}
 }
 \value{
 \code{compute_frob_chain()} and \code{compute_kl_simplex_chain()} return a numeric
@@ -45,9 +45,9 @@ Unlike the functions in \verb{\link{recovery_metrics}}, which
 evaluate posterior point estimates (e.g., posterior means or medians), these
 functions compute the discrepancy between each posterior draw and the
 corresponding reference values.
-They are primarily intended for monitoring the convergence of MCMC
-algorithms of the count-compositional models and evaluating the mixing of
-posterior chain.
+They are primarily intended for monitoring the convergence of the MCMC
+algorithms of the count-compositional models and evaluating the mixing of the
+posterior chains.
 
 The currently functions implemented are:
 \itemize{

@@ -33,7 +33,7 @@ rows and taxa in columns. The taxa (columns) must match those used in the modern
 data set.}
 
 \item{method}{Character string specifying the sampling algorithm. One of
-\code{"sir"}, \code{"ess"}, or \code{"cess"}.}
+\code{"sir"} (the default), \code{"ess"}, or \code{"cess"}.}
 
 \item{dir_posterior_fx}{Directory used by the \code{"sir"} method to store (or
 retrieve) the taxon-specific posterior tree ensembles required for likelihood
@@ -53,23 +53,23 @@ is run for \code{nburnin} iterations before collecting a sample. The default
 \item{n_particles}{Number of particles, that is, samples used to obtain an unbiased estimate of
 the ZANIM-LN-BART likelihood.}
 
-\item{mean_prior, S_prior}{Prior mean vector and covariance matrix
+\item{mean_prior, S_prior}{Prior mean vector and covariance matrix, respectively,
 for the climate variables used for the \code{ess} and \code{cess} methods.}
 
-\item{X_ini}{Initial climate values used to initialize the ESS/CESS samplers. Default is NULL,
-so it then it uses a sample from the prior.}
+\item{X_ini}{Initial climate values used to initialise the ESS/CESS samplers. The default is \code{NULL},
+which then uses a sample from the prior.}
 
-\item{Amat, bvec}{H-representation of the convex hull.}
+\item{Amat, bvec}{Halfspace representation of the convex hull, typically obtained via the output of \code{\link[geometry:convhulln]{geometry::convhulln()}} with the flag \code{output.options="n"}.}
 
-\item{lower, upper}{integer giving the lower and upper limits to constrain the
+\item{lower, upper}{Integers giving the lower and upper limits to constrain the
 past climate.}
 
 \item{eta}{Tuning parameter using in the \code{cess} algorithm related to the logistic
-approximation of the indicator function.}
+approximation of the indicator function. Defaults to \code{50.0}.}
 }
 \description{
 Approximates the inverse posterior distribution of the unobserved climate
-variables given the corresponding with fossil compositional counts, and the
+variables given the corresponding with compositional fossil counts, and the
 posterior draws of parameters from the ZANIM-LN-BART model.
 
 This is the main quantity of interest when performing pollen-based palaeoclimate
@@ -92,5 +92,5 @@ Several sampling algorithms are available, including sampling-importance-
 resampling (SIR), elliptical slice sampling (ESS), and constrained
 elliptical slice sampling (CESS).
 
-This function is a high-level interface to an efficient C++ implementation.
+This function is a high-level interface to an efficient \verb{C++} implementation.
 }

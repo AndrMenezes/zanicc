@@ -17,7 +17,7 @@ zanicc(
   keep_draws = TRUE,
   save_trees = FALSE,
   forests_dir = tempdir(),
-  covariance_type = "fa_mgp",
+  covariance_type = c("fa_mgp", "diag", "wishart", "fa"),
   sd_prior_beta_count = rep(1, ncol(X_count)),
   sd_prior_beta_zi = diag(1, ncol(X_zi)),
   S_prior_betas = diag(1, ncol(X_count)),
@@ -31,28 +31,28 @@ Rows correspond to observations and columns correspond to categories.}
 \item{X_count}{A matrix of covariates used to model the count probabilities.
 Rows must correspond to the observations in \code{Y}.}
 
-\item{X_zi}{An optional matrix of covariates used to model structural-zero
-probabilities. If \code{NULL}, \code{X_count} is used when covariates are required
+\item{X_zi}{An optional matrix of covariates used to model the structural zero
+probabilities. If \code{NULL} (the default), \code{X_count} is used when covariates are required
 for the structural-zero component.}
 
 \item{model}{A character string specifying the model to fit. One of
 \code{"zanim_bart"}, \code{"zanim_ln_bart"}, \code{"ml_bart"}, \code{"mln_bart"}, \code{"zanim_reg"},
-\code{"zanim_ln_reg"}, \code{"zanidm_reg"}, or \code{"dm_reg"}.}
+\code{"zanim_ln_reg"}, \code{"zanidm_reg"}, or \code{"dm_reg"}. Defaults to \code{"zanim-bart"}.}
 
 \item{ntrees_theta}{Number of trees used for the BART prior on the
-count probabilities. Default is \code{ntrees_theta=100}.}
+count probabilities. The default is \code{ntrees_theta=100}.}
 
 \item{ntrees_zeta}{Number of trees used for the category-specific BART prior on the
-structural-zero probabilities. Default is \code{ntrees_zeta=100}.}
+structural-zero probabilities. The default is \code{ntrees_zeta=100}.}
 
-\item{ndpost}{Number of posterior MCMC draws to retain.}
+\item{ndpost}{Number of posterior MCMC draws to retain. The default is \code{ndpost=5000}.}
 
 \item{nskip}{Number of MCMC iterations to discard as burn-in before retaining
-posterior draws.}
+posterior draws. The default is \code{nskip=5000}.}
 
-\item{keep_draws}{Logical. Whether to retain posterior draws.}
+\item{keep_draws}{Logical, defaults to \code{TRUE}. Governs whether to retain posterior draws.}
 
-\item{save_trees}{Logical. Whether to save the posterior draws of the BART
+\item{save_trees}{Logical, defaults to \code{FALSE}. Governs whether to save the posterior draws of the BART
 tree topologies and terminal-node parameters to \code{.bin} files. For BART-based
 models, this creates files named \code{forests_theta_j.bin} for the
 category-specific compositional regression trees and, for zero-inflated
@@ -62,10 +62,12 @@ tree topologies and terminal node parameters across all \code{ndpost} posterior
 draws.}
 
 \item{forests_dir}{Character path indicating where to save the
-\code{forests_theta_j.bin} and \code{forests_zeta_j.bin} files.}
+\code{forests_theta_j.bin} and \code{forests_zeta_j.bin} files. Defaults to \code{\link[=tempdir]{tempdir()}}.}
 
 \item{covariance_type}{Character string specifying the prior on the covariance
-matrix for the logistic-normal random effects.
+matrix for the logistic-normal random effects. Defaults to \code{fa_mgp}, for nonparametric factor
+analysis with a multiplicative gamma process shrinkage prior. Other options include \code{fa} (factor analysis without such a prior),
+\code{diag} (for a diagonal covariance matrix), and \code{wishart} (for an inverse Wishart prior).
 This is only used for \code{mln_bart}, \code{zanim_ln_bart}, and \code{zanim_ln_reg} models.}
 
 \item{sd_prior_beta_count}{Prior standard deviations for the regression
@@ -76,13 +78,15 @@ the regression coefficients associated with \code{X_zi}.}
 
 \item{S_prior_betas}{Prior covariance matrix for the regression coefficients
 associated with the count-compositional component.}
+
+\item{...}{Catches unused arguments.}
 }
 \value{
 An R6 object which class depends on the specified \code{model}.
 }
 \description{
 Carries out Bayesian inference, through efficient Markov chain Monte Carlo algorithms,
-for different (non)parametric regression models for analysis of zero-inflated
+for different (non)parametric regression models for the analysis of zero-inflated
 multivariate count-compositional data.
 }
 \details{
@@ -110,18 +114,18 @@ Two types of regression specifications are available.
 \item \strong{Nonparametric regression:} Covariates are related to
 category-specific compositional probabilities and, where applicable,
 structural-zero probabilities through independent Bayesian additive
-regression tree (BART) priors. This allows nonlinear and interactions
-covariate effects to be estimated from the data.
+regression tree (BART) priors. This allows nonlinearities and interactions
+in the covariate effects to be estimated from the data.
 
 \item \strong{Parametric regression:} Covariates are related to the model
-parameters similar to generalized linear models, with suitable link functions
+parameters similarly to generalised linear models, with suitable link functions
 and a parametric linear predictor.
 }
 }
 
 \subsection{Structural zeros}{
 
-Some models have a mixture-based zero-inflated representation that distinguish
+Some models have a mixture-based zero-inflated representation that distinguishes
 structural zeros from zeros arising from the sampling distribution.
 For these models, a latent indicator
 \eqn{z_{ij} \sim \operatorname{Bernoulli}\lbrack 1-\zeta_{ij} \rbrack}
@@ -130,8 +134,8 @@ is structural zero with probability \eqn{1-\zeta_{ij}}.
 
 The structural-zero probabilities \eqn{\zeta_{ij}} can themselves depend
 on covariates.
-In nonparametric models they are assigned BART priors through a probit-link
-function, whereas in parametric models the probit regression is employed.
+In nonparametric models, they are assigned BART priors through a probit-link
+function, whereas probit regression is employed for the parametric models.
 }
 
 \subsection{Available models}{
@@ -140,7 +144,7 @@ The following models are available through \code{model}.
 
 \describe{
 \item{\code{"ml_bart"}}{Multinomial logistic BART model.}
-\item{\code{"mln_bart"}}{multinomial logistic-normal BART model.}
+\item{\code{"mln_bart"}}{Multinomial logistic-normal BART model.}
 \item{\code{"zanim_bart"}}{Zero-and-N-inflated multinomial logistic regression model.}
 \item{\code{"zanim_ln_bart"}}{Zero-and-N-inflated multinomial logistic-normal BART model.}
 \item{\code{"dm_reg"}}{Dirichlet-multinomial regression model.}

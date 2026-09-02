@@ -175,7 +175,7 @@ void ZANIMReg::UpdateLatentVariables() {
 
 void ZANIMReg::RunMCMC() {
 
-  std::cout << "Doing the warm-up (burn-in) of " << nskip << "\n\n";
+  Rcpp::Rcout << "Doing the warm-up (burn-in) of " << nskip << "\n\n";
   double progress = 0;
   for (int t=0; t < nskip; t++) {
     progress = (double) 100 * t / nskip;
@@ -210,7 +210,7 @@ void ZANIMReg::RunMCMC() {
   // draws_phi = arma::zeros<arma::mat>(n, ndpost);
 
   // Run the post-burn in iterations
-  std::cout << "Starting post-burn-in iterations of " << ndpost << "\n\n";
+  Rcpp::Rcout << "Starting post-burn-in iterations of " << ndpost << "\n\n";
   progress = 0;
 
   for (int t=0; t < ndpost; t++) {

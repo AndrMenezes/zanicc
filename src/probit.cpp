@@ -208,7 +208,7 @@ void ProbitBART::SetMCMC(double k, int ntrees_, int ndpost_, int nskip_,
 
   int flag_grow = 0, flag_prune = 0, flag_change = 0;
 
-  // std::cout << "Model set up!" << "\n\n";
+  // Rcpp::Rcout << "Model set up!" << "\n\n";
 }
 
 // Method to Run MCMC
@@ -228,10 +228,10 @@ void ProbitBART::RunMCMC() {
   // Open file to write the forests
   std::ofstream os(path_out + "/forests.bin", std::ios::binary | std::ios::app);
 
-  std::cout << "Starting MCMC...\n";
+  Rcpp::Rcout << "Starting MCMC...\n";
 
   for (int i=0; i < niter; i++) {
-    if ((i % printevery == 0)) std::cout << "Iteration " << i << " of " << niter << "\n";
+    if ((i % printevery == 0)) Rcpp::Rcout << "Iteration " << i << " of " << niter << "\n";
     for (int t=0; t < ntrees; t++) {
       // Back-fit
       fit_h = f_sum_trees - g_trees.col(t);

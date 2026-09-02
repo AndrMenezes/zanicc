@@ -22,16 +22,16 @@ covariance_zanidm(size, alpha, zeta, j, h)
 \arguments{
 \item{n}{integer. The number of samples to generate.}
 
-\item{size}{integer. The trial parameter of multinomial distribution.}
+\item{size}{integer. The trial parameter of the multinomial distribution.}
 
 \item{alpha}{numeric vector. Positive real numbers.}
 
 \item{zeta}{numeric vector. Excess of zero parameter.}
 
-\item{x}{vector. observed vector of compositional counts. It should have
+\item{x}{vector. Observed vector of compositional counts. It should have
 same length as \code{alpha} and \code{zeta}.}
 
-\item{log}{logical; if \code{TRUE}, probabilities p are given as log(p).}
+\item{log}{logical; if \code{TRUE}, probabilities \eqn{p} are given as \eqn{\log(p)}.}
 
 \item{j, h}{integers. Index corresponding to the component for computing the
 marginal PMF of \eqn{Y_j} and for computing the covariance between \eqn{Y_j}
@@ -39,8 +39,9 @@ and \eqn{Y_h}.}
 }
 \description{
 Random number generation and probability mass function for the
-Zero-&-N-Inflated Dirichlet-multinomial distribution. It also contains the
-marginal probability mass function and their expected value.
+Zero-&-N-Inflated Dirichlet-multinomial distribution. Functions are also provided for the
+marginal probability mass function, the first and second marginal moments, and
+the covariance between two elements of the count-compositional vector .
 }
 \references{
 Menezes, A. F. B., Parnell, A. C., and Murphy, K. (2025). Finite mixture representations of

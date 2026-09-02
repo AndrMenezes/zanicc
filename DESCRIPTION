@@ -1,25 +1,40 @@
 Package: zanicc
-Title: Bayesian nonparametric models for zero-inflated count-compositional data
+Title: Bayesian nonparametric models for zero-inflated count-compositional
+    data
 Version: 0.0.2
-Authors@R: c(person(given = "André F. B.", family = "Menezes", role = c("aut", "cre"), email = "andrefelipemaringa@gmail.com", comment = c(ORCID = "0000-0002-3320-9834")),
-    person(given = "Keefe", family = "Murphy", role = "ctb", comment = c(ORCID = "0000-0002-5668-7046")))
+Authors@R: c(
+    person("André F. B.", "Menezes", , "andrefelipemaringa@gmail.com", role = c("aut", "cre"),
+           comment = c(ORCID = "0000-0002-3320-9834")),
+    person("Keefe", "Murphy", role = "ctb",
+           comment = c(ORCID = "0000-0002-5668-7046"))
+  )
 Maintainer: André F. B. Menezes <andrefelipemaringa@gmail.com>
-Description: Provides a collection of nonparametric and parametric models for analysis of zero-inflated count-compositional data, including the zero-and-N-inflated multinomial (ZANIM)-BART and ZANIM logistic-normal (ZANIM-LN)-BART models.
+Description: Provides a collection of nonparametric and parametric models
+    for the analysis of zero-inflated count-compositional data, including
+    the zero-and-N-inflated multinomial (ZANIM)-BART and ZANIM
+    logistic-normal (ZANIM-LN)-BART models.
 License: GPL (>= 3)
-Encoding: UTF-8
-Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.3
+Depends: 
+    R (>= 3.5.0)
+Imports:
+    coda,
+    geometry,
+    ggplot2,
+    methods,
+    R6,
+    Rcpp,
+    scoringRules,
+    splines,
+    truncnorm
+Suggests: 
+    rmarkdown,
+    testthat (>= 3.0.0)
 LinkingTo: 
     Rcpp,
     RcppArmadillo
-Imports: 
-    Rcpp
-Suggests: 
-    knitr,
-    rmarkdown,
-    testthat (>= 3.0.0)
+Config/roxygen2/version: 8.1.0
 Config/testthat/edition: 3
-Depends: 
-    R (>= 3.5)
+Encoding: UTF-8
+Language: en-GB
 LazyData: true
-VignetteBuilder: knitr
+Roxygen: list(markdown = TRUE)

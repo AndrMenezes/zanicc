@@ -130,7 +130,7 @@ arma::cube MultinomialSharedBART::Predict(arma::mat &X_, int d, int n_samples,
 
   // Iterate over categories (this can be done in parallel)
   // for (int j = 0; j < d; j++) {
-    // std::cout << "Compute prediction of category " << j << "\n";
+    // Rcpp::Rcout << "Compute prediction of category " << j << "\n";
   // Open file of category j
   std::ifstream is(forests_dir + "/forests.bin");
   // Iterate over the MCMC samples
@@ -188,7 +188,7 @@ double MultinomialSharedBART::UpdateSigmaPrior() {
   if (L < 0.0) L = 0.0;
   while (target_sigma_prior(R, m_bh, s_log_lambda, s_lambda, s2_0) > y) R += w_ss;
   double x_star = L + R::unif_rand() * (R - L);
-  // std::cout << "Start SS \n";
+  // Rcpp::Rcout << "Start SS \n";
   // Repeat until create an acceptable proposal
   do {
     x_star = L + R::unif_rand() * (R - L);
@@ -308,7 +308,7 @@ void MultinomialSharedBART::SetMCMC(double v0, int ntrees_, int ndpost_, int nsk
   avg_leaves = arma::zeros<arma::uvec>(ntrees);
   avg_depth = arma::zeros<arma::uvec>(ntrees);
 
-  std::cout << "Model set up!" << "\n\n";
+  Rcpp::Rcout << "Model set up!" << "\n\n";
 }
 
 void MultinomialSharedBART::RunMCMC() {
@@ -332,13 +332,13 @@ void MultinomialSharedBART::RunMCMC() {
   // Open file to write the forests FOR each category
   std::ofstream fout(forests_dir + "/forests.bin", std::ios::binary | std::ios::app);
 
-  std::cout << "Starting MCMC...\n";
+  Rcpp::Rcout << "Starting MCMC...\n";
   double progress = 0.0;
   for (int i=0; i < niter; i++) {
     progress = (double) 100 * i / niter;
     Rprintf("\r");
     Rprintf("%3.2f%% completed", progress);
-    // std::cout << i << "\n";
+    // Rcpp::Rcout << i << "\n";
     // Iterate over trees categories
     for (int t=0; t < ntrees; t++) {
       // Back-fit

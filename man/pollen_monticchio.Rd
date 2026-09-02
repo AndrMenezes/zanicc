@@ -13,9 +13,9 @@ corresponding to each fossil sample.
 data(pollen_monticchio, package = "zanicc")
 }
 \description{
-The fossil data set contains \eqn{924} samples of compositional counts of same
+The fossil data set contains \eqn{924} samples of compositional counts of the same
 28 pollen taxa as in the \code{pollen_climate} modern data.
-The fossil pollen records were extracted from one site in the
+The fossil pollen records were extracted from one site at
 Lago Grande di Monticchio, situated in the crater of Monte Vulture in Basilicata,
 southern Italy.
 }
@@ -23,10 +23,10 @@ southern Italy.
 The pollen records has progressively been developed and published as more of
 the sediment column has become available for analysis.
 Relevant references which study this data set are Allen et al. (2000),
-Allen and Huntley (2009), and Parnell et al. (2016) and references cite therein.
+Allen and Huntley (2009), and Parnell et al. (2016) and references cited therein.
 }
 \references{
-Allen, J. R. M., Watts, W. A., \& Huntley, B. (2000).
+Allen, J. R. M., Watts, W. A., & Huntley, B. (2000).
 Weichselian palynostratigraphy, palaeovegetation and palaeoenvironment:
 the record from Lago Grande di Monticchio, southern Italy.
 \emph{Quaternary International}, \strong{73--74}, 91--110.
@@ -38,8 +38,5 @@ palaeoenvironments and chronology: a new record from Lago Grande di Monticchio, 
 Parnell, A. C., Haslett, J., Sweeney, J., Doan, T. K., Allen, J. R. M. and Huntley, B. (2016),
 Joint palaeoclimate reconstruction from pollen data via forward models and climate histories,
 \emph{Quaternary Science Reviews} \strong{151}, 111--126.
-}
-\author{
-André F. B. Menezes
 }
 \keyword{datasets}

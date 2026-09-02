@@ -24,10 +24,10 @@ distribution from the model \code{object}.}
 count-compositional matrix.}
 
 \item{object}{A fitted model object of class \code{zanicc} used to generate posterior
-predictive samples via the method \code{ppd()}. Only used when \code{Y_ppc = NULL}.}
+predictive samples via the method \code{\link[=ppd]{ppd()}}. Only used when \code{Y_ppc = NULL}.}
 
 \item{output}{Logical. If \code{TRUE}, return the computed posterior predictive
-statistics in addition to producing the plots. Default is \code{FALSE}.}
+statistics in addition to producing the plots. The default is \code{FALSE}.}
 }
 \value{
 \code{ppc_stat()} returns a list with two elements:
@@ -46,7 +46,7 @@ from \code{ppc_stat()}.
 }
 \description{
 Compute and visualise posterior predictive checks for count-compositional models.
-The function \code{stat_ppc()} evaluates a user-defined diagnostic statistics on both
+The function \code{stat_ppc()} evaluates user-defined diagnostic statistics on both
 the observed data and the posterior predictive distribution, while \code{plot_ppc()}
 summarises four built-in diagnostics through density plots.
 }

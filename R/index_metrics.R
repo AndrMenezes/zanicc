@@ -3,29 +3,29 @@
 #' @title Summary indices for multivariate count-compositional data
 #'
 #' @description
-#' A collection of indices for summarising multivariate compositional count data.
+#' A collection of indices for summarising multivariate count-compositional data.
 #' These functions quantify different aspects of the multivariate
 #' count-compositional distribution, including zero-inflation,
 #' dispersion, variability, and compositional diversity.
 #' These indices provide complementary summaries of count-compositional data and
-#' are useful for exploratory analyses, and posterior predictive checks.
+#' are useful for exploratory analyses and posterior predictive checks.
 #'
 #' @param Y A count-compositional matrix with samples in rows and categories in
 #' columns.
 #' @param x A vector of counts for a single category.
 #' @param N A vector containing the total counts associated with `x`.
-#' This arguments is specific for the `zi_binomial()` function.
-#' @param standardise Logical. If `TRUE`, return the standardized version of the
-#' binomial zero-inflation index.
+#' This argument is required only for the `zi_binomial()` function.
+#' @param standardise Logical. If `TRUE`, return the standardised version of the
+#' binomial zero-inflation index. Defaults to `FALSE`.
 #'
 #' @details
 #' Most functions operate on a count-compositional matrix with samples in rows
 #' and categories in columns.
-#' The exceptions are the functions `zi_poisson()`,  `zi_neg_bin()`, and `zi_binomial()`
+#' The exceptions are the functions `zi_poisson()`,  `zi_neg_bin()`, and `zi_binomial()`, which
 #' instead operate on a single count vector corresponding to one category.
 #' The function `shannon_entropy()` expects compositional data (each row sums to
-#' one). If a count-compositional matrix is supplied, the rows are normalized
-#' before computing the average normalized Shannon entropy.
+#' one). If a count-compositional matrix is supplied, the rows are normalised
+#' before computing the average normalised Shannon entropy.
 #'
 #' ## Zero-inflation indices
 #'
@@ -45,22 +45,22 @@
 #'
 #' ## Diversity indices
 #'
-#' * `shannon_entropy()`: average normalized Shannon entropy.
+#' * `shannon_entropy()`: average normalised Shannon entropy.
 #'
 #' @return
-#' A single numeric value summarizing one aspect of the count-compositional data.
+#' A single numeric value summarising one aspect of the count-compositional data.
 #'
 #' @references
 #'
 #' Albert, A. and Zhang, L. (2010), A novel definition of the multivariate coefficient of variation,
 #' \emph{Biometrical Journal}, \strong{52(5)}, 667--675.
 #'
-#' Blasco-Moreno, A., P{\'e}rez-Casany, M., Puig, P., Morante, M. and Castells, E. (2019), What does a zero
+#' Blasco-Moreno, A., Pérez-Casany, M., Puig, P., Morante, M. and Castells, E. (2019), What does a zero
 #' mean? Understanding false, random and structural zeros in ecology, \emph{Methods in Ecology and Evolution}
 #' \strong{10(7)}, 949--959.
 #'
-#' Kim, H., Wei{\s s}, C. and M{\"o}ller, T. (2018), Testing for an excessive number of
-#' zeros in time series of bounded counts. \emph{Statistical Methods \& Applications}, \strong{27}, 689--714.
+#' Kim, H., Weiß, C. and Möller, T. (2018), Testing for an excessive number of
+#' zeros in time series of bounded counts. \emph{Statistical Methods & Applications}, \strong{27}, 689--714.
 #'
 #' Kokonendji, C. C. and Puig, P. (2018), Fisher dispersion index for multivariate count distributions: A review
 #' and a new proposal, Journal of Multivariate Analysis \strong{165}, 180--193.
@@ -85,7 +85,7 @@ zi_multinomial <- function(Y) {
 #' @export
 gdi <- function(Y) {
   m <- colMeans(Y)
-  cv <- cov(Y)
+  cv <- stats::cov(Y)
   drop((crossprod(sqrt(m), cv) %*% sqrt(m)) / crossprod(m))
 }
 
@@ -93,7 +93,7 @@ gdi <- function(Y) {
 #' @export
 mdi <- function(Y) {
   m <- colMeans(Y)
-  v <- diag(cov(Y))
+  v <- diag(stats::cov(Y))
   di <- v / m
   drop(sum(m^2 * di) / crossprod(m))
 }
@@ -102,8 +102,8 @@ mdi <- function(Y) {
 #' @export
 mcv <- function(Y) {
   m <- colMeans(Y)
-  v <- cov(Y)
-  drop( sqrt( (crossprod(m, v) %*% m) / sum(m^2) ))
+  v <- stats::cov(Y)
+  drop(sqrt((crossprod(m, v) %*% m) / sum(m^2)))
 }
 
 #' @rdname count_composition_indices
@@ -113,8 +113,9 @@ shannon_entropy <- function(Y) {
   if (!all(N == 1.0)) {
     warning(
       "The rows of `Y` do not sum to one and are therefore not compositional vectors.\n",
-      "Rows will be normalized before computing the Shannon entropy.")
-    Y <- .normalize_composition(Y)
+      "Rows will be normalized before computing the Shannon entropy."
+    )
+    Y <- .normalise_composition(Y)
   }
   n <- nrow(Y)
   log_d <- log(ncol(Y))
@@ -127,8 +128,10 @@ shannon_entropy <- function(Y) {
 #' @export
 zi_neg_bin <- function(x) {
   p0 <- mean(x == 0)
-  if (p0 == 0.0) return(0.0)
-  s2 <- var(x)
+  if (p0 == 0.0) {
+    return(0.0)
+  }
+  s2 <- stats::var(x)
   m <- mean(x)
   1.0 + (s2 - m) * log(p0) / (m^2 * (log(s2) - log(m)))
 }
@@ -137,7 +140,9 @@ zi_neg_bin <- function(x) {
 #' @export
 zi_poisson <- function(x) {
   p0 <- mean(x == 0)
-  if (p0 == 0.0) return(0.0)
+  if (p0 == 0.0) {
+    return(0.0)
+  }
   1.0 + log(p0) / mean(x)
 }
 
@@ -145,6 +150,7 @@ zi_poisson <- function(x) {
 #' @export
 zi_binomial <- function(x, N, standardise = FALSE) {
   sum_N <- sum(N)
+  n <- nrow(x)
   p0 <- mean(x == 0)
   p_hat <- sum(x) / sum_N
   p0_teo <- mean((1 - p_hat)^N)
@@ -180,7 +186,7 @@ zi_binomial <- function(x, N, standardise = FALSE) {
 #' `true_values`.
 #' @param ep A small positive constant used in `compute_kl_simplex()` to avoid
 #' undefined values when the true probability is positive but the estimated
-#' probability is zero.
+#' probability is zero. Defaults to `1.0`.
 #'
 #' @details
 #' The functions are designed for evaluating parameter recovery in
@@ -205,11 +211,11 @@ zi_binomial <- function(x, N, standardise = FALSE) {
 #'
 #' ## Posterior uncertainty
 #'
-#' * `compute_coverage()`: Compute the empirical coverage given the crebible inteval
+#' * `compute_coverage()`: Compute the empirical coverage given the credible interval
 #' of the parameters.
 #'
-#' In the simulation studies conducted in Menezes et al. (2025), we assessed the
-#' and comparing different models with respect their ability to estimate the
+#' In the simulation studies conducted in Menezes et al. (2025), we assessed
+#' and compared different models with respect to their ability to estimate the
 #' following parameters:
 #'
 #' \describe{
@@ -228,7 +234,7 @@ zi_binomial <- function(x, N, standardise = FALSE) {
 #'   \item{population-level structural zeros probabilities, \eqn{\zeta_{ij}} }{
 #'   It provides the information on the probability a given observation \eqn{i} of
 #'   category \eqn{j} is structural zero.
-#'   Each \eqn{\zeta_{ij} \in (0, 1)}.
+#'   Each \eqn{\zeta_{ij} \in [0, 1]}.
 #'
 #'   For these parameters, we use the Kullback-Leibler divergence averaged over
 #'   the observations, implemented in the function `compute_kl_prob()`.
@@ -242,9 +248,9 @@ zi_binomial <- function(x, N, standardise = FALSE) {
 #'   also lie in the continuous simplex space
 #'   \eqn{\mathbb{S}^d=\{\bm{\vartheta}\in\mathbb{R}^d; \vartheta_{ij} \geq 0, \sum_{j=1}^d \vartheta_{ij}=1\}},
 #'
-#'   However, note that \eqn{\vartheta_{ij}} can be have spikes at zero.
-#'   Because of this, for these parameters we use the Jensen-Shannon divergence
-#'   averaged over the observations, implemented in the function `compute_js`.
+#'   However, note that \eqn{\vartheta_{ij}} can have spikes at zero.
+#'   Because of this, we use the Jensen-Shannon divergence
+#'   averaged over the observations for these parameters, implemented in the function `compute_js`.
 #'   }
 #' }
 #'
@@ -278,8 +284,7 @@ compute_coverage <- function(true_values, estimates_lo, estimates_up) {
 }
 #' @rdname recovery_metrics
 #' @export
-compute_kl_simplex <- function(true_values, estimates) {
-  ep = 1.0
+compute_kl_simplex <- function(true_values, estimates, ep = 1.0) {
   # Critical case: theta >0 and draws == 0
   idx <- which((true_values > 0.0) & estimates == 0.0)
   estimates[idx] <- ep
@@ -288,7 +293,7 @@ compute_kl_simplex <- function(true_values, estimates) {
   log_ratio[log_ratio == -Inf] <- 0.0
   # log(0/0) = 0:
   log_ratio[is.na(log_ratio)] <- 0.0
-  kl_terms <- true_values*log_ratio
+  kl_terms <- true_values * log_ratio
   mean(rowSums(kl_terms))
 }
 #' @rdname recovery_metrics
@@ -304,7 +309,7 @@ compute_kl_prob <- function(true_values, estimates) {
     lr_1p <- log1p(-true_curr) - log1p(-est_curr)
     lr_1p[lr_1p == -Inf] <- 0.0
     lr_1p[is.na(lr_1p)] <- 0.0
-    kl_terms <- kl_terms  + (1 - true_curr) * lr_1p
+    kl_terms <- kl_terms + (1 - true_curr) * lr_1p
     kl[j] <- mean(kl_terms)
   }
   kl
@@ -312,9 +317,9 @@ compute_kl_prob <- function(true_values, estimates) {
 #' @rdname recovery_metrics
 #' @export
 compute_js <- function(true_values, estimates) {
-  t1 <- estimates*log(2.0*estimates / (estimates + true_values))
+  t1 <- estimates * log(2.0 * estimates / (estimates + true_values))
   t1[is.na(t1)] <- 0.0
-  t2 <- true_values*log(2.0*true_values / (estimates + true_values))
+  t2 <- true_values * log(2.0 * true_values / (estimates + true_values))
   t2[is.na(t2)] <- 0.0
   mean(rowSums(t1 + t2))
 }
@@ -322,7 +327,7 @@ compute_js <- function(true_values, estimates) {
 #' @rdname recovery_metrics
 #' @export
 compute_hellinger <- function(true_values, estimates) {
-  1.0 / sqrt(2)*mean(rowSums((sqrt(true_values) - sqrt(estimates))^2))
+  1.0 / sqrt(2) * mean(rowSums((sqrt(true_values) - sqrt(estimates))^2))
 }
 
 # d <- 4
@@ -334,7 +339,6 @@ compute_hellinger <- function(true_values, estimates) {
 # estimates <- matrix(rexp(n*d), ncol = d, nrow = n)
 # estimates[1, 1] <- 0.0
 # estimates <- sweep(estimates, 1, rowSums(estimates), "/")
-
 
 
 #' @name posterior_chain_metrics
@@ -353,9 +357,9 @@ compute_hellinger <- function(true_values, estimates) {
 #' \eqn{n \times d \times M}, where \eqn{M} is the number of posterior
 #' samples.
 #' @param ep A small positive constant used in
-#' `compute_kl_simplex_chain()` to avoid undefined logarithms when a
+#' [compute_kl_simplex_chain()] to avoid undefined logarithms when a
 #' reference probability is positive but the corresponding posterior draw is
-#' zero.
+#' zero. Defaults to `1.0`.
 #'
 #' @details
 #'
@@ -363,9 +367,9 @@ compute_hellinger <- function(true_values, estimates) {
 #' evaluate posterior point estimates (e.g., posterior means or medians), these
 #' functions compute the discrepancy between each posterior draw and the
 #' corresponding reference values.
-#' They are primarily intended for monitoring the convergence of MCMC
-#' algorithms of the count-compositional models and evaluating the mixing of
-#' posterior chain.
+#' They are primarily intended for monitoring the convergence of the MCMC
+#' algorithms of the count-compositional models and evaluating the mixing of the
+#' posterior chains.
 #'
 #' The currently functions implemented are:
 #'
@@ -393,14 +397,14 @@ compute_frob_chain <- function(reference_values, draws) {
 }
 #' @rdname posterior_chain_metrics
 #' @export
-compute_kl_simplex_chain <-  function(reference_values, draws, ep = 1.0) {
+compute_kl_simplex_chain <- function(reference_values, draws, ep = 1.0) {
   d <- dim(draws)[2]
   ndpost <- dim(draws)[3]
   # Fixing critical case: true_values > 0 and draws == 0
   for (k in seq_len(ndpost)) {
     for (j in seq_len(d)) {
-      idx <- which((reference_values[, j] > 0) & (draws[,j,k] == 0))
-      draws[idx,j,k] <- ep
+      idx <- which((reference_values[, j] > 0) & (draws[, j, k] == 0))
+      draws[idx, j, k] <- ep
     }
   }
   # Compute the ratio
@@ -424,7 +428,7 @@ compute_kl_prob_chain <- function(reference_values, draws) {
     true_curr <- matrix(reference_values[, j], nrow = n, ncol = ndpost)
     draws_curr <- draws[, j, ]
     kl_terms <- true_curr * log(true_curr / draws_curr)
-    kl_terms <- kl_terms  + (1 - true_curr) * (log1p(-true_curr) - log1p(-draws_curr))
+    kl_terms <- kl_terms + (1 - true_curr) * (log1p(-true_curr) - log1p(-draws_curr))
     kl[, j] <- colMeans(kl_terms)
   }
   kl
@@ -436,15 +440,20 @@ compute_kl_prob_chain <- function(reference_values, draws) {
 .is_inside <- function(interval, x) {
   p <- length(x)
   isin <- logical(p)
-  for (j in seq_len(p))
-    isin[j] <- x[j] >= interval[j, 1]  && x[j] <= interval[j, 2]
-  if (all(isin)) return(1L) else return(0L)
+  for (j in seq_len(p)) {
+    isin[j] <- x[j] >= interval[j, 1] && x[j] <= interval[j, 2]
+  }
+  if (all(isin)) {
+    return(1L)
+  } else {
+    return(0L)
+  }
 }
 
 # Compute the mode using kernel density estimates
-.get_mode <- function(X) {
+.get_mode <- function(X, ...) {
   apply(X, 2, function(x) {
-    dd <- density(x)
+    dd <- stats::density(x, ...)
     dd$x[which.max(dd$y)]
   })
 }
@@ -462,15 +471,18 @@ compute_kl_prob_chain <- function(reference_values, draws) {
 #' continuous ranked probability score (`crps`), and 95\% and 50\% empirical
 #' coverage of the highest posterior interval (`coverage_95` and `coverage_50`).
 #' @export
+#' @importFrom coda "as.mcmc" "HPDinterval"
+#' @importFrom scoringRules "crps_sample"
 compute_prediction_metrics <- function(x, draws) {
   n <- nrow(x)
   stopifnot(n == dim(draws)[3L])
   l <- lapply(seq_len(n), function(i) {
-    post <- as.matrix(draws[,,i])
+    post <- as.matrix(draws[, , i])
     mu <- colMeans(post)
-    md <- apply(post, 2, median)
+    md <- apply(post, 2, stats::median)
     mo <- .get_mode(post)
-    c(mae = sum(abs(x[i, ] - md)),
+    c(
+      mae = sum(abs(x[i, ] - md)),
       msep = sum((x[i, ] - mu)^2),
       dmode = sum((x[i, ] - mo)^2),
       crps = scoringRules::crps_sample(y = x[i, ], dat = t(post)),
@@ -505,8 +517,7 @@ compute_classification_metrics <- function(truth, estimated) {
   fn <- sum(not_selected %in% included)
   sensitivity <- tp / (fn + tp)
   specificity <- tn / (fp + tn)
-  mcc <- (tp * tn - fp * fn)/(sqrt(tp + fp) * sqrt(tp + fn) * sqrt(tn + fp) * sqrt(tn + fn))
+  mcc <- (tp * tn - fp * fn) / (sqrt(tp + fp) * sqrt(tp + fn) * sqrt(tn + fp) * sqrt(tn + fn))
   f1 <- 2 * tp / (2 * tp + fn + fp)
   c(sens = sensitivity, spec = specificity, mcc = mcc, f1 = f1)
 }
-

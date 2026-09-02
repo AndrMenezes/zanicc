@@ -209,7 +209,7 @@ void SharedLogitBART::SetMCMC(double v0, int ntrees_, int ndpost_, int nskip_,
   flag_prune = 0;
   flag_change = 0;
 
-  std::cout << "Model set up!" << "\n\n";
+  Rcpp::Rcout << "Model set up!" << "\n\n";
 }
 
 void SharedLogitBART::RunMCMC() {
@@ -237,10 +237,10 @@ void SharedLogitBART::RunMCMC() {
   // Open file to write the forests FOR each category
   std::ofstream os(path_out + "/forests.bin", std::ios::binary | std::ios::app);
 
-  std::cout << "Starting MCMC...\n";
+  Rcpp::Rcout << "Starting MCMC...\n";
 
   for (int i=0; i < niter; i++) {
-    if ((i % printevery == 0)) std::cout << "Iteration " << i << " of " << niter << "\n";
+    if ((i % printevery == 0)) Rcpp::Rcout << "Iteration " << i << " of " << niter << "\n";
     // Iterate over trees categories
     for (int t = 0; t < ntrees; t++) {
       // Back-fit
@@ -357,15 +357,15 @@ RCPP_MODULE(shared_logit_bart) {
 //
 //   // TODO: Add avg-leaves, var-count, and predict functions.
 //   // MCMC iteration
-//   std::cout << "Starting MCMC...\n";
+//   Rcpp::Rcout << "Starting MCMC...\n";
 //   for (int i=0; i < niter; i++) {
-//     if ((i % printevery == 0)) std::cout << "Iteration " << i << " of " << niter << "\n";
+//     if ((i % printevery == 0)) Rcpp::Rcout << "Iteration " << i << " of " << niter << "\n";
 //     // Iterate over trees categories
 //     for (int t=0; t < model.ntrees; t++) {
 //       // Back-fit
 //       fit_0_h = f0_mu - model.g0_trees.col(t);
 //       fit_1_h = f1_mu - model.g1_trees.col(t);
-//       //std::cout << f_mu_h[0] << "\n\n";
+//       //Rcpp::Rcout << f_mu_h[0] << "\n\n";
 //       model.fit_0_phi = exp(fit_0_h) % model.phi;
 //       model.fit_1_phi = exp(fit_1_h) % model.phi;
 //       // Update tree

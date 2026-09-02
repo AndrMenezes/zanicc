@@ -89,7 +89,7 @@ void ZANIDMReg::SetMCMC(std::vector<double> sd_prior_beta_alpha_,
     }
   }
 
-  std::cout << "ZANIDM-reg model set up!\n\n";
+  Rcpp::Rcout << "ZANIDM-reg model set up!\n\n";
 }
 
 double ZANIDMReg::LogTargetBetasAlpha(arma::vec &beta_cur, int &j) {
@@ -187,7 +187,7 @@ void ZANIDMReg::RunMCMC() {
     //draws_phi = arma::zeros<arma::mat>(n, ndpost);
   }
 
-  std::cout << "Doing the warm-up (burn-in) of " << nskip << "\n\n";
+  Rcpp::Rcout << "Doing the warm-up (burn-in) of " << nskip << "\n\n";
   double progress = 0;
   for (int k=0; k < nskip; k++) {
     progress = (double) 100 * k / nskip;
@@ -210,7 +210,7 @@ void ZANIDMReg::RunMCMC() {
   std::ofstream ff_z(dir_draws + "/draws_betas_zeta.bin", std::ios::binary | std::ios::app);
 
   // Run the post-burn in iterations
-  std::cout << "Starting post-burn-in iterations of " << ndpost << "\n\n";
+  Rcpp::Rcout << "Starting post-burn-in iterations of " << ndpost << "\n\n";
   progress = 0;
 
   for (int k=0; k < ndpost; k++) {

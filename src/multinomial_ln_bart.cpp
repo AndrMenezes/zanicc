@@ -210,7 +210,7 @@ double MultinomialLNBART::UpdateSigmaPrior() {
   if (L < 0.0) L = 0.0;
   while (target_sigma_prior(R, m_bh, s_log_lambda, s_lambda, s2_0) > y) R += w_ss;
   double x_star = L + R::unif_rand() * (R - L);
-  // std::cout << "Start SS \n";
+  // Rcpp::Rcout << "Start SS \n";
   // Repeat until create an acceptable proposal
   do {
     x_star = L + R::unif_rand() * (R - L);
@@ -717,7 +717,7 @@ void MultinomialLNBART::SetMCMC(double v0, int ntrees_,
   // Initialise the aux variable to keep the varcount
   vc = arma::zeros<arma::uvec>(p);
 
-  std::cout << "Model set up!" << "\n\n";
+  Rcpp::Rcout << "Model set up!" << "\n\n";
 }
 
 void MultinomialLNBART::RunMCMC() {
@@ -742,7 +742,7 @@ void MultinomialLNBART::RunMCMC() {
   f_lambda = arma::zeros<arma::mat>(n, d);
 
   // Start burn-in
-  std::cout << "Doing the warm-up (burn-in) of " << nskip << "\n\n";
+  Rcpp::Rcout << "Doing the warm-up (burn-in) of " << nskip << "\n\n";
   double progress = 0;
   for (int i = 0; i < nskip; i++) {
     progress = (double) 100 * i / nskip;
@@ -793,7 +793,7 @@ void MultinomialLNBART::RunMCMC() {
   std::ofstream ff_Sigma_V(forests_dir + "/chol_Sigma_V.bin",
                            std::ios::binary | std::ios::app);
 
-  std::cout << "Starting post-burn-in iterations of " << ndpost << "\n\n";
+  Rcpp::Rcout << "Starting post-burn-in iterations of " << ndpost << "\n\n";
   progress = 0.0;
   for (int i=0; i < ndpost; i++) {
     progress = (double) 100 * i / ndpost;

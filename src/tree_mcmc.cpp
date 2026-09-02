@@ -73,11 +73,11 @@ void Grow(Node *tree, ModelType &Model) {
           + log(1.0 - leaf_prior)
           + log(1.0 - prob_tree_split(leaf_to_split->right->depth, Model.base, Model.power))
           + log(1.0 - prob_tree_split(leaf_to_split->right->depth, Model.base, Model.power)));
-  //std::cout << "Grow lr: " << lr << "\n";
+  //Rcpp::Rcout << "Grow lr: " << lr << "\n";
   // Perform the MH step
   Model.flag_grow = 1;
   if (log(R::unif_rand()) > lr) {
-    //std::cout << "Grow rejected \n";
+    //Rcpp::Rcout << "Grow rejected \n";
     Model.flag_grow = 0;
     leaf_to_split->DeleteLeaves();
   }
@@ -103,10 +103,10 @@ void Prune(Node *tree, ModelType &Model) {
   Model.UpdateSuffStats(node_to_prune);
   // Compute log-likelihood and prior after movement
   lr += Model.lml(node_to_prune) + log(1.0 - internal_prior);
-  //std::cout << "Prune lr: " << lr << "\n";
+  //Rcpp::Rcout << "Prune lr: " << lr << "\n";
   Model.flag_prune = 0;
   if (log(R::unif_rand()) < lr) {
-    //std::cout << "Prune accepted \n";
+    //Rcpp::Rcout << "Prune accepted \n";
     node_to_prune->DeleteLeaves();
     Model.flag_prune = 1;
   }
@@ -158,9 +158,9 @@ void Change(Node *tree, ModelType &Model) {
   Model.UpdateSuffStats(node_to_change->right);
   // Compute log-likelihood and log-prior after
   lr += Model.lml(node_to_change->left) + Model.lml(node_to_change->right);
-  //std::cout << "Change lr: " << lr << "\n";
+  //Rcpp::Rcout << "Change lr: " << lr << "\n";
   if (log(R::unif_rand()) < lr) {
-    //std::cout << "Change accepted \n";
+    //Rcpp::Rcout << "Change accepted \n";
     // Update the decision rule
     Model.flag_change = 1;
     node_to_change->predictor = j;
@@ -168,7 +168,7 @@ void Change(Node *tree, ModelType &Model) {
     // Model.ar_change[tree->h]++;
   } else {
     Model.flag_change = 0;
-    //std::cout << "Change rejected \n";
+    //Rcpp::Rcout << "Change rejected \n";
     // Get back to the old  left and right children
     //node_to_change->predictor = j_old;
     node_to_change->left->ids = ids_left_old;

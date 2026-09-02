@@ -22,8 +22,10 @@ test_that("bspline", {
   head(data_sim)
   # ggplot(data = data_sim, aes(x = x, y = theta)) + geom_line()
 
-  out <- probit_bart(y = y, X = X, path = path_res, ntrees = 100L,
-                     ndpost = 2000L, nskip = 1000L)
+  out <- probit_bart(
+    y = y, X = X, path = path_res, ntrees = 100L,
+    ndpost = 2000L, nskip = 1000L
+  )
   dim(out$mod$draws)
   rowMeans(out$mod$varcount_mcmc)
 
@@ -42,7 +44,6 @@ test_that("bspline", {
 
   # Delete files and folders
   unlink(x = path_res, recursive = TRUE)
-
 })
 
 test_that("friedman", {
@@ -65,23 +66,33 @@ test_that("friedman", {
   quantile(theta_truth)
 
   # BART
-  p_bart <- probit_bart(y = y, X = X, path = tempdir(), ntrees = 100L,
-                        ndpost = 2000L, nskip = 1000L, sparse = FALSE)
+  p_bart <- probit_bart(
+    y = y, X = X, path = tempdir(), ntrees = 100L,
+    ndpost = 2000L, nskip = 1000L, sparse = FALSE
+  )
 
   # DART fixed concentration parameter at 1.0
-  p_dart_1 <- probit_bart(y = y, X = X, path = tempdir(), ntrees = 100L,
-                          ndpost = 5000L, nskip = 2000L, sparse = TRUE,
-                          alpha_sparse = 1.0, alpha_random = FALSE)
+  p_dart_1 <- probit_bart(
+    y = y, X = X, path = tempdir(), ntrees = 100L,
+    ndpost = 5000L, nskip = 2000L, sparse = TRUE,
+    alpha_sparse = 1.0, alpha_random = FALSE
+  )
   p_dart_1$mod$alpha_sparse
 
-  cbind(bart = rowMeans(p_bart$mod$varcount_mcmc),
-        dart_1 = rowMeans(p_dart_1$mod$varcount_mcmc))
+  cbind(
+    bart = rowMeans(p_bart$mod$varcount_mcmc),
+    dart_1 = rowMeans(p_dart_1$mod$varcount_mcmc)
+  )
 
-  cbind(bart = rowMeans(p_bart$mod$varcount_mcmc > 0),
-        dart_1 = rowMeans(p_dart_1$mod$varcount_mcmc > 0))
+  cbind(
+    bart = rowMeans(p_bart$mod$varcount_mcmc > 0),
+    dart_1 = rowMeans(p_dart_1$mod$varcount_mcmc > 0)
+  )
 
-  cbind(bart = p_bart$mod$splitprobs,
-        dart = p_dart_1$mod$splitprobs)
+  cbind(
+    bart = p_bart$mod$splitprobs,
+    dart = p_dart_1$mod$splitprobs
+  )
 
   mean_prob <- rowMeans(p_bart$draws)
   yhat <- 1L * (mean_prob > 0.5)
@@ -90,5 +101,3 @@ test_that("friedman", {
   # Remove files
   unlink(x = path_res, recursive = TRUE)
 })
-
-

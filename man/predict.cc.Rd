@@ -2,6 +2,11 @@
 % Please edit documentation in R/predict.R
 \name{predict.MultinomialBART}
 \alias{predict.MultinomialBART}
+\alias{predict.MultinomialLNBART}
+\alias{predict.ZANIMBART}
+\alias{predict.ZANIMLNBART}
+\alias{predict.DMRegression}
+\alias{predict.ZANIDMRegression}
 \title{Posterior predictions}
 \usage{
 \method{predict}{MultinomialBART}(
@@ -10,7 +15,58 @@
   ndpost = object$ndpost,
   output_dir = tempdir(),
   load = TRUE,
-  verbose = TRUE
+  verbose = TRUE,
+  ...
+)
+
+\method{predict}{MultinomialLNBART}(
+  object,
+  newdata,
+  ndpost = object$ndpost,
+  output_dir = tempdir(),
+  load = TRUE,
+  verbose = TRUE,
+  ...
+)
+
+\method{predict}{ZANIMBART}(
+  object,
+  newdata,
+  type = c("theta", "zeta"),
+  ndpost = object$ndpost,
+  output_dir = tempdir(),
+  load = TRUE,
+  verbose = TRUE,
+  ...
+)
+
+\method{predict}{ZANIMLNBART}(
+  object,
+  newdata,
+  type = c("theta", "zeta"),
+  ndpost = object$ndpost,
+  output_dir = tempdir(),
+  load = TRUE,
+  verbose = TRUE,
+  ...
+)
+
+\method{predict}{DMRegression}(
+  object,
+  newdata,
+  type = c("alpha", "theta"),
+  ndpost = object$ndpost,
+  verbose = TRUE,
+  ...
+)
+
+\method{predict}{ZANIDMRegression}(
+  object,
+  newdata,
+  type = c("alpha", "zeta", "theta"),
+  ndpost = object$ndpost,
+  verbose = TRUE,
+  ...
 )
 }
 \arguments{
@@ -28,14 +84,16 @@ used when fitting the model.}
 \item{output_dir}{Directory in which the predictions across all posterior draws
 are written. The resulting binary files are named according to the predicted
 quantity, for example \code{theta_ij.bin} for \code{type="theta"} or
-\code{zeta_ij.bin} for \code{type="zeta"}. Default is \code{tempdir()}.}
+\code{zeta_ij.bin} for \code{type="zeta"}. The default is \code{\link[=tempdir]{tempdir()}}.}
 
 \item{load}{Logical indicating whether prediction draws written to binary
 files should be loaded into R memory. Defaults to \code{TRUE}. Set to
 \code{FALSE} when predictions are too large to comfortably fit in memory.}
 
 \item{verbose}{Logical indicating whether progress should be displayed.
-Defaults is \code{TRUE}.}
+The default is \code{TRUE}.}
+
+\item{...}{Catches unused arguments.}
 
 \item{type}{The type of prediction to return. For \code{ZANIMBART} and
 \code{ZANIMLNBART}, choices are \code{"theta"} and \code{"zeta"}. For
