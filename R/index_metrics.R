@@ -11,7 +11,8 @@
 #' are useful for exploratory analyses and posterior predictive checks.
 #'
 #' @param Y A count-compositional matrix with samples in rows and categories in
-#' columns.
+#' columns. For the shannon_entropy, the matrix should be compositional, with
+#' each row sums to one.
 #' @param x A vector of counts for a single category.
 #' @param N A vector containing the total counts associated with `x`.
 #' This argument is required only for the `zi_binomial()` function.
@@ -109,14 +110,14 @@ mcv <- function(Y) {
 #' @rdname count_composition_indices
 #' @export
 shannon_entropy <- function(Y) {
-  N <- rowSums(Y)
-  if (!all(N == 1.0)) {
-    warning(
-      "The rows of `Y` do not sum to one and are therefore not compositional vectors.\n",
-      "Rows will be normalized before computing the Shannon entropy."
-    )
-    Y <- .normalise_composition(Y)
-  }
+  # N <- rowSums(Y)
+  # if (!all(N == 1.0)) {
+  #   warning(
+  #     "The rows of `Y` do not sum to one and are therefore not compositional vectors.\n",
+  #     "Rows will be normalized before computing the Shannon entropy."
+  #   )
+  #   Y <- .normalise_composition(Y)
+  # }
   n <- nrow(Y)
   log_d <- log(ncol(Y))
   terms <- numeric(n)
@@ -524,7 +525,3 @@ compute_classification_metrics <- function(truth, estimated) {
   f1 <- 2 * prc * rcl / (prc + rcl)
   c(precision = prc, recall = rcl, specificity = spec, mcc = mcc, f1 = f1)
 }
-
-
-
-
