@@ -30,4 +30,4 @@
 *.vscode
 
 # Exclude development subfolder
-dev/
+# dev/
