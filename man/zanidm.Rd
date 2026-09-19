@@ -7,7 +7,7 @@
 \alias{dzanidm_marginal}
 \alias{moments_zanidm}
 \alias{covariance_zanidm}
-\title{Zero-&-N-Inflated Dirichlet-multinomial Distribution}
+\title{Zero-and-N-inflated Dirichlet-multinomial distribution}
 \usage{
 rzanidm(n, size, alpha, zeta)
 

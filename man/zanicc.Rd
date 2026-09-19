@@ -2,7 +2,7 @@
 % Please edit documentation in R/zanicc.R
 \name{zanicc}
 \alias{zanicc}
-\title{Bayesian (non)parametric regression models zero-inflated multivariate count-compositional data}
+\title{Bayesian (non)parametric regression models for zero-inflated multivariate count-compositional data}
 \usage{
 zanicc(
   Y,

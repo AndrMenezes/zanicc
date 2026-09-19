@@ -31,7 +31,7 @@ Weichselian palynostratigraphy, palaeovegetation and palaeoenvironment:
 the record from Lago Grande di Monticchio, southern Italy.
 \emph{Quaternary International}, \strong{73--74}, 91--110.
 
-Allen, J.R., Huntley, B., 2009, jul. Last Interglacial palaeovegetation,
+Allen, J.R., Huntley, B., (2009) Last Interglacial palaeovegetation,
 palaeoenvironments and chronology: a new record from Lago Grande di Monticchio, southern Italy.
 \emph{Quaternary Science Reviews}, \strong{28 (15e16)}, 1521e1538.
 

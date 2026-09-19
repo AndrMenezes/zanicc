@@ -3,7 +3,7 @@
 # Generate posterior predictive samples from a multinomial model given
 # posterior draws of the individual-level count probabilities.
 #
-# For each posterior draw \eqn{k = 1,\dots,ndpost} and observation
+# For each posterior draw \eqn{k = 1,\ldots,ndpost} and observation
 # \eqn{i = 1,\dots,n}, a count vector is generated as
 #
 # \deqn{Y^{(k)}_{i} \sim \text{Multinomial}(N_i, \boldsymbol{\vartheta}^{k}_{i})}
@@ -24,7 +24,7 @@
 #
 # @return
 # A 3D array of posterior predictive samples with dimensions
-# \eqn{ndpost \times n \times d}. If `relative = TRUE`, the array
+# \eqn{ndpost \times n \times d}. If `relative = FALSE`, the array
 # contains relative abundances instead of counts.
 #
 # @details
@@ -44,7 +44,7 @@
 # n_trials <- sample(20:50, n, replace = TRUE)
 #
 # y_rep <- ppd_multinomial(n_trials, probs)
-.ppd_multinomial <- function(n_trials, draws_theta, relative = TRUE, printevery = 100L) {
+.ppd_multinomial <- function(n_trials, draws_theta, relative = FALSE, printevery = 100L) {
   n_sample <- dim(draws_theta)[1L]
   d <- dim(draws_theta)[2L]
   ndpost <- dim(draws_theta)[3L]
@@ -93,7 +93,7 @@
 #
 # @return
 # A 3D array of posterior predictive samples with dimensions
-# \eqn{ndpost \times n \times d}. If `relative = TRUE`, the array
+# \eqn{ndpost \times n \times d}. If `relative = FALSE`, the array
 # contains relative abundances instead of counts.
 #
 # @details
@@ -139,7 +139,7 @@
 # zetas <- array(runif(n * d * ndpost), dim = c(n, d, ndpost))
 # n_trials <- sample(20:50, n, replace = TRUE)
 # y_rep <- ppd_zanim(n_trials, probs, zetas)
-.ppd_zanim <- function(n_trials, draws_theta, draws_zeta, relative = TRUE, printevery = 100L) {
+.ppd_zanim <- function(n_trials, draws_theta, draws_zeta, relative = FALSE, printevery = 100L) {
   d <- dim(draws_theta)[2L]
   ndpost <- dim(draws_theta)[3L]
   n_sample <- dim(draws_theta)[1L]
@@ -155,8 +155,7 @@
   return(y_rep)
 }
 
-# TODO: document
-.ppd_zanidm <- function(n_trials, draws_alpha, draws_zeta, relative = TRUE, printevery = 100L) {
+.ppd_zanidm <- function(n_trials, draws_alpha, draws_zeta, relative = FALSE, printevery = 100L) {
   d <- dim(draws_alpha)[2L]
   ndpost <- dim(draws_alpha)[3L]
   n_sample <- dim(draws_alpha)[1L]
@@ -172,8 +171,9 @@
   if (relative) y_rep <- .normalise_composition(y_rep)
   return(y_rep)
 }
+
 .ppd_zanim_ln <- function(n_trials, draws_theta, draws_zeta, draws_chol_Sigma_V, Bt,
-                          relative = TRUE, printevery = 100L) {
+                          relative = FALSE, printevery = 100L) {
   d <- dim(draws_theta)[2L]
   dm1 <- d - 1L
   ndpost <- dim(draws_theta)[3L]
@@ -194,7 +194,8 @@
   if (relative) y_rep <- .normalise_composition(y_rep)
   return(y_rep)
 }
-.ppd_mln <- function(n_trials, draws_theta, draws_chol_Sigma_V, Bt, relative = TRUE,
+
+.ppd_mln <- function(n_trials, draws_theta, draws_chol_Sigma_V, Bt, relative = FALSE,
                      printevery = 100L) {
   d <- dim(draws_theta)[2L]
   dm1 <- d - 1L
@@ -214,7 +215,8 @@
   if (relative) y_rep <- .normalise_composition(y_rep)
   return(y_rep)
 }
-.ppd_dm <- function(n_trials, draws_alpha, relative = TRUE, printevery = 100L) {
+
+.ppd_dm <- function(n_trials, draws_alpha, relative = FALSE, printevery = 100L) {
   d <- dim(draws_alpha)[2L]
   ndpost <- dim(draws_alpha)[3L]
   n_sample <- dim(draws_alpha)[1L]
@@ -228,7 +230,7 @@
 }
 
 # Wrapper function for conditional
-.ppd_conditional <- function(object, relative = TRUE, printevery = 100L) {
+.ppd_conditional <- function(object, relative = FALSE, printevery = 100L) {
   .ppd_multinomial(
     n_trials = object$n_trials, draws_theta = object$draws_abundance,
     relative = relative, printevery = printevery
@@ -250,7 +252,7 @@
 # @param printevery Integer specifying how often progress is printed during sampling. Defaults to `100`.
 # @rdname ppd_batch
 .ppd_multinomial_batch <- function(n_trials, output_dir, n_pred, d, ndpost,
-                                   batch_size, relative = TRUE, printevery = 100L) {
+                                   batch_size, relative = FALSE, printevery = 100L) {
   ff_theta <- file.path(output_dir, "theta_ij.bin")
 
   # Create a vector to load the predictions by batch
@@ -277,9 +279,10 @@
   if (relative) y_rep <- .normalise_composition(y_rep)
   y_rep
 }
+
 # @rdname ppd_batch
 .ppd_mln_batch <- function(n_trials, output_dir, output_dir_chol_V, n_pred, d,
-                           ndpost, Bt, batch_size, relative = TRUE, printevery = 100L) {
+                           ndpost, Bt, batch_size, relative = FALSE, printevery = 100L) {
   ff_theta <- file.path(output_dir, "theta_ij.bin")
   ff_chol_Sigma_V <- file.path(output_dir_chol_V, "chol_Sigma_V.bin")
 
@@ -314,9 +317,10 @@
   if (relative) y_rep <- .normalise_composition(y_rep)
   y_rep
 }
+
 # @rdname ppd_batch
 .ppd_zanim_batch <- function(n_trials, output_dir, n_pred, d, ndpost, batch_size,
-                             relative = TRUE, printevery = 100L) {
+                             relative = FALSE, printevery = 100L) {
   ff_theta <- file.path(output_dir, "theta_ij.bin")
   ff_zeta <- file.path(output_dir, "zeta_ij.bin")
 
@@ -348,9 +352,11 @@
   if (relative) y_rep <- .normalise_composition(y_rep)
   y_rep
 }
+
 # @rdname ppd_batch
 .ppd_zanim_ln_batch <- function(n_trials, output_dir, output_dir_chol_V, n_pred, d,
-                                ndpost, Bt, batch_size, relative = TRUE, printevery = 100L) {
+                                ndpost, Bt, batch_size, relative = FALSE,
+                                printevery = 100L) {
   ff_theta <- file.path(output_dir, "theta_ij.bin")
   ff_zeta <- file.path(output_dir, "zeta_ij.bin")
   ff_chol_Sigma_V <- file.path(output_dir_chol_V, "chol_Sigma_V.bin")
@@ -394,18 +400,117 @@
 }
 
 
-# Dispatch methods for different models
+
+#' @name ppd
+#'
+#' @title Posterior predictive distribution
+#' @description
+#' Generate draws from the posterior predictive distribution of the data
+#' for different count-compositional models.
+#' These draws can then be used to perform posterior predictive checks.
+#'
+#' @param object A fitted model object. The supported model classes are
+#' `MultinomialBART`, `MultinomialLNBART`, `ZANIMBART`, `ZANIMLNBART`,
+#' `DMRegression`, `ZANIMRegression`, `ZANIMLNRegression` and  `ZANIDMRegression`.
+#' Use [zanicc()] for fitting such models.
+#' @param relative Logical. If `TRUE`, return the posterior predictive draws
+#' as continuous compositions, obtained by normalising the simulated compositional
+#' counts by their sample-specific number of trials. If `FALSE`, return
+#' compositional counts. Default is `FALSE`.
+#' @param ... Currently not used.
+#' @param in_sample Logical. If `TRUE`, generate the posterior predictive
+#' distribution for the samples used to fit the model, using the
+#' corresponding posterior draws stored in the model `object`.
+#' If `FALSE`, the posterior predictive distribution is simulated for a potential
+#' new data set. In this case,
+#' the sample-specific posterior draws must either be supplied explicitly
+#' through the relevant `draws_{*}` arguments or loaded from binary files saved in
+#' `output_dir`.
+#' Default is `TRUE`.
+#' @param conditional Logical. Determines whether the posterior predictive
+#' distribution is generated conditionally on the individual-level
+#' multinomial probabilities or the population-level parameters.
+#' If `TRUE`, the predictive counts are generated from a multinomial
+#' distribution using the posterior draws of the individual-level
+#' probabilities.
+#' If `FALSE`, the predictive distribution is generated from the sampling
+#' distribution implied by the fitted model and its population-level
+#' parameters.
+#' Default is `FALSE`.
+#' @param draws_theta,draws_zeta,draws_alpha,draws_chol_Sigma_V
+#' Array with the sample-specific posterior draws of the population-level
+#' parameters for the corresponding model.
+#' Used for out-of-sample posterior predictive distributions when the draws are
+#' supplied directly rather than loaded from the path `output_dir`.
+#' @param output_dir Character string giving the directory containing
+#' posterior draws of sample-specific parameters for the new data.
+#' In particular, the directory is expected to contain the files required
+#' to reconstruct the relevant `draws_*` objects, such as
+#' `theta_ij.bin` and, for zero-inflated models, `zeta_ij.bin`.
+#' For logistic-normal models, the posterior draws of the covariance
+#' parameters are loaded from the model's forest path.
+#' @param n_trials Integer vector giving the sample-specific number of
+#' trials for the new samples. Required when `in_sample = FALSE`.
+#' The length of `n_trials` should correspond to the number of observations
+#' in the new data.
+#' @param n_pred Integer giving the number of samples in the new data.
+#' This argument is required when posterior draws for the new samples
+#' are loaded from files rather than supplied directly through the
+#' `draws_*` arguments.
+#' @param ndpost Integer giving the number of posterior draws to use.
+#' Default is `object$ndpost`. This argument is used for out-of-sample
+#' prediction when posterior draws are loaded from files.
+#' @param batch_size Integer giving the number of observations processed
+#' in each batch when posterior draws are loaded from disk. Batching can
+#' reduce memory usage for large data sets. Default is `50` samples
+#' per batch.
+#' @param printevery Integer giving the frequency with which progress
+#' information is printed during posterior predictive sampling. Default is to print
+#' at each `100` sample.
+#'
+#' @details
+#'
+#' The posterior predictive distribution can be generated either
+#' by simulating from a multinomial distribution condition on the individual-level
+#' count probabilities  or using the underlying sampling distribution of the model
+#' and its posterior draws of the population-level parameters.
+#'
+#' When `conditional = TRUE`, for each posterior draw
+#' \eqn{k \in \{1,\ldots, M\} } and sample \eqn{i \in \{ 1,\ldots,n\}},
+#' posterior predictive distribution simulated as follows
+#' \deqn{\left(Y^{(k)}_{i} \mid N_i, \boldsymbol{\vartheta}^{(k)}_{i}\right) \sim \text{Multinomial}\lbrack N_i, \boldsymbol{\vartheta}^{(k)}_{i} \rbrack,}
+#' where \eqn{N_i} is the number of trials for observation \eqn{i}
+#' and \eqn{\boldsymbol{\vartheta}^{k}_{i}} are the posterior draws of the
+#' individual-level count probabilities.
+#'
+#' For out-of-sample prediction (`in_sample = FALSE`), posterior draws of
+#' the sample-specific parameters can either be supplied directly through
+#' the appropriate `draws_*` argument(s), or loaded in batches from
+#' `output_dir` path. The latter approach avoids loading all posterior draws
+#' into memory simultaneously, reducing the memory usage.
+#'
+#' @return
+#' A three-dimensional array containing draws of the posterior predictive distribution
+#' of the corresponding model with dimensions
+#' \eqn{M \times n \times d}, where \eqn{M} is the
+#' number of posterior draws, \eqn{n} is the number of observations, and
+#' \eqn{d} is the number of categories.
+#'
+#' @seealso [predict()], [plot_qqplots_ppd()]
+#'
+#' @rdname ppd
 #' @export
-ppd <- function(object, relative = TRUE, ...) {
+ppd <- function(object, relative = FALSE, ...) {
   UseMethod("ppd")
 }
 
+#' @rdname ppd
 #' @export
-ppd.MultinomialBART <- function(object, relative = TRUE,
+ppd.MultinomialBART <- function(object, relative = FALSE,
                                 in_sample = TRUE,
                                 draws_theta = NULL,
-                                output_dir = NULL,
                                 n_trials = NULL,
+                                output_dir = NULL,
                                 n_pred = NULL,
                                 ndpost = object$ndpost,
                                 batch_size = 50L,
@@ -438,12 +543,17 @@ ppd.MultinomialBART <- function(object, relative = TRUE,
     ))
   }
 }
+
+#' @rdname ppd
 #' @export
-ppd.MultinomialLNBART <- function(object, relative = TRUE, conditional = FALSE,
+ppd.MultinomialLNBART <- function(object, relative = FALSE, conditional = FALSE,
                                   in_sample = TRUE, draws_theta = NULL,
-                                  draws_chol_Sigma_V = NULL, output_dir = NULL,
-                                  n_trials = NULL, n_pred = NULL,
-                                  ndpost = object$ndpost, batch_size = 50L,
+                                  draws_chol_Sigma_V = NULL,
+                                  n_trials = NULL,
+                                  output_dir = NULL,
+                                  n_pred = NULL,
+                                  ndpost = object$ndpost,
+                                  batch_size = 50L,
                                   printevery = 100L, ...) {
   if (in_sample) {
     if (conditional) {
@@ -481,10 +591,12 @@ ppd.MultinomialLNBART <- function(object, relative = TRUE, conditional = FALSE,
     ))
   }
 }
+
+#' @rdname ppd
 #' @export
-ppd.ZANIMBART <- function(object, relative = TRUE, conditional = FALSE,
+ppd.ZANIMBART <- function(object, relative = FALSE, conditional = FALSE,
                           in_sample = TRUE, draws_theta = NULL, draws_zeta = NULL,
-                          output_dir = NULL, n_trials = NULL, n_pred = NULL,
+                          n_trials = NULL, output_dir = NULL, n_pred = NULL,
                           ndpost = object$ndpost, batch_size = 50L,
                           printevery = 100L, ...) {
   if (in_sample) {
@@ -523,11 +635,14 @@ ppd.ZANIMBART <- function(object, relative = TRUE, conditional = FALSE,
     ))
   }
 }
+
+#' @rdname ppd
 #' @export
-ppd.ZANIMLNBART <- function(object, relative = TRUE, conditional = FALSE,
+ppd.ZANIMLNBART <- function(object, relative = FALSE, conditional = FALSE,
                             in_sample = TRUE, draws_theta = NULL, draws_zeta = NULL,
-                            draws_chol_Sigma_V = NULL, output_dir = NULL,
-                            n_trials = NULL, n_pred = NULL, ndpost = object$ndpost,
+                            draws_chol_Sigma_V = NULL, n_trials = NULL,
+                            output_dir = NULL, n_pred = NULL,
+                            ndpost = object$ndpost,
                             batch_size = 50L, printevery = 100L, ...) {
   if (in_sample) {
     if (conditional) {
@@ -571,8 +686,10 @@ ppd.ZANIMLNBART <- function(object, relative = TRUE, conditional = FALSE,
     ))
   }
 }
+
+#' @rdname ppd
 #' @export
-ppd.ZANIMLNRegression <- function(object, relative = TRUE, conditional = FALSE,
+ppd.ZANIMLNRegression <- function(object, relative = FALSE, conditional = FALSE,
                                   printevery = 100L, ...) {
   if (conditional) {
     return(.ppd_conditional(object, relative, printevery))
@@ -584,8 +701,10 @@ ppd.ZANIMLNRegression <- function(object, relative = TRUE, conditional = FALSE,
     relative = relative, printevery = printevery
   )
 }
+
+#' @rdname ppd
 #' @export
-ppd.ZANIMRegression <- function(object, relative = TRUE, conditional = FALSE,
+ppd.ZANIMRegression <- function(object, relative = FALSE, conditional = FALSE,
                                 printevery = 100L, ...) {
   if (conditional) {
     return(.ppd_conditional(object, relative, printevery))
@@ -596,8 +715,10 @@ ppd.ZANIMRegression <- function(object, relative = TRUE, conditional = FALSE,
     printevery = printevery
   )
 }
+
+#' @rdname ppd
 #' @export
-ppd.ZANIDMRegression <- function(object, relative = TRUE, conditional = FALSE,
+ppd.ZANIDMRegression <- function(object, relative = FALSE, conditional = FALSE,
                                  in_sample = TRUE, draws_alpha = NULL,
                                  draws_zeta = NULL, n_trials = NULL,
                                  ndpost = object$ndpost,
@@ -624,10 +745,9 @@ ppd.ZANIDMRegression <- function(object, relative = TRUE, conditional = FALSE,
   }
 }
 #' @export
-ppd.DMRegression <- function(object, relative = TRUE, conditional = FALSE,
+ppd.DMRegression <- function(object, relative = FALSE, conditional = FALSE,
                              in_sample = TRUE, draws_alpha = NULL,
-                             n_trials = NULL,
-                             ndpost = object$ndpost,
+                             n_trials = NULL, ndpost = object$ndpost,
                              printevery = 100L, ...) {
   if (in_sample) {
     if (conditional) {

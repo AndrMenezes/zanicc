@@ -5,7 +5,7 @@
 #' It includes the `C++` classes: `MultinomialBART`, `MultinomialLNBART`,
 #' `ZANIMBARTProbit`, and `ZANIMLNBART`.
 #' It also includes the `C++` classes for the regression-based models
-#' `ZANIDMReg`, and `DMLinearReg`.
+#' `DMRegression`, and `ZANIDMRegression`.
 #'
 #' `save_model()` serialises the R object to disk while removing the underlying
 #' `C++` object (`cpp_obj`) because external pointers cannot be saved.
@@ -49,8 +49,8 @@ load_model <- function(model_dir, file_name = "mod.rds") {
     "multinomial_ln_bart" = methods::new(ml$MultinomialLNBART, matrix(0, 1, obj$d), matrix(0, 1, obj$p)),
     "zanim_bart_probit" = methods::new(ml$ZANIMBARTProbit, matrix(0, 1, obj$d), matrix(0, 1, obj$p_theta), matrix(0, 1, obj$p_zeta)),
     "zanim_ln_bart" = methods::new(ml$ZANIMLNBART, matrix(0, 1, obj$d), matrix(0, 1, obj$p_theta), matrix(0, 1, obj$p_zeta)),
-    "zanidm_linear_reg" = methods::new(ml$ZANIDMReg, matrix(0, 1, obj$d), matrix(0, 1, obj$p_alpha), matrix(0, 1, obj$p_zeta)),
-    "dm_linear_reg" = methods::new(ml$DMLinearReg, matrix(0, 1, obj$d), matrix(0, 1, obj$p))
+    "zanidm_linear_reg" = methods::new(ml$ZANIDMRegression, matrix(0, 1, obj$d), matrix(0, 1, obj$p_alpha), matrix(0, 1, obj$p_zeta)),
+    "dm_linear_reg" = methods::new(ml$DMRegression, matrix(0, 1, obj$d), matrix(0, 1, obj$p))
   )
   obj
 }

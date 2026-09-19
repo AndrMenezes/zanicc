@@ -53,13 +53,13 @@
   return(invisible())
 }
 
-# Dispatch methods for different models
 
-#' Posterior predictions
+#' @name predict
+#' @title Posterior predictions
 #'
+#' @description
 #' Compute the posterior predictions for the ML-BART, MLN-BART, ZANIM-BART,
-#' ZANIM-LN-BART, DM-reg and ZANIDM-reg models for a given newdata across all the
-#' posterior draws of model parameters.
+#' ZANIM-LN-BART, DM-reg and ZANIDM-reg models for a new data set.
 #'
 #' For BART-based models, the predictions can be written to binary files on
 #' disk. The `load` argument controls whether these draws are loaded into
@@ -87,12 +87,14 @@
 #' `FALSE` when predictions are too large to comfortably fit in memory.
 #' @param verbose Logical indicating whether progress should be displayed.
 #' The default is `TRUE`.
-#' @param ... Catches unused arguments.
+#' @param ... Currently not used.
 #'
 #' @return Posterior prediction draws. When `load = TRUE`, the draws are
 #'   loaded into R memory. When `load = FALSE`, the prediction draws are
 #'   written to the files in `output_dir`.
-#' @rdname predict.cc
+
+
+#' @rdname predict
 #' @export
 predict.MultinomialBART <- function(object, newdata, ndpost = object$ndpost,
                                     output_dir = tempdir(), load = TRUE,
@@ -103,8 +105,8 @@ predict.MultinomialBART <- function(object, newdata, ndpost = object$ndpost,
   )
 }
 
+#' @rdname predict
 #' @export
-#' @rdname predict.cc
 predict.MultinomialLNBART <- function(object, newdata, ndpost = object$ndpost,
                                       output_dir = tempdir(), load = TRUE,
                                       verbose = TRUE, ...) {
@@ -114,8 +116,8 @@ predict.MultinomialLNBART <- function(object, newdata, ndpost = object$ndpost,
   )
 }
 
+#' @rdname predict
 #' @export
-#' @rdname predict.cc
 predict.ZANIMBART <- function(object, newdata, type = c("theta", "zeta"),
                               ndpost = object$ndpost, output_dir = tempdir(),
                               load = TRUE, verbose = TRUE, ...) {
@@ -125,8 +127,9 @@ predict.ZANIMBART <- function(object, newdata, type = c("theta", "zeta"),
     output_dir = output_dir, load = load, verbose = verbose
   )
 }
+
+#' @rdname predict
 #' @export
-#' @rdname predict.cc
 predict.ZANIMLNBART <- function(object, newdata, type = c("theta", "zeta"),
                                 ndpost = object$ndpost, output_dir = tempdir(),
                                 load = TRUE, verbose = TRUE, ...) {
@@ -137,8 +140,8 @@ predict.ZANIMLNBART <- function(object, newdata, type = c("theta", "zeta"),
   )
 }
 
+#' @rdname predict
 #' @export
-#' @rdname predict.cc
 predict.DMRegression <- function(object, newdata, type = c("alpha", "theta"),
                                  ndpost = object$ndpost, verbose = TRUE, ...) {
   type <- match.arg(type)
@@ -165,8 +168,8 @@ predict.DMRegression <- function(object, newdata, type = c("alpha", "theta"),
   return(predictions)
 }
 
+#' @rdname predict
 #' @export
-#' @rdname predict.cc
 predict.ZANIDMRegression <- function(object, newdata, type = c("alpha", "zeta", "theta"),
                                      ndpost = object$ndpost, verbose = TRUE, ...) {
   type <- match.arg(type)

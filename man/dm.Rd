@@ -4,7 +4,7 @@
 \alias{dm}
 \alias{rdm}
 \alias{ddm}
-\title{Dirichlet-multinomial Distribution}
+\title{Dirichlet-multinomial distribution}
 \usage{
 rdm(n, sizes, alphas)
 

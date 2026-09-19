@@ -12,7 +12,7 @@ compute_classification_metrics(truth, estimated)
 \item{estimated}{A vector of estimated binary class labels, coded as \code{0} and \code{1}.}
 }
 \value{
-A named vector containing sensitivity (\code{sens}), specificity (\code{spec}),
+A named vector containing \code{precision}, \code{recall}, \code{specificity},
 Matthews correlation coefficient (\code{mcc}), and F1 score (\code{f1}).
 }
 \description{

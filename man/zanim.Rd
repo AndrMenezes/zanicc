@@ -7,7 +7,7 @@
 \alias{moments_zanim}
 \alias{dzanim}
 \alias{covariance_zanim}
-\title{Zero-&-N-Inflated Multinomial Distribution}
+\title{Zero-and-N-inflated multinomial distribution}
 \usage{
 rzanim(n, size, prob, zeta)
 

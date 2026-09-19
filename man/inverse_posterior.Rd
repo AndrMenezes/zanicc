@@ -25,8 +25,8 @@ inverse_posterior_zanimlnbart(
 )
 }
 \arguments{
-\item{object}{A fitted ZANIM-LN-BART model of class \code{zanicc}. The model must
-have been fitted using a modern calibration data set.}
+\item{object}{An object of the R6 class \code{ZANIMLNBART}. The ZANIM-LN-BART model
+must have been fitted using a modern calibration data set.}
 
 \item{Y}{A matrix of fossil count-compositional observations with samples in
 rows and taxa in columns. The taxa (columns) must match those used in the modern
@@ -77,7 +77,8 @@ reconstruction using the ZANIM-LN-BART model.
 }
 \details{
 This function implements the Bayesian modular framework proposed in
-in Menezes et al. (2026) to perform palaeoclimate reconstruction.
+in \href{https://arxiv.org/abs/2609.08866v1}{Menezes et al. (2026)}
+to perform pollen-based palaeoclimate reconstruction.
 
 The function performs inverse prediction using a previously fitted
 ZANIM-LN-BART model.
@@ -93,4 +94,9 @@ resampling (SIR), elliptical slice sampling (ESS), and constrained
 elliptical slice sampling (CESS).
 
 This function is a high-level interface to an efficient \verb{C++} implementation.
+}
+\references{
+Menezes, A. F. B., Parnell, A. C., Huntley, B., and Murphy, K. (2026).
+Bayesian palaeoclimate reconstruction from zero-inflated count-compositional pollen data: A case study of Lago Grande di Monticchio in southern Italy.
+\emph{arXiv preprint}, \strong{arXiv:2609.08866}. \url{https://arxiv.org/abs/2609.08866v1}.
 }

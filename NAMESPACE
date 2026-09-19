@@ -64,14 +64,10 @@ export(zi_multinomial)
 export(zi_neg_bin)
 export(zi_poisson)
 importFrom(R6,"R6Class")
-importFrom(Rcpp,
-  "Module",
-  sourceCpp
-)
-importFrom(coda,
-  "HPDinterval",
-  "as.mcmc"
-)
+importFrom(Rcpp,"Module")
+importFrom(Rcpp,sourceCpp)
+importFrom(coda,"HPDinterval")
+importFrom(coda,"as.mcmc")
 importFrom(geometry,"delaunayn")
 importFrom(scoringRules,"crps_sample")
 importFrom(splines,"bs")

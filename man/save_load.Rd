@@ -30,7 +30,7 @@ implemented in \verb{C++} classes and exposed using the \code{Rcpp::Module} func
 It includes the \verb{C++} classes: \code{MultinomialBART}, \code{MultinomialLNBART},
 \code{ZANIMBARTProbit}, and \code{ZANIMLNBART}.
 It also includes the \verb{C++} classes for the regression-based models
-\code{ZANIDMReg}, and \code{DMLinearReg}.
+\code{DMRegression}, and \code{ZANIDMRegression}.
 }
 \details{
 \code{save_model()} serialises the R object to disk while removing the underlying

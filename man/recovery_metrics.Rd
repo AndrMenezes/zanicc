@@ -94,9 +94,9 @@ following parameters:
 \describe{
 \item{population-level count probabilities, \eqn{\theta_{ij}} }{
 It provides the information underlying the observed compositional counts.
-The vector \eqn{\pmb{\theta}_{i} = (\theta_{i1}, \ldots, \theta_{id}) \in \mathbb{S}^d}
+The vector \eqn{\bm{\theta}_{i} = (\theta_{i1}, \ldots, \theta_{id}) \in \mathbb{S}^d}
 lie in the continuous simplex space
-\eqn{\mathbb{S}^d=\{\bm{\theta}\in\mathbb{R}^d; \theta_{ij} > 0, \sum_{j=1}^d \theta_{ij}=1\}}.
+\eqn{\mathbb{S}^d=\{\bm{\theta}_i\in\mathbb{R}^d; \theta_{ij} > 0, \sum_{j=1}^d \theta_{ij}=1\}}.
 
 For these parameters, we use the Kullback-Leibler divergence for
 parameters on the simplex, averaged over the observations.
@@ -117,9 +117,9 @@ the observations, implemented in the function \code{compute_kl_prob()}.
 \item{individual-level structural zero probabilities, \eqn{\vartheta_{ij}}}{
 It describe within- and between-subject heterogeneity, while \eqn{\bm{\theta}_i}
 characterises the counts at a global level.
-The vector \eqn{\pmb{\vartheta}_{i} = (\vartheta_{i1}, \ldots, \vartheta_{id}) \in \mathbb{S}^d}
+The vector \eqn{\bm{\vartheta}_{i} = (\vartheta_{i1}, \ldots, \vartheta_{id}) \in \mathbb{S}^d}
 also lie in the continuous simplex space
-\eqn{\mathbb{S}^d=\{\bm{\vartheta}\in\mathbb{R}^d; \vartheta_{ij} \geq 0, \sum_{j=1}^d \vartheta_{ij}=1\}},
+\eqn{\mathbb{S}^d=\{\bm{\vartheta}_i\in\mathbb{R}^d; \vartheta_{ij} \geq 0, \sum_{j=1}^d \vartheta_{ij}=1\}},
 
 However, note that \eqn{\vartheta_{ij}} can have spikes at zero.
 Because of this, we use the Jensen-Shannon divergence
@@ -130,5 +130,5 @@ averaged over the observations for these parameters, implemented in the function
 }
 \references{
 Menezes, A. F. B., Parnell, A. C. and Murphy, K. (2026), Bayesian nonparametric models for zero-inflated
-count-compositional data using ensembles of regression trees. \url{https://arxiv.org/abs/2601.08067}
+count-compositional data using ensembles of regression trees. \emph{arXiv preprint}, \strong{arXiv:2601.08067} \url{https://arxiv.org/abs/2601.08067v2}
 }

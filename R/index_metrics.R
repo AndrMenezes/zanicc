@@ -1,4 +1,4 @@
-#' @name count_composition_indices
+#' @name cc_indices
 #'
 #' @title Summary indices for multivariate count-compositional data
 #'
@@ -70,7 +70,7 @@
 #' count-compositional data using ensembles of regression trees. <https://arxiv.org/abs/2601.08067>
 #'
 
-#' @rdname count_composition_indices
+#' @rdname cc_indices
 #' @export
 zi_multinomial <- function(Y) {
   N <- rowSums(Y)
@@ -82,7 +82,7 @@ zi_multinomial <- function(Y) {
   index
 }
 
-#' @rdname count_composition_indices
+#' @rdname cc_indices
 #' @export
 gdi <- function(Y) {
   m <- colMeans(Y)
@@ -90,7 +90,7 @@ gdi <- function(Y) {
   drop((crossprod(sqrt(m), cv) %*% sqrt(m)) / crossprod(m))
 }
 
-#' @rdname count_composition_indices
+#' @rdname cc_indices
 #' @export
 mdi <- function(Y) {
   m <- colMeans(Y)
@@ -99,7 +99,7 @@ mdi <- function(Y) {
   drop(sum(m^2 * di) / crossprod(m))
 }
 
-#' @rdname count_composition_indices
+#' @rdname cc_indices
 #' @export
 mcv <- function(Y) {
   m <- colMeans(Y)
@@ -107,7 +107,7 @@ mcv <- function(Y) {
   drop(sqrt((crossprod(m, v) %*% m) / sum(m^2)))
 }
 
-#' @rdname count_composition_indices
+#' @rdname cc_indices
 #' @export
 shannon_entropy <- function(Y) {
   # N <- rowSums(Y)
@@ -125,7 +125,7 @@ shannon_entropy <- function(Y) {
   mean(terms)
 }
 
-#' @rdname count_composition_indices
+#' @rdname cc_indices
 #' @export
 zi_neg_bin <- function(x) {
   p0 <- mean(x == 0)
@@ -137,7 +137,7 @@ zi_neg_bin <- function(x) {
   1.0 + (s2 - m) * log(p0) / (m^2 * (log(s2) - log(m)))
 }
 
-#' @rdname count_composition_indices
+#' @rdname cc_indices
 #' @export
 zi_poisson <- function(x) {
   p0 <- mean(x == 0)
@@ -147,7 +147,7 @@ zi_poisson <- function(x) {
   1.0 + log(p0) / mean(x)
 }
 
-#' @rdname count_composition_indices
+#' @rdname cc_indices
 #' @export
 zi_binomial <- function(x, N, standardise = FALSE) {
   sum_N <- sum(N)
@@ -222,9 +222,9 @@ zi_binomial <- function(x, N, standardise = FALSE) {
 #' \describe{
 #'   \item{population-level count probabilities, \eqn{\theta_{ij}} }{
 #'    It provides the information underlying the observed compositional counts.
-#'    The vector \eqn{\pmb{\theta}_{i} = (\theta_{i1}, \ldots, \theta_{id}) \in \mathbb{S}^d}
+#'    The vector \eqn{\bm{\theta}_{i} = (\theta_{i1}, \ldots, \theta_{id}) \in \mathbb{S}^d}
 #'    lie in the continuous simplex space
-#'   \eqn{\mathbb{S}^d=\{\bm{\theta}\in\mathbb{R}^d; \theta_{ij} > 0, \sum_{j=1}^d \theta_{ij}=1\}}.
+#'   \eqn{\mathbb{S}^d=\{\bm{\theta}_i\in\mathbb{R}^d; \theta_{ij} > 0, \sum_{j=1}^d \theta_{ij}=1\}}.
 #'
 #'   For these parameters, we use the Kullback-Leibler divergence for
 #'   parameters on the simplex, averaged over the observations.
@@ -245,9 +245,9 @@ zi_binomial <- function(x, N, standardise = FALSE) {
 #'   \item{individual-level structural zero probabilities, \eqn{\vartheta_{ij}}}{
 #'   It describe within- and between-subject heterogeneity, while \eqn{\bm{\theta}_i}
 #'   characterises the counts at a global level.
-#'   The vector \eqn{\pmb{\vartheta}_{i} = (\vartheta_{i1}, \ldots, \vartheta_{id}) \in \mathbb{S}^d}
+#'   The vector \eqn{\bm{\vartheta}_{i} = (\vartheta_{i1}, \ldots, \vartheta_{id}) \in \mathbb{S}^d}
 #'   also lie in the continuous simplex space
-#'   \eqn{\mathbb{S}^d=\{\bm{\vartheta}\in\mathbb{R}^d; \vartheta_{ij} \geq 0, \sum_{j=1}^d \vartheta_{ij}=1\}},
+#'   \eqn{\mathbb{S}^d=\{\bm{\vartheta}_i\in\mathbb{R}^d; \vartheta_{ij} \geq 0, \sum_{j=1}^d \vartheta_{ij}=1\}},
 #'
 #'   However, note that \eqn{\vartheta_{ij}} can have spikes at zero.
 #'   Because of this, we use the Jensen-Shannon divergence
@@ -257,7 +257,7 @@ zi_binomial <- function(x, N, standardise = FALSE) {
 #'
 #' @references
 #' Menezes, A. F. B., Parnell, A. C. and Murphy, K. (2026), Bayesian nonparametric models for zero-inflated
-#' count-compositional data using ensembles of regression trees. <https://arxiv.org/abs/2601.08067>
+#' count-compositional data using ensembles of regression trees. \emph{arXiv preprint}, \strong{arXiv:2601.08067} <https://arxiv.org/abs/2601.08067v2>
 #'
 #' @return
 #' A numeric value or vector containing the recovery metric. The returned value

@@ -40,7 +40,4 @@ exponential random variables.
 coordinates using the vertices of the selected simplex.
 }
 }
-
-This implementation follows the method described by Stack Exchange user  \strong{whuber}:
-\url{https://stats.stackexchange.com/questions/663559/transform-convex-hull-vertex-weights-for-uniform-distribution/663594#663594}.
 }

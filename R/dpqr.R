@@ -1,4 +1,4 @@
-#' Zero-&-N-Inflated Multinomial Distribution
+#' Zero-and-N-inflated multinomial distribution
 #' @name zanim
 #' @aliases zanim rzanim dzanim_marginal moments_zanim
 #'
@@ -155,7 +155,7 @@ covariance_zanim <- function(size, prob, zeta, j, h) {
   size * (size - 1) * c_jh - mean_j * mean_h
 }
 
-#' Zero-&-N-Inflated Dirichlet-multinomial Distribution
+#' Zero-and-N-inflated Dirichlet-multinomial distribution
 #' @name zanidm
 #' @aliases zanidm rzanidm dzanidm
 #'
@@ -315,7 +315,7 @@ covariance_zanidm <- function(size, alpha, zeta, j, h) {
   size * c_jh - mean_j * mean_h
 }
 
-#' Dirichlet-multinomial Distribution
+#' Dirichlet-multinomial distribution
 #' @name dm
 #' @aliases dm rdm ddm
 #'

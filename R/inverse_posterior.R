@@ -14,6 +14,7 @@
 #' value of this determinant is proportional to the simplex volume.
 #'
 #' @return A numeric vector containing one value per simplex.
+#' @noRd
 .volume_simplices <- function(i, X) {
   if (!is.matrix(i)) i <- matrix(i, nrow = 1)
   apply(i, 1, function(j) {
@@ -86,15 +87,14 @@ runifconvexhull <- function(n, X) {
 #'
 #' @description
 #' Approximates the inverse posterior distribution of the unobserved climate
-#' variables given the corresponding with compositional fossil counts, and the
+#' variables given the corresponding compositional fossil counts, and the
 #' posterior draws of parameters from the ZANIM-LN-BART model.
 #'
 #' This is the main quantity of interest when performing pollen-based palaeoclimate
 #' reconstruction using the ZANIM-LN-BART model.
 #'
-#'
-#' @param object A fitted ZANIM-LN-BART model of class `zanicc`. The model must
-#' have been fitted using a modern calibration data set.
+#' @param object An object of the R6 class `ZANIMLNBART`. The ZANIM-LN-BART model
+#' must have been fitted using a modern calibration data set.
 #' @param Y A matrix of fossil count-compositional observations with samples in
 #' rows and taxa in columns. The taxa (columns) must match those used in the modern
 #' data set.

@@ -21,6 +21,11 @@ test_that("multiplication works", {
   x_R2 <- matrix(nrow = n, ncol = p)
   for (i in seq_len(n)) x_R2[i, ] <- drop(SigL %*% rand_norm[i, ] + mu)
 
+  # R v2 implementation
+  x_R3 <- matrix(nrow = n, ncol = p)
+  for (i in seq_len(n)) x_R3[i, ] <- drop(Sigma_chol %*% rand_norm[i, ] + mu)
+
+
   # C++
   x_C <- replicate(n, rmvnorm_chol_22(mean = mu, L = c(Sigma_chol), p = p))
   x_C <- t(x_C)
