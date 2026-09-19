@@ -48,17 +48,20 @@ lpd_multinomial <- function(x, draws_prob, printevery = 100L) {
   lpl
 }
 
-#' Read binary MCMC output
+#' @name load_bin
+#' @title Read binary MCMC output
 #'
 #' @description
+#' Binary files are saved either during the MCMC sampling or for sample-specific
+#' predictions of BART-based models.
+#' These functions read the binary data into memory and format it as a
+#' three-dimensional array.
 #'
-#' Binary data are exported during the MCMC sampling. These functions read the
-#' binary data into memory and format it as a three-dimensional array.
-#'
-#' [load_bin_predictions()] reads posterior predictions, while
-#' [load_bin_coefficients()] reads posterior coefficient draws. The binary
-#' files are expected to contain values stored as 8-byte doubles.
-#'
+#' [load_bin_predictions()] reads posterior predictions typically from BART-based
+#' models, while
+#' [load_bin_coefficients()] reads posterior coefficient draws from regression-based
+#' models.
+#' The binary files are expected to contain values stored as 8-byte doubles.
 #'
 #' @param fname Character string giving the name and path of the binary file.
 #' @param n Integer giving the number of observations.
@@ -164,6 +167,7 @@ summarise_draws.array <- function(x, prob = 0.05) {
 #' @param x A matrix of multivariate count-compositional data.
 #' Rows correspond to observations and columns correspond to categories.
 #' @return Matrix of empirical composition on the continuous simplex.
+#' @noRd
 .normalise_composition <- function(x) {
   x <- sweep(x = x, MARGIN = c(1, 2), STATS = apply(x, c(1, 2), sum), FUN = "/")
   # Rare case when n_trials = 0
