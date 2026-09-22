@@ -139,9 +139,23 @@ runifconvexhull <- function(n, X) {
 #'
 #' Several sampling algorithms are available, including sampling-importance-
 #' resampling (SIR), elliptical slice sampling (ESS), and constrained
-#' elliptical slice sampling (CESS).
+#' elliptical slice sampling (cESS).
 #'
 #' This function is a high-level interface to an efficient `C++` implementation.
+#'
+#' @return
+#' A three-dimensional array containing draws of the posterior distribution
+#' of the unobserved climate vector model with dimensions
+#' \eqn{M \times p \times n}, where \eqn{M} is the
+#' number of posterior draws,
+#' \eqn{p} is the dimensional of the climate vector, and
+#' \eqn{n} is the number of observations corresponding to `Y`.
+#'
+#'
+#' @references
+#' Menezes, A. F. B., Parnell, A. C., Huntley, B., and Murphy, K. (2026),
+#' Bayesian palaeoclimate reconstruction from zero-inflated count-compositional pollen data: A case study of Lago Grande di Monticchio in southern Italy \emph{arXiv preprint}, \strong{arXiv:2609.08866} <https://arxiv.org/abs/2609.08866>
+#'
 #'
 #' @importFrom truncnorm "rtruncnorm"
 #' @rdname inverse_posterior
@@ -225,7 +239,8 @@ inverse_posterior_zanimlnbart <- function(object, Y,
       ini <- proc.time()
       xx <- switch(method,
         "ess" = {
-          if (is.null(X_ini)) X_ini <- stats::rnorm(n = n, mean = mean_prior, sd = S_prior)
+          if (is.null(X_ini)) X_ini <- stats::rnorm(n = n, mean = mean_prior,
+                                                    sd = S_prior)
           cpp_obj$ESS1p(
             Y, X_ini, ndpost, nburnin, n_particles,
             mean_prior, S_prior, B

@@ -5,6 +5,49 @@
 #' for different (non)parametric regression models for the analysis of zero-inflated
 #' multivariate count-compositional data.
 #'
+#' @param Y A matrix of multivariate count-compositional data.
+#' Rows correspond to observations and columns correspond to categories.
+#' @param X_count A matrix of covariates used to model the count probabilities.
+#' Rows must correspond to the observations in `Y`.
+#' @param X_zi An optional matrix of covariates used to model the structural zero
+#' probabilities. If `NULL` (the default), `X_count` is used when covariates are required
+#' for the structural-zero component.
+#' @param model A character string specifying the model to fit. One of
+#' `"zanim_bart"`, `"zanim_ln_bart"`, `"ml_bart"`, `"mln_bart"`, `"zanim_reg"`,
+#' `"zanim_ln_reg"`, `"zanidm_reg"`, or `"dm_reg"`. Defaults to `"zanim-bart"`.
+#' @param ntrees_theta Number of trees used for the BART prior on the
+#' count probabilities. The default is `ntrees_theta=100`.
+#' @param ntrees_zeta Number of trees used for the category-specific BART prior on the
+#' structural-zero probabilities. The default is `ntrees_zeta=100`.
+#' @param ndpost Number of posterior MCMC draws to retain. The default is `ndpost=5000`.
+#' @param nskip Number of MCMC iterations to discard as burn-in before retaining
+#' posterior draws. The default is `nskip=5000`.
+#' @param keep_draws Logical, defaults to `TRUE`. Governs whether to retain posterior draws.
+#' @param save_trees Logical, defaults to `FALSE`. Governs whether to save the posterior draws of the BART
+#' tree topologies and terminal-node parameters to `.bin` files. For BART-based
+#' models, this creates files named `forests_theta_j.bin` for the
+#' category-specific compositional regression trees and, for zero-inflated
+#' models, `forests_zeta_j.bin` for the structural-zero regression trees.
+#' Here, `j` indexes the category, and each file contains the corresponding
+#' tree topologies and terminal node parameters across all `ndpost` posterior
+#' draws.
+#' @param forests_dir Character path indicating where to save the
+#' `forests_theta_j.bin` and `forests_zeta_j.bin` files. Default is to [tempdir()].
+#' @param covariance_type Character string specifying the prior on the covariance
+#' matrix for the logistic-normal random effects. Defaults to `fa_mgp`, for nonparametric factor
+#'  analysis with a multiplicative gamma process shrinkage prior. Other options include `fa` (factor analysis without such a prior),
+#'  `diag` (for a diagonal covariance matrix), and `wishart` (for an inverse Wishart prior).
+#' This is only used for `mln_bart`, `zanim_ln_bart`, and `zanim_ln_reg` models.
+#' @param S_prior_beta_count Prior covariance matrix for the regression coefficients
+#' associated with `X_count`, i.e., the count-compositional component.
+#' @param S_prior_beta_zi Prior covariance matrix for
+#' the regression coefficients associated with `X_zi`, i.e., the structural zero
+#' components.
+#' @param ... Additional model-specific MCMC and (hyper)parameters.
+#' These arguments are passed to the `SetupMCMC()` method of the
+#' `R6` class corresponding to `model`. The available arguments depend
+#' on the selected model. See \code{Details} for a summary.
+#'
 #' @details
 #' The available models differ in their treatment of the compositional
 #' probabilities, structural zeros, and additional random effects.
@@ -70,48 +113,14 @@
 #' }
 #' }
 #'
-#' @param Y A matrix of multivariate count-compositional data.
-#' Rows correspond to observations and columns correspond to categories.
-#' @param X_count A matrix of covariates used to model the count probabilities.
-#' Rows must correspond to the observations in `Y`.
-#' @param X_zi An optional matrix of covariates used to model the structural zero
-#' probabilities. If `NULL` (the default), `X_count` is used when covariates are required
-#' for the structural-zero component.
-#' @param model A character string specifying the model to fit. One of
-#' `"zanim_bart"`, `"zanim_ln_bart"`, `"ml_bart"`, `"mln_bart"`, `"zanim_reg"`,
-#' `"zanim_ln_reg"`, `"zanidm_reg"`, or `"dm_reg"`. Defaults to `"zanim-bart"`.
-#' @param ntrees_theta Number of trees used for the BART prior on the
-#' count probabilities. The default is `ntrees_theta=100`.
-#' @param ntrees_zeta Number of trees used for the category-specific BART prior on the
-#' structural-zero probabilities. The default is `ntrees_zeta=100`.
-#' @param ndpost Number of posterior MCMC draws to retain. The default is `ndpost=5000`.
-#' @param nskip Number of MCMC iterations to discard as burn-in before retaining
-#' posterior draws. The default is `nskip=5000`.
-#' @param keep_draws Logical, defaults to `TRUE`. Governs whether to retain posterior draws.
-#' @param save_trees Logical, defaults to `FALSE`. Governs whether to save the posterior draws of the BART
-#' tree topologies and terminal-node parameters to `.bin` files. For BART-based
-#' models, this creates files named `forests_theta_j.bin` for the
-#' category-specific compositional regression trees and, for zero-inflated
-#' models, `forests_zeta_j.bin` for the structural-zero regression trees.
-#' Here, `j` indexes the category, and each file contains the corresponding
-#' tree topologies and terminal node parameters across all `ndpost` posterior
-#' draws.
-#' @param forests_dir Character path indicating where to save the
-#' `forests_theta_j.bin` and `forests_zeta_j.bin` files. Defaults to [tempdir()].
-#' @param covariance_type Character string specifying the prior on the covariance
-#' matrix for the logistic-normal random effects. Defaults to `fa_mgp`, for nonparametric factor
-#'  analysis with a multiplicative gamma process shrinkage prior. Other options include `fa` (factor analysis without such a prior),
-#'  `diag` (for a diagonal covariance matrix), and `wishart` (for an inverse Wishart prior).
-#' This is only used for `mln_bart`, `zanim_ln_bart`, and `zanim_ln_reg` models.
-#' @param sd_prior_beta_count Prior standard deviations for the regression
-#' coefficients associated with `X_count`.
-#' @param sd_prior_beta_zi Prior standard deviations or covariance structure for
-#' the regression coefficients associated with `X_zi`.
-#' @param S_prior_betas Prior covariance matrix for the regression coefficients
-#' associated with the count-compositional component.
-#' @param ... Catches unused arguments.
+#' This function is a high-level interface to an efficient `C++` implementation.
 #'
 #' @return An R6 object which class depends on the specified `model`.
+#'
+#' @references Menezes, A. F. B., Parnell, A. C. and Murphy, K. (2026),
+#' Bayesian nonparametric models for zero-inflated
+#' count-compositional data using ensembles of regression trees. \emph{arXiv preprint}, \strong{arXiv:2601.08067} <https://arxiv.org/abs/2601.08067v2>
+#'
 #' @importFrom R6 "R6Class"
 #'
 #' @export
@@ -125,9 +134,9 @@ zanicc <- function(Y, X_count, X_zi = NULL,
                    nskip = 5000L, keep_draws = TRUE, save_trees = FALSE,
                    forests_dir = tempdir(),
                    covariance_type = c("fa_mgp", "diag", "wishart", "fa"),
-                   sd_prior_beta_count = rep(1.0, ncol(X_count)),
-                   sd_prior_beta_zi = diag(1.0, ncol(X_zi)),
-                   S_prior_betas = diag(1.0, ncol(X_count)),
+                   S_prior_beta_count = diag(1.0, ncol(X_count)),
+                   # sd_prior_beta_count = rep(1.0, ncol(X_count)),
+                   S_prior_beta_zi = diag(1.0, ncol(X_zi)),
                    ...) {
   model <- match.arg(model)
 
@@ -168,8 +177,8 @@ zanicc <- function(Y, X_count, X_zi = NULL,
       mod <- ZANIMRegression$new(Y = Y, X_theta = X_count, X_zeta = X_zi)
       mod$SetupMCMC(
         ndpost = ndpost, nskip = nskip,
-        sd_prior_beta_theta = sd_prior_beta_count,
-        sd_prior_beta_zeta = sd_prior_beta_zi,
+        sd_prior_beta_theta = diag(S_prior_beta_count),
+        S_prior_beta_zeta = S_prior_beta_zi,
         keep_draws = keep_draws, ...
       )
     },
@@ -177,8 +186,8 @@ zanicc <- function(Y, X_count, X_zi = NULL,
       mod <- ZANIDMRegression$new(Y = Y, X_alpha = X_count, X_zeta = X_zi)
       mod$SetupMCMC(
         ndpost = ndpost, nskip = nskip,
-        sd_prior_beta_alpha = sd_prior_beta_count,
-        sd_prior_beta_zeta = sd_prior_beta_zi,
+        sd_prior_beta_alpha = diag(S_prior_beta_count),
+        S_prior_beta_zeta = S_prior_beta_zi,
         keep_draws = keep_draws, ...
       )
     },
@@ -186,8 +195,8 @@ zanicc <- function(Y, X_count, X_zi = NULL,
       mod <- ZANIMLNRegression$new(Y = Y, X_theta = X_count, X_zeta = X_zi)
       mod$SetupMCMC(
         ndpost = ndpost, nskip = nskip,
-        sd_prior_beta_theta = sd_prior_beta_count,
-        sd_prior_beta_zeta = sd_prior_beta_zi,
+        sd_prior_beta_theta = diag(S_prior_beta_count),
+        S_prior_beta_zeta = S_prior_beta_zi,
         covariance_type = covariance_type,
         keep_draws = keep_draws, ...
       )
@@ -195,7 +204,7 @@ zanicc <- function(Y, X_count, X_zi = NULL,
     "dm_reg" = {
       mod <- DMRegression$new(Y = Y, X = X_count)
       mod$SetupMCMC(
-        S_prior_betas = S_prior_betas,
+        S_prior_betas = S_prior_beta_count,
         ndpost = ndpost, nskip = nskip, keep_draws = keep_draws,
         ...
       )

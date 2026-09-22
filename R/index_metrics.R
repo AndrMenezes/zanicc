@@ -67,8 +67,8 @@
 #' and a new proposal, Journal of Multivariate Analysis \strong{165}, 180--193.
 #'
 #' Menezes, A. F. B., Parnell, A. C. and Murphy, K. (2026), Bayesian nonparametric models for zero-inflated
-#' count-compositional data using ensembles of regression trees. <https://arxiv.org/abs/2601.08067>
-#'
+#' count-compositional data using ensembles of regression trees. \emph{arXiv preprint}, \strong{arXiv:2601.08067} <https://arxiv.org/abs/2601.08067v2>
+
 
 #' @rdname cc_indices
 #' @export
