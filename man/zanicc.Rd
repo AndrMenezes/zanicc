@@ -18,9 +18,8 @@ zanicc(
   save_trees = FALSE,
   forests_dir = tempdir(),
   covariance_type = c("fa_mgp", "diag", "wishart", "fa"),
-  sd_prior_beta_count = rep(1, ncol(X_count)),
-  sd_prior_beta_zi = diag(1, ncol(X_zi)),
-  S_prior_betas = diag(1, ncol(X_count)),
+  S_prior_beta_count = diag(1, ncol(X_count)),
+  S_prior_beta_zi = diag(1, ncol(X_zi)),
   ...
 )
 }
@@ -62,7 +61,7 @@ tree topologies and terminal node parameters across all \code{ndpost} posterior
 draws.}
 
 \item{forests_dir}{Character path indicating where to save the
-\code{forests_theta_j.bin} and \code{forests_zeta_j.bin} files. Defaults to \code{\link[=tempdir]{tempdir()}}.}
+\code{forests_theta_j.bin} and \code{forests_zeta_j.bin} files. Default is to \code{\link[=tempdir]{tempdir()}}.}
 
 \item{covariance_type}{Character string specifying the prior on the covariance
 matrix for the logistic-normal random effects. Defaults to \code{fa_mgp}, for nonparametric factor
@@ -70,16 +69,17 @@ analysis with a multiplicative gamma process shrinkage prior. Other options incl
 \code{diag} (for a diagonal covariance matrix), and \code{wishart} (for an inverse Wishart prior).
 This is only used for \code{mln_bart}, \code{zanim_ln_bart}, and \code{zanim_ln_reg} models.}
 
-\item{sd_prior_beta_count}{Prior standard deviations for the regression
-coefficients associated with \code{X_count}.}
+\item{S_prior_beta_count}{Prior covariance matrix for the regression coefficients
+associated with \code{X_count}, i.e., the count-compositional component.}
 
-\item{sd_prior_beta_zi}{Prior standard deviations or covariance structure for
-the regression coefficients associated with \code{X_zi}.}
+\item{S_prior_beta_zi}{Prior covariance matrix for
+the regression coefficients associated with \code{X_zi}, i.e., the structural zero
+components.}
 
-\item{S_prior_betas}{Prior covariance matrix for the regression coefficients
-associated with the count-compositional component.}
-
-\item{...}{Catches unused arguments.}
+\item{...}{Additional model-specific MCMC and (hyper)parameters.
+These arguments are passed to the \code{SetupMCMC()} method of the
+\code{R6} class corresponding to \code{model}. The available arguments depend
+on the selected model. See \code{Details} for a summary.}
 }
 \value{
 An R6 object which class depends on the specified \code{model}.
@@ -153,4 +153,11 @@ The following models are available through \code{model}.
 \item{\code{"zanim_ln_reg"}}{Zero-and-N-inflated multinomial logistic-normal regression model.}
 }
 }
+
+This function is a high-level interface to an efficient \verb{C++} implementation.
+}
+\references{
+Menezes, A. F. B., Parnell, A. C. and Murphy, K. (2026),
+Bayesian nonparametric models for zero-inflated
+count-compositional data using ensembles of regression trees. \emph{arXiv preprint}, \strong{arXiv:2601.08067} \url{https://arxiv.org/abs/2601.08067v2}
 }

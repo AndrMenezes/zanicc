@@ -101,5 +101,5 @@ Kokonendji, C. C. and Puig, P. (2018), Fisher dispersion index for multivariate 
 and a new proposal, Journal of Multivariate Analysis \strong{165}, 180--193.
 
 Menezes, A. F. B., Parnell, A. C. and Murphy, K. (2026), Bayesian nonparametric models for zero-inflated
-count-compositional data using ensembles of regression trees. \url{https://arxiv.org/abs/2601.08067}
+count-compositional data using ensembles of regression trees. \emph{arXiv preprint}, \strong{arXiv:2601.08067} \url{https://arxiv.org/abs/2601.08067v2}
 }

@@ -67,9 +67,17 @@ past climate.}
 \item{eta}{Tuning parameter using in the \code{cess} algorithm related to the logistic
 approximation of the indicator function. Defaults to \code{50.0}.}
 }
+\value{
+A three-dimensional array containing draws of the posterior distribution
+of the unobserved climate vector model with dimensions
+\eqn{M \times p \times n}, where \eqn{M} is the
+number of posterior draws,
+\eqn{p} is the dimensional of the climate vector, and
+\eqn{n} is the number of observations corresponding to \code{Y}.
+}
 \description{
 Approximates the inverse posterior distribution of the unobserved climate
-variables given the corresponding with compositional fossil counts, and the
+variables given the corresponding compositional fossil counts, and the
 posterior draws of parameters from the ZANIM-LN-BART model.
 
 This is the main quantity of interest when performing pollen-based palaeoclimate
@@ -77,8 +85,7 @@ reconstruction using the ZANIM-LN-BART model.
 }
 \details{
 This function implements the Bayesian modular framework proposed in
-in \href{https://arxiv.org/abs/2609.08866v1}{Menezes et al. (2026)}
-to perform pollen-based palaeoclimate reconstruction.
+in Menezes et al. (2026) to perform palaeoclimate reconstruction.
 
 The function performs inverse prediction using a previously fitted
 ZANIM-LN-BART model.
@@ -91,12 +98,11 @@ corresponding latent climate variables.
 
 Several sampling algorithms are available, including sampling-importance-
 resampling (SIR), elliptical slice sampling (ESS), and constrained
-elliptical slice sampling (CESS).
+elliptical slice sampling (cESS).
 
 This function is a high-level interface to an efficient \verb{C++} implementation.
 }
 \references{
-Menezes, A. F. B., Parnell, A. C., Huntley, B., and Murphy, K. (2026).
-Bayesian palaeoclimate reconstruction from zero-inflated count-compositional pollen data: A case study of Lago Grande di Monticchio in southern Italy.
-\emph{arXiv preprint}, \strong{arXiv:2609.08866}. \url{https://arxiv.org/abs/2609.08866v1}.
+Menezes, A. F. B., Parnell, A. C., Huntley, B., and Murphy, K. (2026),
+Bayesian palaeoclimate reconstruction from zero-inflated count-compositional pollen data: A case study of Lago Grande di Monticchio in southern Italy \emph{arXiv preprint}, \strong{arXiv:2609.08866} \url{https://arxiv.org/abs/2609.08866}
 }
