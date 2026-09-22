@@ -22,7 +22,7 @@
 #' The `rzanim` function returns a matrix of integer counts with `n` rows and
 #' `d` columns, where `d` is the number of categories.
 #'
-#' @references Menezes, A. F. B., Parnell, A. C., and Murphy, K. (2025). Finite mixture representations of
+#' @references Menezes, A. F. B., Parnell, A. C., and Murphy, K. (2025), Finite mixture representations of
 #' zero-and-N -inflated distributions for count-compositional data. \emph{Journal of Multivariate Analysis},
 #' \strong{210:105492}. <https://doi.org/10.1016/j.jmva.2025.105492>.
 #'
@@ -177,7 +177,7 @@ covariance_zanim <- function(size, prob, zeta, j, h) {
 #' @param log logical; if `TRUE`, probabilities \eqn{p} are given as \eqn{\log(p)}.
 #'
 #'
-#' @references Menezes, A. F. B., Parnell, A. C., and Murphy, K. (2025). Finite mixture representations of
+#' @references Menezes, A. F. B., Parnell, A. C., and Murphy, K. (2025), Finite mixture representations of
 #' zero-and-N -inflated distributions for count-compositional data. \emph{Journal of Multivariate Analysis},
 #' \strong{210:105492}. <https://doi.org/10.1016/j.jmva.2025.105492>.
 
