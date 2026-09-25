@@ -1,8 +1,9 @@
-#' @title Zero-and-N-inflated multinomial logistic BART
+#' @title ZANIM-BART
 #'
 #' @description
-#' R6 class wrapper for the `C++` implementation of the Markov chain Monte Carlo algorithm
-#' to perform Bayesian inference for the zero-and-N-inflated multinomial BART model.
+#' Carries out Bayesian inference for the zero-and-N-inflated multinomial logistic
+#' BART (ZANIM-BART) model through an efficient Markov chain Monte Carlo algorithm.
+#' The `R6` class is an wrapper for the underlying `C++` implementation.
 #'
 #' @export
 ZANIMBART <- R6::R6Class(classname = "ZANIMBART", cloneable = FALSE, public = list(
@@ -59,9 +60,9 @@ ZANIMBART <- R6::R6Class(classname = "ZANIMBART", cloneable = FALSE, public = li
   draws_zeta = NULL,
   #' @field draws_abundance Posterior draws of the individual-level structural zero probabilities.
   draws_abundance = NULL,
-  #' @field keep_draws Logical indicating whether posterior draws are retained.
+  #' @field keep_draws Logical indicating whether posterior draws were retained.
   keep_draws = logical(),
-  #' @field save_trees Logical indicating whether the posterior forests should be
+  #' @field save_trees Logical indicating whether the posterior forests were
   #' saved in disk.
   save_trees = logical(),
   #' @field varcount_theta A three dimensional array with dimension \eqn{p_{\theta} \times d \times m},
@@ -85,7 +86,7 @@ ZANIMBART <- R6::R6Class(classname = "ZANIMBART", cloneable = FALSE, public = li
   #' (MPPI) for the category-specific covariates associated to the compositional components.
   mppi_zeta = NULL,
   #' @field sigma_theta_hyperprior Posterior distribution of the hyperparameter related to the
-  #' shirinkage prior in the compositional component.
+  #' shrinkage prior in the compositional component.
   sigma_theta_hyperprior = NULL,
 
   #' Create a new `ZANIMBART` object
@@ -129,11 +130,10 @@ ZANIMBART <- R6::R6Class(classname = "ZANIMBART", cloneable = FALSE, public = li
     self$n_trials <- rowSums(Y)
   },
 
-  #' Set up the the settings for the MCMC algorithm
+  #' Set up the settings for the MCMC algorithm
   #' @description
-  #' Configures priors and hyperparameters for regression-tree ensembles,
-  #' variable selection settings, and output options
-  #' used by the underlying `C++` implementation.
+  #' Configures priors and hyperparameters of the ZANIM-BART model
+  #' used by the underlying MCMC algorithm implemented in `C++`.
   #' This method must be called before \href{#method-ZANIMBART-RunMCMC}{\code{ZANIMBART$RunMCMC()}}.
   #' @param v0_theta Hyperparameter controlling the level of shrinkage of the
   #' regression trees for the compositional component. The smaller `v0_theta` is,
@@ -247,7 +247,7 @@ ZANIMBART <- R6::R6Class(classname = "ZANIMBART", cloneable = FALSE, public = li
       as.integer(save_trees)
     )
   },
-  #' Run the MCMC algorithm
+  #' Run the MCMC algorithm of ZANIM-BART
   #'
   #' @description
   #'  Runs the MCMC sampler using the settings previously configured with
@@ -285,22 +285,110 @@ ZANIMBART <- R6::R6Class(classname = "ZANIMBART", cloneable = FALSE, public = li
   }
 ))
 
-# ZANIM logistic normal BART
-ZANIMLNBART <- R6::R6Class(classname = "ZANIMLNBART", public = list(
-  cpp_obj = NULL, cpp_module_name = character(),
-  n_trials = integer(), n = integer(), d = integer(), p_theta = integer(),
-  p_zeta = integer(), ntrees_zeta = integer(), ntrees_theta = integer(),
-  ndpost = integer(), niter = integer(), nskip = integer(), forests_dir = character(),
+#' @title ZANIM-LN-BART
+#'
+#' @description
+#' Carries out Bayesian inference for the zero-and-N-inflated multinomial
+#' logistic-normal BART (ZANIM-LN-BART) model through an efficient
+#' Markov chain Monte Carlo algorithm.
+#' The `R6` class is an wrapper for the underlying `C++` implementation.
+#'
+#' @export
+ZANIMLNBART <- R6::R6Class(classname = "ZANIMLNBART", cloneable = FALSE,
+                           public = list(
+  #' @field cpp_obj Internal reference to the underlying `C++` model object.
+  cpp_obj = NULL,
+  #' @field cpp_module_name Internal name of the `Rcpp` module used by the model.
+  cpp_module_name = character(),
+  #' @field n_trials Sample-specific total counts (number of trials), calculated as `rowSums(Y)`.
+  n_trials = integer(),
+  #' @field n Number of samples.
+  n = integer(),
+  #' @field d Number of categories.
+  d = integer(),
+  #' @field p_theta Number of covariates associated to the compositional components
+  p_theta = integer(),
+  #' @field p_zeta Number of covariates associated to the structural zero components
+  p_zeta = integer(),
+  #' @field ntrees_theta Number of trees for the structural zero components.
+  ntrees_theta = integer(),
+  #' @field ntrees_zeta Number of trees for the structural zero components.
+  ntrees_zeta = integer(),
+  #' @field ndpost Number of posterior MCMC draws to retain.
+  ndpost = integer(),
+  #' @field nskip Number of posterior MCMC draws to discard as burn-in before retaining
+  #' posterior draws.
+  nskip = integer(),
+  #' @field forests_dir Character path indicating where to save the
+  #' `forests_theta_j.bin` and `forests_zeta_j.bin` files.
+  forests_dir = character(),
+  #' @field covariance_type Character string with the prior used for the covariance
+  #' matrix for the logistic-normal random effects.
   covariance_type = NULL,
-  elapsed_time = NULL, elapsed_time_log_lik = NULL,
-  avg_leaves_theta = NULL, avg_leaves_zeta = NULL, accept_rate_theta = NULL,
-  accept_rate_zeta = NULL, y_rep_draws = NULL, log_lik_draws = NULL,
-  draws_theta = NULL, Bt = NULL,
-  draws_zeta = NULL, draws_phi = NULL, draws_chol_Sigma_V = NULL,
-  draws_abundance = NULL, varcount_theta = NULL, varcount_zeta = NULL,
+  #' @field Bt transpose of the orthogonal matrix for the sum-to-zero constraint
+  #' in the logistic random effects.
+  Bt = NULL,
+  #' @field elapsed_time Elapsed time taken to run the MCMC algorithm.
+  elapsed_time = NULL,
+  #' @field avg_leaves_theta Average number of leaves across the posterior draws `ndpost`
+  #' for the category-specific regression tree ensembles of the compositional components.
+  avg_leaves_theta = NULL,
+  #' @field avg_leaves_zeta Average number of leaves across the posterior draws `ndpost` for
+  #' the category-specific regression tree ensembles of the structural zero components.
+  avg_leaves_zeta = NULL,
+  #' @field accept_rate_theta Acceptance rate of the Metropolis-Hastings proposals,
+  #' `grow`, `prune`, `change`, for the category-specific regression tree ensembles
+  #' of the compositional components.
+  accept_rate_theta = NULL,
+  #' @field accept_rate_zeta Acceptance rate of the Metropolis-Hastings proposals,
+  #' `grow`, `prune`, `change`, for category-specific regression tree ensembles
+  #' of the structural zero components.
+  accept_rate_zeta = NULL,
+  #' @field draws_theta Posterior draws of the population-level count probabilities.
+  draws_theta = NULL,
+  #' @field draws_zeta Posterior draws of the population-level structural zero probabilities.
+  draws_zeta = NULL,
+  #' @field draws_chol_Sigma_V Posterior draws of the Cholesky decomposition of the
+  #' covariance matrix of the logistic-normal random effects.
+  draws_chol_Sigma_V = NULL,
+  #' @field draws_abundance Posterior draws of the individual-level structural zero probabilities.
+  draws_abundance = NULL,
+  #' @field keep_draws Logical indicating whether posterior draws were retained.
+  keep_draws = logical(),
+  #' @field save_trees Logical indicating whether the posterior forests were
+  #' saved in disk.
+  save_trees = logical(),
+  #' @field varcount_theta A three dimensional array with dimension \eqn{p_{\theta} \times d \times m},
+  #' where \eqn{p_\theta} is the number of covariates for the compositional components,
+  #' \eqn{d} is the number of categories and \eqn{m} is the number of posterior draws, `ndpost`.
+  #' Contains the total count of the number of times that variable is used in a
+  #' tree decision rule over all category-specific trees.
+  varcount_theta = NULL,
+  #' @field varcount_zeta A three dimensional array with dimension \eqn{p_{\zeta} \times d \times m},
+  #' where \eqn{p_\zeta} is the number of covariates for the structural zero components,
+  #' \eqn{d} is the number of categories and \eqn{m} is the number of posterior draws, `ndpost`.
+  #' Contains the total count of the number of times that variable is used in a
+  #' tree decision rule over all category-specific trees.
+  varcount_zeta = NULL,
+  #' @field mppi_theta A matrix with rows being the covariates and columns the categories.
+  #' It contains the posterior estimates of the marginal probability of inclusion
+  #' (MPPI) for the category-specific covariates associated to the compositional components.
+  mppi_theta = NULL,
+  #' @field mppi_zeta A matrix with rows being the covariates and columns the categories.
+  #' It contains the posterior estimates of the marginal probability of inclusion
+  #' (MPPI) for the category-specific covariates associated to the compositional components.
+  mppi_zeta = NULL,
+  #' @field sigma_theta_hyperprior Posterior distribution of the hyperparameter related to the
+  #' shrinkage prior in the compositional component.
   sigma_theta_hyperprior = NULL,
-  keep_draws = logical(), save_trees = logical(),
-  mppi_theta = NULL, mppi_zeta = NULL,
+
+  #' Create a new `ZANIMLNBART` object
+  #' @param Y A matrix of multivariate count-compositional data.
+  #' Rows correspond to observations and columns correspond to categories.
+  #' @param X_theta A matrix of covariates used to model the count probabilities.
+  #' Rows must correspond to the observations in `Y`.
+  #' @param X_zeta A matrix of covariates used to model the structural zero probabilities.
+  #' Rows must correspond to the observations in `Y`.
   initialize = function(Y, X_theta, X_zeta) {
     ml <- Rcpp::Module(module = "zanim_ln_bart", PACKAGE = "zanicc")
     self$cpp_obj <- new(ml$ZANIMLNBART, Y, X_theta, X_zeta)
@@ -311,21 +399,127 @@ ZANIMLNBART <- R6::R6Class(classname = "ZANIMLNBART", public = list(
     self$p_zeta <- ncol(X_zeta)
     self$n_trials <- rowSums(Y)
   },
+
+  #' Set up the settings for the MCMC algorithm
+  #' @description
+  #' Configures priors and hyperparameters of the ZANIM-LN-BART model
+  #' used by the underlying MCMC algorithm implemented in `C++`.
+  #' This method must be called before
+  #' \href{#method-ZANIMLNBART-RunMCMC}{\code{ZANIMLNBART$RunMCMC()}}.
+  #' @param v0_theta Hyperparameter controlling the level of shrinkage of the
+  #' regression trees for the compositional component. The smaller `v0_theta` is,
+  #' the more shrinkage is applied, i.e., shallow trees are expected.
+  #' @param k_zeta Hyperparameter controlling the level of shrinkage of the
+  #' regression trees for the structural zero component. The smaller `k_zeta` is,
+  #' the more shrinkage is applied, i.e., shallow trees are expected.
+  #' Default is `k_zeta = 3.0`, which assigns a prior probability of 0.95 that the
+  #' structural zero probability is between `qnorm(-3)` and `qnorm(3)`.
+  #' @param ntrees_theta Number of trees used for the BART prior on the
+  #' count probabilities. The default is `ntrees_theta=100`.
+  #' @param ntrees_zeta Number of trees used for the category-specific BART prior on the
+  #' structural-zero probabilities. The default is `ntrees_zeta=100`.
+  #' @param ndpost Number of posterior MCMC draws to retain. The default is `ndpost=5000`.
+  #' @param nskip Number of MCMC iterations to discard as burn-in before retaining
+  #' posterior draws. The default is `nskip=5000`.
+  #' @param covariance_type Character string specifying the prior on the covariance
+  #' matrix for the logistic-normal random effects. Defaults to `fa_mgp`, for nonparametric factor
+  #'  analysis with a multiplicative gamma process shrinkage prior. Other options include `fa` (factor analysis without such a prior),
+  #'  `diag` (for a diagonal covariance matrix), and `wishart` (for an inverse Wishart prior).
+  #' @param nu_prior Degrees of freedom for the inverse-Wishart prior on the
+  #' covariance matrix of random effects, when \code{covariance_type="wishart"}.
+  #' Default is number of categories, `self$d`.
+  #' @param Psi_prior Prior scale matrix for the inverse-Wishart prior on the
+  #' covariance matrix of random effects, when \code{covariance_type="wishart"}.
+  #' Default is \eqn{\mathbf{I}_{d-1}d}, where \eqn{d} is the number of categories,
+  #' `self$d`.
+  #' @param a_sigma,b_sigma Shape and scale prior parameters for the independent
+  #' gamma priors on the covariance matrix, i.e., when \code{covariance_type="diag"}.
+  #' Default is `a_sigma=b_sigma=1.0`.
+  #' @param q_factors Number of factors when the prior for the covariance matrix is
+  #' has a factor-analytic representation, i.e., \code{covariance_type="fa"} or
+  #' \code{covariance_type="fa_mgp"}. Default is the Ledermann bound of
+  #' the dimension of the full covariance matrix.
+  #' @param sigma2_gamma Scale (variance) hyperparameter of the normal prior on the
+  #' factor loadings, when \code{covariance_type="fa"}.
+  #' @param a_psi,b_psi Shape and rate hyperparameters, respectively for the gamma
+  #' prior on the residual precisions of the error term when \code{covariance_type="fa"}
+  #' or \code{covariance_type="fa_mgp"}.
+  #' @param shape_lsphis Shape hyperprameter of the gamma prior on local shrinkage
+  #' parameters under the multiplicative gamma process (MGP) prior, i.e.,
+  #' when \code{covariance_type="fa_mgp"}. Default is `shape_lsphis=3.0`.
+  #' @param a1_gs,a2_gs Shaper hyperparameters for the gamma prior on the column-wise
+  #' global shrinkage paraemters under the multiplicative gamma process (MGP) prior, i.e.,
+  #' when \code{covariance_type="fa_mgp"}. Default values are `a1_gs=2.1` and `a2_gs=3.1`.
+  #' @param numcut Total number of cut points \eqn{c_b} used to form
+  #' the splitting decision rules \eqn{x_{jb} \leq c_b}. For each covariate we
+  #' generate `numcut` equally space cut points, \eqn{c_b} in the range of the corresponding covariate. Default is `numcut=100`.
+  #' @param power Power parameter regarding the tree prior. Default is `power=2.0`.
+  #' @param base Base parameter regarding the tree prior. Default is `power=0.95`.
+  #' @param proposals_prob Numeric vector of length three containing the probabilities of proposing the
+  #' `grow`, `prune`, and `change` tree moves, respectively.
+  #' Default probabilities are \eqn{0.25}, \eqn{0.25} and \eqn{0.50}, respectively.
+  #' @param update_sigma_theta Logical indicating whether the hyperprior should be
+  #' used for the shrinkage hyperparameter, `v0_theta`. If so, then we use slice
+  #' sampling to update this hyperparameter during the MCMC.
+  #' @param s0_2_theta Hyperprior scale parameter for the `v0_theta` hyperparameter. Default is `1/ntrees_theta`.
+  #' @param w_ss Hyperprameter for stepping out method in the slice sampling algorithm.
+  #' It controls the width of the slice.
+  #' @param splitprobs_zi Numeric vector with the prior probabilities of each
+  #' covariate in `X_zi` to generate a splitting rule. Default is `1/p_zeta`.
+  #' @param splitprobs_mult Numeric vector with the prior probabilities of each
+  #' covariate in `X_count` to generate a splitting rule. Default is `1/p_theta`.
+  #' @param sparse Logical vector of length two indicating whether to perform
+  #' variable selection based on the sparse Dirichlet prior
+  #' of Linero (2018) rather than uniform prior on the splitting probabilities of the
+  #' structural zero and compositional components, respectively.
+  #' This prior assumes that the splitting probability vector follows
+  #' \eqn{\mathbf{s} \sim \operatorname{Dirichlet}\lbrack \alpha/p, \ldots, \alpha/p \rbrack},
+  #' with \eqn{\alpha} a hyperparameter and \eqn{p} number of covariates.
+  #' @param alpha_sparse Numeric vector of length two with the hyperprameter values
+  #' of \eqn{\alpha} which controls the level of sparsity of the Dirichlet prior on the splitting
+  #' probabilities for the structural zero and compositional components, respectively.
+  #' Default is `alpha_sparse = c(1, 1)`. As \eqn{\alpha \rightarrow \infty}, it recovers the
+  #' default uniform prior on the splitting probabilities under BART.
+  #' @param alpha_random Logical vector of length two indicating whether to put a
+  #' hyperprior on \eqn{\alpha} for the structural zero and compositional components,
+  #' respectively. The hyperprior is of the form
+  #' \eqn{\alpha / (\alpha + \rho) \sim \operatorname{Beta}\lbrack a, b \rbrack}
+  #' with further hyperprior parameters \eqn{\rho}, \eqn{a} and \eqn{b}.
+  #' @param sparse_parms Numeric vector of length six for the hyperprior parameters
+  #' \eqn{\rho}, \eqn{a} and \eqn{b}. The first three entries correspond to
+  #' the structural-zero component and the last three to the compositional
+  #' component. By default, these are `c(p_zeta, 0.5, 1.0, p_theta, 0.5, 1.0)`.
+  #' @param forests_dir Character path indicating where to save the
+  #' `forests_theta_j.bin` and `forests_zeta_j.bin` files. Default is to [tempdir()].
+  #' @param xinfo Optional matrix containing the cut points information of each
+  #' covariate supplied to the underlying `C++` implementation.
+  #' An empty matrix requests that the cut points be determined internally.
+  #' @param keep_draws Logical, defaults to `TRUE`. Governs whether to retain posterior draws.
+  #' @param save_trees Logical, defaults to `FALSE`. Governs whether to save the posterior draws of the BART
+  #' tree topologies and terminal-node parameters to `.bin` files. For BART-based
+  #' models, this creates files named `forests_theta_j.bin` for the
+  #' category-specific compositional regression trees and, for zero-inflated
+  #' models, `forests_zeta_j.bin` for the structural-zero regression trees.
+  #' Here, `j` indexes the category, and each file contains the corresponding
+  #' tree topologies and terminal node parameters across all `ndpost` posterior
+  #' draws.
   SetupMCMC = function(v0_theta = 1.5 / sqrt(2), k_zeta = 3.0,
-                       ntrees_theta = 50L, ntrees_zeta = 100L,
-                       ndpost = 1000L, nskip = 1000L,
-                       covariance_type = c("diag", "wishart", "fa", "fa_mgp"),
+                       ntrees_theta = 100L, ntrees_zeta = 100L,
+                       ndpost = 5000L, nskip = 5000L,
+                       covariance_type = c("fa_mgp", "diag", "wishart", "fa"),
                        #### Related to the covariance
-                       # Inv-Wishart or indep. Gammas
+                       # Inv-Wishart
                        nu_prior = self$d,
                        Psi_prior = diag(self$d, self$d - 1),
-                       # FA
+                       # Independent gamma, diag
                        a_sigma = 1.0, b_sigma = 1.0,
-                       q_factors = .ledermann(self$d - 1L), sigma2_gamma = 1.0,
-                       # MGP
+                       # FA
+                       q_factors = .ledermann(self$d - 1L),
                        a_psi = 2.5, b_psi = 1.0,
-                       shape_lsphis = 3.0, a1_gs = 2.1, a2_gs = 3.1,
-                       # shape_lsphis = 2.0, a1_gs = 1.5, a2_gs = 2.8,
+                       sigma2_gamma = 1.0,
+                       # MGP
+                       shape_lsphis = 3.0,
+                       a1_gs = 2.1, a2_gs = 3.1,
                        ####
                        numcut = 100L, power = 2.0, base = 0.95,
                        proposals_prob = c(0.25, 0.25, 0.50),
@@ -334,10 +528,8 @@ ZANIMLNBART <- R6::R6Class(classname = "ZANIMLNBART", public = list(
                        splitprobs_zi = rep(1 / self$p_zeta, self$p_zeta),
                        splitprobs_mult = rep(1 / self$p_theta, self$p_theta),
                        sparse = c(FALSE, FALSE),
-                       sparse_parms = c(
-                         self$p_zeta, 0.5, 1.0,
-                         self$p_theta, 0.5, 1.0
-                       ),
+                       sparse_parms = c(self$p_zeta, 0.5, 1.0,
+                                        self$p_theta, 0.5, 1.0),
                        alpha_sparse = c(1.0, 1.0), alpha_random = c(FALSE, FALSE),
                        xinfo = matrix(), forests_dir = tempdir(),
                        keep_draws = TRUE, save_trees = FALSE) {
@@ -349,7 +541,6 @@ ZANIMLNBART <- R6::R6Class(classname = "ZANIMLNBART", public = list(
     self$ntrees_zeta <- ntrees_zeta
     self$ndpost <- ndpost
     self$nskip <- nskip
-    self$niter <- nskip + ndpost
     self$forests_dir <- forests_dir
     self$keep_draws <- keep_draws
     self$save_trees <- save_trees
@@ -378,6 +569,13 @@ ZANIMLNBART <- R6::R6Class(classname = "ZANIMLNBART", public = list(
       xinfo, forests_dir, as.integer(keep_draws), as.integer(save_trees)
     )
   },
+  #' Run the MCMC algorithm of ZANIM-LN-BART
+  #'
+  #' @description
+  #'  Runs the MCMC sampler using the settings previously configured with
+  #' \href{#method-ZANIMLNBART-SetupMCMC}{\code{ZANIMLNBART$SetupMCMC()}}.
+  #' Posterior draws, acceptance rates, and variable-selection statistics, are
+  #' then transferred from the underlying `C++` object to the `ZANIMLNBART` object.
   RunMCMC = function() {
     ini <- proc.time()
     self$cpp_obj$RunMCMC()
@@ -386,8 +584,8 @@ ZANIMLNBART <- R6::R6Class(classname = "ZANIMLNBART", public = list(
     self$avg_leaves_theta <- self$cpp_obj$avg_leaves_theta / self$ndpost
     self$avg_leaves_zeta <- self$cpp_obj$avg_leaves_zeta / self$ndpost
     # Avg accept rate over iteration and the trees
-    self$accept_rate_theta <- self$cpp_obj$accept_rate_theta / self$niter / self$ntrees_theta
-    self$accept_rate_zeta <- self$cpp_obj$accept_rate_zeta / self$niter / self$ntrees_zeta
+    self$accept_rate_theta <- self$cpp_obj$accept_rate_theta / (self$nskip + self$ndpost) / self$ntrees_theta
+    self$accept_rate_zeta <- self$cpp_obj$accept_rate_zeta / (self$nskip + self$ndpost) / self$ntrees_zeta
     rownames(self$accept_rate_zeta) <- rownames(self$accept_rate_theta) <- c("grow", "prune", "change")
     self$sigma_theta_hyperprior <- self$cpp_obj$sigma_mult_mcmc
     # Save draws
