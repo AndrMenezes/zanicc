@@ -613,8 +613,7 @@ void ZANIMLNBART::UpdateGammaChol() {
     // 1. Compute Cholesky factorisation
     Q_chol = arma::chol(Q);
     // 2. Compute the inverse of using backsolve
-    Q_chol_inv = arma::solve(arma::trimatu(Q_chol), Iq,
-                                       arma::solve_opts::fast);
+    Q_chol_inv = arma::solve(arma::trimatu(Q_chol), Iq, arma::solve_opts::fast);
     // 3. Compute the mean parameter
     mu_gamma_chol = (Q_chol_inv * Q_chol_inv.t()) * HVp.col(j);
     // 4. Generate using traditional approach

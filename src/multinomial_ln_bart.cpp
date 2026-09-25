@@ -548,8 +548,6 @@ void MultinomialLNBART::SetMCMC(double v0, int ntrees_,
   B = B_;
   a_sigma = a_sigma_;
   b_sigma = b_sigma_;
-  a_sigma = a_sigma_;
-  b_sigma = b_sigma_;
   covariance_type = covariance_type_,
   Psi_prior = Psi_prior_,
   nu_prior = nu_prior_,
