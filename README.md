@@ -4,7 +4,6 @@
 # `zanicc` R package
 
 <!-- badges: start -->
-
 <!-- badges: end -->
 
 The `zanicc` R package implements Bayesian nonparametric models for the
@@ -20,10 +19,10 @@ Dirichlet-multinomial (DM) and zero-and-N-inflated DM distributions.
 
 Further functionalities are provided which implement the Bayesian
 modular framework for pollen-based palaeoclimate reconstruction
-following the paper “Bayesian palaeoclimate reconstruction from
+following the paper [“Bayesian palaeoclimate reconstruction from
 zero-inflated count-compositional pollen data: A case study of Lago
-Grande di Monticchio in southern Italy” (*to appear*), by the same
-authors.
+Grande di Monticchio in southern
+Italy”](https://arxiv.org/abs/2609.08866v1), by the same authors.
 
 You can install the development version of `zanicc` from GitHub with:
 
