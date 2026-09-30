@@ -32,7 +32,7 @@ ZANIMBART <- R6::R6Class(classname = "ZANIMBART", cloneable = FALSE, public = li
   ntrees_zeta = integer(),
   #' @field ndpost Number of posterior MCMC draws to retain.
   ndpost = integer(),
-  #' @field nskip Number of posterior MCMC draws to discard as burn-in before retaining
+  #' @field nskip Number of MCMC draws to discard as burn-in before retaining
   #' posterior draws.
   nskip = integer(),
   #' @field forests_dir Character path indicating where to save the
@@ -112,18 +112,18 @@ ZANIMBART <- R6::R6Class(classname = "ZANIMBART", cloneable = FALSE, public = li
     # Call the C++ class in R
     if (link_zeta == "logit") {
       ml <- Rcpp::Module(module = "zanim_bart_logit", PACKAGE = "zanicc")
-      self$cpp_obj <- new(ml$ZANIMBARTLogit, Y, X_theta, X_zeta)
+      self$cpp_obj <- methods::new(ml$ZANIMBARTLogit, Y, X_theta, X_zeta)
       self$cpp_module_name <- "zanim_bart_logit"
       if (shared_trees) warning("Shared trees only implemented with the probit.")
       shared_trees <- FALSE
     } else {
       if (shared_trees) {
         ml <- Rcpp::Module(module = "zanim_shared_bart_probit", PACKAGE = "zanicc")
-        self$cpp_obj <- new(ml$ZANIMSharedBARTProbit, Y, X_theta, X_zeta)
+        self$cpp_obj <- methods::new(ml$ZANIMSharedBARTProbit, Y, X_theta, X_zeta)
         self$cpp_module_name <- "zanim_shared_bart_probit"
       } else {
         ml <- Rcpp::Module(module = "zanim_bart_probit", PACKAGE = "zanicc")
-        self$cpp_obj <- new(ml$ZANIMBARTProbit, Y, X_theta, X_zeta)
+        self$cpp_obj <- methods::new(ml$ZANIMBARTProbit, Y, X_theta, X_zeta)
         self$cpp_module_name <- "zanim_bart_probit"
       }
     }
@@ -328,7 +328,7 @@ ZANIMLNBART <- R6::R6Class(classname = "ZANIMLNBART", cloneable = FALSE,
   ntrees_zeta = integer(),
   #' @field ndpost Number of posterior MCMC draws to retain.
   ndpost = integer(),
-  #' @field nskip Number of posterior MCMC draws to discard as burn-in before retaining
+  #' @field nskip Number of MCMC draws to discard as burn-in before retaining
   #' posterior draws.
   nskip = integer(),
   #' @field forests_dir Character path indicating where to save the
@@ -337,7 +337,7 @@ ZANIMLNBART <- R6::R6Class(classname = "ZANIMLNBART", cloneable = FALSE,
   #' @field covariance_type Character string with the prior used for the covariance
   #' matrix for the logistic-normal random effects.
   covariance_type = NULL,
-  #' @field Bt transpose of the orthogonal matrix for the sum-to-zero constraint
+  #' @field Bt Transpose of the orthogonal matrix for the sum-to-zero constraint
   #' in the logistic random effects.
   Bt = NULL,
   #' @field elapsed_time Elapsed time taken to run the MCMC algorithm.
@@ -403,7 +403,7 @@ ZANIMLNBART <- R6::R6Class(classname = "ZANIMLNBART", cloneable = FALSE,
   #' Rows must correspond to the observations in `Y`.
   initialize = function(Y, X_theta, X_zeta) {
     ml <- Rcpp::Module(module = "zanim_ln_bart", PACKAGE = "zanicc")
-    self$cpp_obj <- new(ml$ZANIMLNBART, Y, X_theta, X_zeta)
+    self$cpp_obj <- methods::new(ml$ZANIMLNBART, Y, X_theta, X_zeta)
     self$cpp_module_name <- "zanim_ln_bart"
     self$n <- nrow(Y)
     self$d <- ncol(Y)
@@ -652,7 +652,7 @@ MultinomialBART <- R6::R6Class(classname = "MultinomialBART", cloneable = FALSE,
   ntrees = integer(),
   #' @field ndpost Number of posterior MCMC draws to retain.
   ndpost = integer(),
-  #' @field nskip Number of posterior MCMC draws to discard as burn-in before retaining
+  #' @field nskip Number of MCMC draws to discard as burn-in before retaining
   #' posterior draws.
   nskip = integer(),
   #' @field forests_dir Character path indicating where the files,
@@ -702,11 +702,11 @@ MultinomialBART <- R6::R6Class(classname = "MultinomialBART", cloneable = FALSE,
     # Call the C++ class in R
     if (!self$shared_trees) {
       ml <- Rcpp::Module(module = "multinomial_bart", PACKAGE = "zanicc")
-      self$cpp_obj <- new(ml$MultinomialBART, Y, X)
+      self$cpp_obj <- methods::new(ml$MultinomialBART, Y, X)
       self$cpp_module_name <- "multinomial_bart"
     } else {
       ml <- Rcpp::Module(module = "multinomial_shared_bart", PACKAGE = "zanicc")
-      self$cpp_obj <- new(ml$MultinomialSharedBART, Y, X)
+      self$cpp_obj <- methods::new(ml$MultinomialSharedBART, Y, X)
       self$cpp_module_name <- "multinomial_shared_bart"
     }
     self$n <- nrow(Y)
@@ -871,7 +871,7 @@ MultinomialLNBART <- R6::R6Class(
   ntrees = integer(),
   #' @field ndpost Number of posterior MCMC draws to retain.
   ndpost = integer(),
-  #' @field nskip Number of posterior MCMC draws to discard as burn-in before retaining
+  #' @field nskip Number of MCMC draws to discard as burn-in before retaining
   #' posterior draws.
   nskip = integer(),
   #' @field forests_dir Character path indicating where the files,
@@ -880,7 +880,7 @@ MultinomialLNBART <- R6::R6Class(
   #' @field covariance_type Character string with the prior used for the covariance
   #' matrix for the logistic-normal random effects.
   covariance_type = NULL,
-  #' @field Bt transpose of the orthogonal matrix for the sum-to-zero constraint
+  #' @field Bt Transpose of the orthogonal matrix for the sum-to-zero constraint
   #' in the logistic random effects.
   Bt = NULL,
   #' @field elapsed_time Elapsed time taken to run the MCMC algorithm.
@@ -928,7 +928,7 @@ MultinomialLNBART <- R6::R6Class(
   initialize = function(Y, X) {
     # Call the C++ class in R
     ml <- Rcpp::Module(module = "multinomial_ln_bart", PACKAGE = "zanicc")
-    self$cpp_obj <- new(ml$MultinomialLNBART, Y, X)
+    self$cpp_obj <- methods::new(ml$MultinomialLNBART, Y, X)
     self$cpp_module_name <- "multinomial_ln_bart"
     self$n <- nrow(Y)
     self$d <- ncol(Y)
@@ -1106,27 +1106,120 @@ MultinomialLNBART <- R6::R6Class(
 ))
 
 
-# ZANIM-linear regression
+#' @title ZANIM-reg
+#'
+#' @description
+#' Carries out Bayesian inference for the zero-and-N-inflated multinomial logistic
+#' regression model (ZANIM-reg) through an efficient Markov chain Monte Carlo algorithm.
+#' The `R6` class is an wrapper for the underlying `C++` implementation.
+#'
+#' @details
+#' The MCMC algorithm leverages the data augmentation scheme proposed by
+#' Menezes et al. (2025) for inference on the parameter of ZANIM distribution
+#' in i.i.d settings within a linear regression context. It assumes a probit link
+#' function for the structural-zero probabilities and a log-linear link
+#' function for the compositional probabilities. For the category-specific
+#' structural-zero components, the regression coefficients are sampled using
+#' the probit data augmentation scheme of Albert and Chib (1993). For the
+#' category-specific compositional probabilities, the algorithm uses the
+#' elliptical slice sampling method of Murray et al. (2010).
+#' For both components normal priors are assumed for the regression coefficients.
+#'
+#' @references
+#'
+#' Albert, J. H. and Chib, S. (1993),
+#' Bayesian analysis of binary and polychotomous response data,
+#' \emph{Journal of the American Statistical Association}, \strong{88}(442), 669--679.
+#'
+#' @references Menezes, A. F. B., Parnell, A. C., and Murphy, K. (2025), Finite mixture representations of
+#' zero-and-N -inflated distributions for count-compositional data. \emph{Journal of Multivariate Analysis},
+#' \strong{210:105492}. <https://doi.org/10.1016/j.jmva.2025.105492>.
+#'
+#' Murray, I., Adams, R. and MacKay, D. (2010), Elliptical slice sampling, in Y. W. Teh \& M. Titterington, eds,
+#' \emph{Proceedings of the Thirteenth International Conference on Artificial Intelligence and Statistics},
+#' \strong{Vol. 9 of Proceedings of Machine Learning Research, PMLR}, Chia Laguna Resort, Sardinia, Italy, pp. 541--548.
+#'
+#' @export
 ZANIMRegression <- R6::R6Class(
-  classname = "ZANIMRegression",
+  classname = "ZANIMRegression", cloneable = FALSE,
   public = list(
-    cpp_obj = NULL, n_trials = integer(), n = integer(), d = integer(),
-    p_theta = integer(), p_zeta = integer(),
-    ndpost = integer(), nskip = integer(), nthin = integer(),
-    n_pred = integer(),
-    draws_theta = NULL, draws_zeta = NULL,
-    draws_abundance = NULL, draws_betas_theta = NULL, draws_betas_zeta = NULL,
+    #' @field cpp_obj Internal reference to the underlying `C++` model object.
+    cpp_obj = NULL,
+    #' @field cpp_module_name Internal name of the `Rcpp` module used by the model.
+    cpp_module_name = character(),
+    #' @field n_trials Sample-specific total counts (number of trials), calculated as `rowSums(Y)`.
+    n_trials = integer(),
+    #' @field n Number of samples.
+    n = integer(),
+    #' @field d Number of categories.
+    d = integer(),
+    #' @field p_theta Number of covariates associated to the compositional components.
+    p_theta = integer(),
+    #' @field p_zeta Number of covariates associated to the structural zero components.
+    p_zeta = integer(),
+    #' @field ndpost Number of posterior MCMC draws to retain.
+    ndpost = integer(),
+    #' @field nskip Number of MCMC draws to discard as burn-in before retaining
+    #' posterior draws.
+    nskip = integer(),
+    #' @field nthin Number of MCMC draws to discard as thinning before retaining
+    #' posterior draws.
+    nthin = integer(),
+    #' @field draws_theta Posterior draws of the population-level count probabilities.
+    draws_theta = NULL,
+    #' @field draws_zeta Posterior draws of the population-level structural zero probabilities.
+    draws_zeta = NULL,
+    #' @field draws_abundance Posterior draws of the individual-level count probabilities.
+    draws_abundance = NULL,
+    #' @field draws_betas_theta Posterior draws of the category-specific regression
+    #' coefficients associated with the compositional probabilities.
+    draws_betas_theta = NULL,
+    #' @field draws_betas_zeta Posterior draws of the category-specific regression
+    #' coefficients associated with the structural zero probabilities.
+    draws_betas_zeta = NULL,
+    #' @field elapsed_time Elapsed time taken to run the MCMC algorithm.
     elapsed_time = NULL,
-    keep_draws = logical(), keep_draws_coef = logical(),
+    #' @field keep_draws Logical indicating whether posterior draws of the
+    #' population-level compositional and structural probabilities were retained.
+    keep_draws = logical(),
+    #' @field keep_draws_coef Logical indicating whether posterior draws of the
+    #' regression coefficients were retained.
+    keep_draws_coef = logical(),
+    #' Create a new `ZANIMRegression` object
+    #' @param Y A matrix of multivariate count-compositional data.
+    #' Rows correspond to observations and columns correspond to categories.
+    #' @param X_theta A matrix of covariates used to model the count probabilities.
+    #' Rows must correspond to the observations in `Y`.
+    #' @param X_zeta A matrix of covariates used to model the structural zero probabilities.
+    #' Rows must correspond to the observations in `Y`.
     initialize = function(Y, X_theta, X_zeta) {
       ml <- Rcpp::Module(module = "zanim_linear_reg", PACKAGE = "zanicc")
-      self$cpp_obj <- new(ml$ZANIMReg, Y, X_theta, X_zeta)
+      self$cpp_obj <- methods::new(ml$ZANIMReg, Y, X_theta, X_zeta)
+      self$cpp_module_name <- "zanim_linear_reg"
       self$n <- nrow(Y)
       self$d <- ncol(Y)
       self$p_theta <- ncol(X_theta)
       self$p_zeta <- ncol(X_zeta)
       self$n_trials <- rowSums(Y)
     },
+    #' Set up the settings for the MCMC algorithm
+    #' @description
+    #' Configures priors and hyperparameters of the ZANIM-reg model
+    #' used by the underlying MCMC algorithm implemented in `C++`.
+    #' This method must be called before \href{#method-ZANIMRegression-RunMCMC}{\code{ZANIMRegression$RunMCMC()}}.
+    #' @param sd_prior_beta_theta Numeric vector of length `p_theta` with the
+    #' prior standard deviation for the regression coefficients associated with `X_theta`.
+    #' @param S_prior_beta_zeta A matrix `p_zeta` by `p_zeta` with the prior
+    #' covariance matrix for the regression coefficients associated with `X_zeta`.
+    #' Default is the identity matrix.
+    #' @param ndpost Number of posterior MCMC draws to retain. The default is `ndpost=5000`.
+    #' @param nskip Number of MCMC iterations to discard as burn-in before retaining
+    #' posterior draws. The default is `nskip=5000`.
+    #' @param nthin Currently not used.
+    #' @param keep_draws Whether to keep the draws with the subject-specific predictions
+    #' for the population-level count probabilities and structural zero probabilities,
+    #' as well as the individual-level count probabilities. Default is `TRUE`.
+    #' @param keep_draws_coef Whether to keep the draws of the regression coefficients. Default is `TRUE`.
     SetupMCMC = function(sd_prior_beta_theta = rep(1.0, self$p_theta),
                          S_prior_beta_zeta = diag(1.0, self$p_zeta),
                          ndpost = 5000L, nskip = 5000L, nthin = 1L,
@@ -1139,6 +1232,13 @@ ZANIMRegression <- R6::R6Class(
       self$cpp_obj$SetMCMC(sd_prior_beta_theta, S_prior_beta_zeta, ndpost, nskip,
                            nthin)
     },
+    #' Run the MCMC algorithm of ZANIM-reg
+    #'
+    #' @description
+    #'  Runs the MCMC sampler using the settings previously configured with
+    #' \href{#method-ZANIMRegression-SetupMCMC}{\code{ZANIMRegression$SetupMCMC()}}.
+    #' Posterior draws of the parameters are then transferred from the underlying `C++`
+    #' object to the `ZANIMRegression` object.
     RunMCMC = function() {
       ini <- proc.time()
       self$cpp_obj$RunMCMC()
@@ -1155,34 +1255,125 @@ ZANIMRegression <- R6::R6Class(
         }
       }
     },
+    #' Posterior mean of the regression coefficients
+    #' @param parameter Character string indicating which posterior mean of
+    #' regression coefficients to compute. If `parameter="theta"`, then returns posterior
+    #' mean for the regression coefficients associated to the compositional probabilities.
+    #' Otherwise, if `parameter="zeta"` the return the posterior mean for the regression
+    #' coefficients associated to the structural zero probabilities.
     PosteriorMeanCoef = function(parameter = c("theta", "zeta")) {
       parameter <- match.arg(parameter)
-      switch(parameter,
-        "zeta" = apply(self$draws_betas_zeta, c(1, 2), mean),
-        "theta" = apply(self$draws_betas_theta, c(1, 2), mean)
-      )
+      if (self$keep_draws_coef) {
+        switch(parameter,
+          "zeta" = apply(self$draws_betas_zeta, c(1, 2), mean),
+          "theta" = apply(self$draws_betas_theta, c(1, 2), mean)
+        )
+      } else {
+        warning("Posterior draws of the regression coefficients were not saved because you set {keep_draws_coef = FALSE}.")
+      }
     }
   )
 )
 
 
-# ZANIDM logistic regression
+#' @title ZANIDM-reg
+#'
+#' @description
+#' Carries out Bayesian inference for the zero-and-N-inflated Dirichlet multinomial
+#' regression model (ZANIDM-reg) through an efficient Markov chain Monte Carlo algorithm.
+#' The `R6` class is an wrapper for the underlying `C++` implementation.
+#'
+#' @details
+#' The MCMC algorithm leverages the data augmentation scheme proposed by
+#' Menezes et al. (2025) for inference on the parameter of ZANIDM distribution
+#' in i.i.d settings within a linear regression context.
+#' It assumes a probit link function for the structural-zero probabilities and a log-linear link
+#' function for the count components. For the category-specific
+#' structural-zero components, the regression coefficients are sampled using
+#' the probit data augmentation scheme of Albert and Chib (1993). For the
+#' category-specific count components, the algorithm uses the
+#' elliptical slice sampling method of Murray et al. (2010).
+#' For both components normal priors are assumed for the regression coefficients.
+#'
+#' @references
+#'
+#' Albert, J. H. and Chib, S. (1993),
+#' Bayesian analysis of binary and polychotomous response data,
+#' \emph{Journal of the American Statistical Association}, \strong{88}(442), 669--679.
+#'
+#' @references Menezes, A. F. B., Parnell, A. C., and Murphy, K. (2025), Finite mixture representations of
+#' zero-and-N -inflated distributions for count-compositional data. \emph{Journal of Multivariate Analysis},
+#' \strong{210:105492}. <https://doi.org/10.1016/j.jmva.2025.105492>.
+#'
+#' Murray, I., Adams, R. and MacKay, D. (2010), Elliptical slice sampling, in Y. W. Teh \& M. Titterington, eds,
+#' \emph{Proceedings of the Thirteenth International Conference on Artificial Intelligence and Statistics},
+#' \strong{Vol. 9 of Proceedings of Machine Learning Research, PMLR}, Chia Laguna Resort, Sardinia, Italy, pp. 541--548.
+#'
+#' @export
 ZANIDMRegression <- R6::R6Class(
   classname = "ZANIDMRegression",
+  cloneable = FALSE,
   public = list(
-    cpp_obj = NULL, cpp_module_name = character(),
-    n_trials = integer(), n = integer(), d = integer(),
-    p_alpha = integer(), p_zeta = integer(),
-    ndpost = integer(), nskip = integer(), nthin = integer(),
-    n_pred = integer(),
-    draws_alpha = NULL, draws_zeta = NULL, draws_theta = NULL,
-    draws_abundance = NULL, draws_betas_alpha = NULL, draws_betas_zeta = NULL,
+    #' @field cpp_obj Internal reference to the underlying `C++` model object.
+    cpp_obj = NULL,
+    #' @field cpp_module_name Internal name of the `Rcpp` module used by the model.
+    cpp_module_name = character(),
+    #' @field n_trials Sample-specific total counts (number of trials), calculated as `rowSums(Y)`.
+    n_trials = integer(),
+    #' @field n Number of samples.
+    n = integer(),
+    #' @field d Number of categories.
+    d = integer(),
+    #' @field p_alpha Number of covariates associated to the compositional components.
+    p_alpha = integer(),
+    #' @field p_zeta Number of covariates associated to the structural zero components.
+    p_zeta = integer(),
+    #' @field ndpost Number of posterior MCMC draws to retain.
+    ndpost = integer(),
+    #' @field nskip Number of MCMC draws to discard as burn-in before retaining
+    #' posterior draws.
+    nskip = integer(),
+    #' @field nthin Number of MCMC draws to discard as thinning before retaining
+    #' posterior draws.
+    nthin = integer(),
+    #' @field draws_alpha Posterior draws of the population-level concentration parameters.
+    draws_alpha = NULL,
+    #' @field draws_theta Posterior draws of the population-level count probabilities.
+    draws_theta = NULL,
+    #' @field draws_zeta Posterior draws of the population-level structural zero probabilities.
+    draws_zeta = NULL,
+    #' @field draws_abundance Posterior draws of the individual-level count probabilities.
+    draws_abundance = NULL,
+    #' @field draws_betas_alpha Posterior draws of the category-specific regression
+    #' coefficients associated with the compositional probabilities (concentration parameters).
+    draws_betas_alpha = NULL,
+    #' @field draws_betas_zeta Posterior draws of the category-specific regression
+    #' coefficients associated with the structural zero probabilities.
+    draws_betas_zeta = NULL,
+    #' @field elapsed_time Elapsed time taken to run the MCMC algorithm.
     elapsed_time = NULL,
-    keep_draws = logical(), keep_draws_coef = logical(), save_draws = logical(),
+    #' @field keep_draws Logical indicating whether posterior draws of the
+    #' population-level compositional and structural probabilities were retained.
+    keep_draws = logical(),
+    #' @field keep_draws_coef Logical indicating whether posterior draws of the
+    #' regression coefficients were retained.
+    keep_draws_coef = logical(),
+    #' @field save_draws Logical indicating whether the posterior draws of the
+    #' regression coefficients were saved in disk.
+    save_draws = logical(),
+    #' @field dir_draws Character string indicating the directory where the
+    #' posterior draws of the regression coefficients were saved.
     dir_draws = NULL,
+    #' Create a new `ZANIDMRegression` object
+    #' @param Y A matrix of multivariate count-compositional data.
+    #' Rows correspond to observations and columns correspond to categories.
+    #' @param X_alpha A matrix of covariates used to model the count probabilities.
+    #' Rows must correspond to the observations in `Y`.
+    #' @param X_zeta A matrix of covariates used to model the structural zero probabilities.
+    #' Rows must correspond to the observations in `Y`.
     initialize = function(Y, X_alpha, X_zeta) {
       ml <- Rcpp::Module(module = "zanidm_linear_reg", PACKAGE = "zanicc")
-      self$cpp_obj <- new(ml$ZANIDMReg, Y, X_alpha, X_zeta)
+      self$cpp_obj <- methods::new(ml$ZANIDMReg, Y, X_alpha, X_zeta)
       self$cpp_module_name <- "zanidm_linear_reg"
       self$n <- nrow(Y)
       self$d <- ncol(Y)
@@ -1190,6 +1381,31 @@ ZANIDMRegression <- R6::R6Class(
       self$p_zeta <- ncol(X_zeta)
       self$n_trials <- rowSums(Y)
     },
+    #' Set up the settings for the MCMC algorithm
+    #' @description
+    #' Configures priors and hyperparameters of the ZANIDM-reg model
+    #' used by the underlying MCMC algorithm implemented in `C++`.
+    #' This method must be called before \href{#method-ZANIDMRegression-RunMCMC}{\code{ZANIDMRegression$RunMCMC()}}.
+    #' @param sd_prior_beta_alpha Numeric vector of length `p_alpha` with the
+    #' prior standard deviation for the regression coefficients associated with `X_theta`.
+    #' @param S_prior_beta_zeta A matrix `p_zeta` by `p_zeta` with the prior
+    #' covariance matrix for the regression coefficients associated with `X_zeta`.
+    #' Default is the identity matrix.
+    #' @param ndpost Number of posterior MCMC draws to retain. The default is `ndpost=5000`.
+    #' @param nskip Number of MCMC iterations to discard as burn-in before retaining
+    #' posterior draws. The default is `nskip=5000`.
+    #' @param nthin Currently not used.
+    #' @param keep_draws Whether to keep the draws with the subject-specific predictions
+    #' for the population-level count probabilities and structural zero probabilities,
+    #' as well as the individual-level count probabilities. Default is `TRUE`.
+    #' @param keep_draws_coef Whether to keep the draws of the regression coefficients. Default is `TRUE`.
+    #' @param save_draws Whether to save the draws of the regression coefficients in binary format.
+    #' This creates to files `draws_betas_alpha.bin` for the count components and
+    #' `draws_betas_zeta.bin` for the structural zero components. These files are
+    #' created in the folder provided in the argument `dir_draws`.
+    #' @param dir_draws Character string with the folder where the posterior draws
+    #' of the regression coefficients should be saved, when `save_draws=TRUE`.
+    #' Default is [tempdir()].
     SetupMCMC = function(sd_prior_beta_alpha = rep(1.0, self$p_alpha),
                          S_prior_beta_zeta = diag(1.0, self$p_zeta),
                          ndpost = 5000L, nskip = 5000L, nthin = 1L,
@@ -1207,6 +1423,13 @@ ZANIDMRegression <- R6::R6Class(
         nthin, keep_draws, save_draws, dir_draws
       )
     },
+    #' Run the MCMC algorithm of ZANIDM-reg
+    #'
+    #' @description
+    #'  Runs the MCMC sampler using the settings previously configured with
+    #' \href{#method-ZANIDMRegression-SetupMCMC}{\code{ZANIDMRegression$SetupMCMC()}}.
+    #' Posterior draws of the parameters are then transferred from the underlying `C++`
+    #' object to the `ZANIDMRegression` object.
     RunMCMC = function() {
       ini <- proc.time()
       self$cpp_obj$RunMCMC()
@@ -1228,33 +1451,129 @@ ZANIDMRegression <- R6::R6Class(
         }
       }
     },
+    #' Posterior mean of the regression coefficients
+    #' @param parameter Character string indicating which posterior mean of
+    #' regression coefficients to compute. If `parameter="alpha"`, then returns posterior
+    #' mean for the regression coefficients associated to the compositional probabilities.
+    #' Otherwise, if `parameter="zeta"` the return the posterior mean for the regression
+    #' coefficients associated to the structural zero probabilities.
     PosteriorMeanCoef = function(parameter = c("alpha", "zeta")) {
       parameter <- match.arg(parameter)
-      switch(parameter,
-        "zeta" = apply(self$draws_betas_zeta, c(1, 2), mean),
-        "alpha" = apply(self$draws_betas_alpha, c(1, 2), mean)
-      )
+      if (self$keep_draws_coef) {
+        switch(parameter,
+          "zeta" = apply(self$draws_betas_zeta, c(1, 2), mean),
+          "alpha" = apply(self$draws_betas_alpha, c(1, 2), mean)
+        )
+      } else {
+        warning("Posterior draws of the regression coefficients were not saved because you set {keep_draws_coef = FALSE}.")
+      }
     }
   )
 )
 
-# ZANIM logistic normal regression
+#' @title ZANIM-LN-reg
+#'
+#' @description
+#' Carries out Bayesian inference for the zero-and-N-inflated multinomial logistic-normal
+#' regression model (ZANIM-LN-reg) through an efficient Markov chain Monte Carlo algorithm.
+#' The `R6` class is an wrapper for the underlying `C++` implementation.
+#'
+#' @details
+#' The ZANIM-LN distribution extends the ZANIM distribution with additional
+#' logistic-normal random effects on the compositional probabilities.
+#' The current MCMC algorithm leverages the data augmentation scheme proposed by
+#' Menezes et al. (2025) for inference on the parameter of ZANIM distribution
+#' in i.i.d settings within a linear regression context.
+#' It assumes a probit link function for the structural-zero probabilities and a log-linear link
+#' function for the count components. For the category-specific
+#' structural-zero components, the regression coefficients are sampled using
+#' the probit data augmentation scheme of Albert and Chib (1993). For the
+#' category-specific count components, the algorithm uses the
+#' elliptical slice sampling method of Murray et al. (2010).
+#' For both components normal priors are assumed for the regression coefficients.
+#'
+#'
+#' @references
+#'
+#' Albert, J. H. and Chib, S. (1993),
+#' Bayesian analysis of binary and polychotomous response data,
+#' \emph{Journal of the American Statistical Association}, \strong{88}(442), 669--679.
+#'
+#' @references Menezes, A. F. B., Parnell, A. C., and Murphy, K. (2025), Finite mixture representations of
+#' zero-and-N -inflated distributions for count-compositional data. \emph{Journal of Multivariate Analysis},
+#' \strong{210:105492}. <https://doi.org/10.1016/j.jmva.2025.105492>.
+#'
+#' Murray, I., Adams, R. and MacKay, D. (2010), Elliptical slice sampling, in Y. W. Teh \& M. Titterington, eds,
+#' \emph{Proceedings of the Thirteenth International Conference on Artificial Intelligence and Statistics},
+#' \strong{Vol. 9 of Proceedings of Machine Learning Research, PMLR}, Chia Laguna Resort, Sardinia, Italy, pp. 541--548.
+#'
+#' @export
+
 ZANIMLNRegression <- R6::R6Class(
   classname = "ZANIMLNRegression",
+  cloneable = FALSE,
   public = list(
-    cpp_obj = NULL, cpp_module_name = NULL,
-    n_trials = integer(), n = integer(), d = integer(),
-    p_theta = integer(), p_zeta = integer(),
-    ndpost = integer(), nskip = integer(), nthin = integer(),
-    n_pred = integer(),
-    draws_theta = NULL, draws_zeta = NULL,
-    draws_abundance = NULL, draws_betas_theta = NULL, draws_betas_zeta = NULL,
-    draws_chol_Sigma_V = NULL, Bt = NULL,
+    #' @field cpp_obj Internal reference to the underlying `C++` model object.
+    cpp_obj = NULL,
+    #' @field cpp_module_name Internal name of the `Rcpp` module used by the model.
+    cpp_module_name = character(),
+    #' @field n_trials Sample-specific total counts (number of trials), calculated as `rowSums(Y)`.
+    n_trials = integer(),
+    #' @field n Number of samples.
+    n = integer(),
+    #' @field d Number of categories.
+    d = integer(),
+    #' @field p_theta Number of covariates associated to the compositional components.
+    p_theta = integer(),
+    #' @field p_zeta Number of covariates associated to the structural zero components.
+    p_zeta = integer(),
+    #' @field ndpost Number of posterior MCMC draws to retain.
+    ndpost = integer(),
+    #' @field nskip Number of MCMC draws to discard as burn-in before retaining
+    #' posterior draws.
+    nskip = integer(),
+    #' @field nthin Number of MCMC draws to discard as thinning before retaining
+    #' posterior draws.
+    nthin = integer(),
+    #' @field covariance_type Character string with the prior used for the covariance
+    #' matrix for the logistic-normal random effects.
+    covariance_type = NULL,
+    #' @field Bt Transpose of the orthogonal matrix for the sum-to-zero constraint
+    #' in the logistic random effects.
+    Bt = NULL,
+    #' @field draws_theta Posterior draws of the population-level count probabilities.
+    draws_theta = NULL,
+    #' @field draws_zeta Posterior draws of the population-level structural zero probabilities.
+    draws_zeta = NULL,
+    #' @field draws_abundance Posterior draws of the individual-level count probabilities.
+    draws_abundance = NULL,
+    #' @field draws_betas_theta Posterior draws of the category-specific regression
+    #' coefficients associated with the compositional probabilities.
+    draws_betas_theta = NULL,
+    #' @field draws_betas_zeta Posterior draws of the category-specific regression
+    #' coefficients associated with the structural zero probabilities.
+    draws_betas_zeta = NULL,
+    #' @field draws_chol_Sigma_V Posterior draws of the Cholesky decomposition of the
+    #' covariance matrix of the logistic-normal random effects.
+    draws_chol_Sigma_V = NULL,
+    #' @field elapsed_time Elapsed time taken to run the MCMC algorithm.
     elapsed_time = NULL,
-    keep_draws = logical(), keep_draws_coef = logical(),
+    #' @field keep_draws Logical indicating whether posterior draws of the
+    #' population-level compositional and structural probabilities were retained.
+    keep_draws = logical(),
+    #' @field keep_draws_coef Logical indicating whether posterior draws of the
+    #' regression coefficients were retained.
+    keep_draws_coef = logical(),
+    #' Create a new `ZANIMLNRegression` object
+    #' @param Y A matrix of multivariate count-compositional data.
+    #' Rows correspond to observations and columns correspond to categories.
+    #' @param X_theta A matrix of covariates used to model the count probabilities.
+    #' Rows must correspond to the observations in `Y`.
+    #' @param X_zeta A matrix of covariates used to model the structural zero probabilities.
+    #' Rows must correspond to the observations in `Y`.
     initialize = function(Y, X_theta, X_zeta) {
       ml <- Rcpp::Module(module = "zanim_ln_reg", PACKAGE = "zanicc")
-      self$cpp_obj <- new(ml$ZANIMLNReg, Y, X_theta, X_zeta)
+      self$cpp_obj <- methods::new(ml$ZANIMLNReg, Y, X_theta, X_zeta)
       self$cpp_module_name <- "zanim_ln_reg"
       # self$Y <- Y
       self$n <- nrow(Y)
@@ -1263,21 +1582,69 @@ ZANIMLNRegression <- R6::R6Class(
       self$p_zeta <- ncol(X_zeta)
       self$n_trials <- rowSums(Y)
     },
+    #' Set up the settings for the MCMC algorithm
+    #' @description
+    #' Configures priors and hyperparameters of the ZANIM-LN-reg model
+    #' used by the underlying MCMC algorithm implemented in `C++`.
+    #' This method must be called before \href{#method-ZANIDMRegression-RunMCMC}{\code{ZANIDMRegression$RunMCMC()}}.
+    #' @param sd_prior_beta_theta Numeric vector of length `p_alpha` with the
+    #' prior standard deviation for the regression coefficients associated with `X_theta`.
+    #' @param S_prior_beta_zeta A matrix `p_zeta` by `p_zeta` with the prior
+    #' covariance matrix for the regression coefficients associated with `X_zeta`.
+    #' Default is the identity matrix.
+    #' @param ndpost Number of posterior MCMC draws to retain. The default is `ndpost=5000`.
+    #' @param nskip Number of MCMC iterations to discard as burn-in before retaining
+    #' posterior draws. The default is `nskip=5000`.
+    #' @param nthin Currently not used.
+    #' @param covariance_type Character string specifying the prior on the covariance
+    #' matrix for the logistic-normal random effects. Default is `fa_mgp`, for nonparametric factor
+    #'  analysis with a multiplicative gamma process shrinkage prior. Other options include `fa` (factor analysis without such a prior),
+    #'  `diag` (for a diagonal covariance matrix with inverse-gamma priors), and `wishart` (for an inverse Wishart prior).
+    #' @param nu_prior Degrees of freedom for the inverse-Wishart prior on the
+    #' covariance matrix of random effects, when \code{covariance_type="wishart"}.
+    #' Default is number of categories, `self$d`.
+    #' @param Psi_prior Prior scale matrix for the inverse-Wishart prior on the
+    #' covariance matrix of random effects, when \code{covariance_type="wishart"}.
+    #' Default is \eqn{\mathbf{I}_{d-1}d}, where \eqn{d} is the number of categories,
+    #' `self$d`.
+    #' @param a_sigma,b_sigma Shape and scale prior parameters for the independent
+    #' gamma priors on the covariance matrix, i.e., when \code{covariance_type="diag"}.
+    #' Default is `a_sigma=b_sigma=1.0`.
+    #' @param q_factors Number of factors when the prior for the covariance matrix is
+    #' has a factor-analytic representation, i.e., \code{covariance_type="fa"} or
+    #' \code{covariance_type="fa_mgp"}. Default is the Ledermann bound of
+    #' the dimension of the full covariance matrix.
+    #' @param sigma2_gamma Scale (variance) hyperparameter of the normal prior on the
+    #' factor loadings, when \code{covariance_type="fa"}.
+    #' @param a_psi,b_psi Shape and rate hyperparameters, respectively for the gamma
+    #' prior on the residual precisions of the error term when \code{covariance_type="fa"}
+    #' or \code{covariance_type="fa_mgp"}.
+    #' @param shape_lsphis Shape hyperprameter of the gamma prior on local shrinkage
+    #' parameters under the multiplicative gamma process (MGP) prior, i.e.,
+    #' when \code{covariance_type="fa_mgp"}. Default is `shape_lsphis=3.0`.
+    #' @param a1_gs,a2_gs Shaper hyperparameters for the gamma prior on the column-wise
+    #' global shrinkage paraemters under the multiplicative gamma process (MGP) prior, i.e.,
+    #' when \code{covariance_type="fa_mgp"}. Default values are `a1_gs=2.1` and `a2_gs=3.1`.
+    #' @param keep_draws Whether to keep the draws with the subject-specific predictions
+    #' for the population-level count probabilities and structural zero probabilities,
+    #' as well as the individual-level count probabilities. Default is `TRUE`.
+    #' @param keep_draws_coef Whether to keep the draws of the regression coefficients. Default is `TRUE`.
     SetupMCMC = function(sd_prior_beta_theta = rep(1.0, self$p_theta),
                          S_prior_beta_zeta = diag(1.0, self$p_zeta),
                          ndpost = 5000L, nskip = 5000L, nthin = 1L,
-                         covariance_type = c("diag", "wishart", "fa", "fa_mgp"),
+                         covariance_type = c("fa_mgp", "diag", "wishart", "fa"),
                          nu_prior = self$d,
                          Psi_prior = diag(self$d, self$d - 1),
                          a_sigma = 1.0, b_sigma = 1.0,
-                         q_factors = .ledermann(self$d - 1L), sigma2_gamma = 1.0,
+                         q_factors = .ledermann(self$d - 1L),
+                         sigma2_gamma = 1.0,
                          a_psi = 2.5, b_psi = 1.0,
-                         shape_lsphis = 2.0, a1_gs = 1.5, a2_gs = 2.8,
+                         shape_lsphis = 2.0, a1_gs = 2.1, a2_gs = 3.1,
                          keep_draws = TRUE, keep_draws_coef = TRUE) {
       covariance_type <- match.arg(covariance_type)
       cov_type <- as.integer(which(covariance_type == c("diag", "wishart", "fa", "fa_mgp"))) - 1L
       if (q_factors == 0) q_factors <- 1
-
+      self$covariance_type <- covariance_type
       self$ndpost <- ndpost
       self$nskip <- nskip
       self$nthin <- nthin
@@ -1295,6 +1662,13 @@ ZANIMLNRegression <- R6::R6Class(
         shape_lsphis, a1_gs, a2_gs, keep_draws
       )
     },
+    #' Run the MCMC algorithm of ZANIM-reg
+    #'
+    #' @description
+    #'  Runs the MCMC sampler using the settings previously configured with
+    #' \href{#method-ZANIMLNRegression-SetupMCMC}{\code{ZANIMLNRegression$SetupMCMC()}}.
+    #' Posterior draws of the parameters are then transferred from the underlying `C++`
+    #' object to the `ZANIMLNRegression` object.
     RunMCMC = function() {
       ini <- proc.time()
       self$cpp_obj$RunMCMC()
@@ -1312,12 +1686,22 @@ ZANIMLNRegression <- R6::R6Class(
         }
       }
     },
+    #' Posterior mean of the regression coefficients
+    #' @param parameter Character string indicating which posterior mean of
+    #' regression coefficients to compute. If `parameter="theta"`, then returns posterior
+    #' mean for the regression coefficients associated to the compositional probabilities.
+    #' Otherwise, if `parameter="zeta"` the return the posterior mean for the regression
+    #' coefficients associated to the structural zero probabilities.
     PosteriorMeanCoef = function(parameter = c("theta", "zeta")) {
       parameter <- match.arg(parameter)
-      switch(parameter,
-        "zeta" = apply(self$draws_betas_zeta, c(1, 2), mean),
-        "theta" = apply(self$draws_betas_theta, c(1, 2), mean)
-      )
+      if (self$keep_draws_coef) {
+        switch(parameter,
+          "zeta" = apply(self$draws_betas_zeta, c(1, 2), mean),
+          "theta" = apply(self$draws_betas_theta, c(1, 2), mean)
+        )
+      } else{
+        warning("Posterior draws of the regression coefficients were not saved because you set {keep_draws_coef = FALSE}.")
+      }
     }
   )
 )
@@ -1326,19 +1710,19 @@ ZANIMLNRegression <- R6::R6Class(
 # DM-linear regression
 DMRegression <- R6::R6Class(
   classname = "DMRegression",
+  cloneable = FALSE,
   public = list(
     cpp_obj = NULL, cpp_module_name = character(),
     n_trials = integer(), n = integer(), d = integer(),
     p = integer(), ndpost = integer(), nskip = integer(), nthin = integer(),
-    n_pred = integer(),
     draws_alpha = NULL, draws_phi = NULL, draws_theta = NULL,
     draws_abundance = NULL, draws_betas = NULL,
-    y_rep_draws = NULL, log_lik_draws = NULL, elapsed_time = NULL,
+    elapsed_time = NULL,
     keep_draws = logical(), keep_draws_coef = logical(), save_draws = logical(),
     dir_draws = character(),
     initialize = function(Y, X) {
       ml <- Rcpp::Module(module = "dm_linear_reg", PACKAGE = "zanicc")
-      self$cpp_obj <- new(ml$DMLinearReg, Y, X)
+      self$cpp_obj <- methods::new(ml$DMLinearReg, Y, X)
       self$cpp_module_name <- "dm_linear_reg"
       # self$Y <- Y
       self$n <- nrow(Y)
@@ -1383,8 +1767,10 @@ DMRegression <- R6::R6Class(
         if (self$keep_draws_coef) self$draws_betas <- self$cpp_obj$draws_betas
       }
     },
+    #' Posterior mean of the regression coefficients
     PosteriorMeanCoef = function() {
       if (self$keep_draws) apply(self$draws_betas, c(1, 2), mean)
+      else warning("Posterior draws of the regression coefficients were not saved because you set {keep_draws_coef = FALSE}.")
     }
   )
 )
