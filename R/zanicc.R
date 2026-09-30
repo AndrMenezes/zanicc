@@ -145,7 +145,8 @@ zanicc <- function(Y, X_count, X_zi = NULL,
       mod <- MultinomialBART$new(Y = Y, X = X_count)
       mod$SetupMCMC(
         ntrees = ntrees_theta, ndpost = ndpost, nskip = nskip,
-        keep_draws = keep_draws, save_trees = save_trees, ...
+        keep_draws = keep_draws, save_trees = save_trees,
+        forests_dir = forests_dir, ...
       )
     },
     "mln_bart" = {
@@ -153,7 +154,8 @@ zanicc <- function(Y, X_count, X_zi = NULL,
       mod$SetupMCMC(
         ntrees = ntrees_theta, ndpost = ndpost,
         nskip = nskip, covariance_type = covariance_type,
-        keep_draws = keep_draws, save_trees = save_trees, ...
+        keep_draws = keep_draws, save_trees = save_trees,
+        forests_dir = forests_dir, ...
       )
     },
     "zanim_bart" = {
@@ -161,7 +163,7 @@ zanicc <- function(Y, X_count, X_zi = NULL,
       mod$SetupMCMC(
         ntrees_theta = ntrees_theta, ntrees_zeta = ntrees_zeta,
         ndpost = ndpost, nskip = nskip, keep_draws = keep_draws,
-        save_trees = save_trees, ...
+        save_trees = save_trees, forests_dir = forests_dir, ...
       )
     },
     "zanim_ln_bart" = {
@@ -170,6 +172,7 @@ zanicc <- function(Y, X_count, X_zi = NULL,
         ntrees_theta = ntrees_theta, ntrees_zeta = ntrees_zeta,
         ndpost = ndpost, nskip = nskip, keep_draws = keep_draws,
         save_trees = save_trees, covariance_type = covariance_type,
+        forests_dir = forests_dir,
         ...
       )
     },
