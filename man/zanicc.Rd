@@ -58,10 +58,11 @@ category-specific compositional regression trees and, for zero-inflated
 models, \code{forests_zeta_j.bin} for the structural-zero regression trees.
 Here, \code{j} indexes the category, and each file contains the corresponding
 tree topologies and terminal node parameters across all \code{ndpost} posterior
-draws.}
+draws. Such files are written in disk in the directory indicated by the argument \code{forests_dir}.}
 
 \item{forests_dir}{Character path indicating where to save the
-\code{forests_theta_j.bin} and \code{forests_zeta_j.bin} files. Default is to \code{\link[=tempdir]{tempdir()}}.}
+\code{forests_theta_j.bin} and \code{forests_zeta_j.bin} files when \code{save_trees=TRUE}.
+Default is to \code{\link[=tempdir]{tempdir()}}.}
 
 \item{covariance_type}{Character string specifying the prior on the covariance
 matrix for the logistic-normal random effects. Defaults to \code{fa_mgp}, for nonparametric factor
@@ -76,10 +77,15 @@ associated with \code{X_count}, i.e., the count-compositional component.}
 the regression coefficients associated with \code{X_zi}, i.e., the structural zero
 components.}
 
-\item{...}{Additional model-specific MCMC and (hyper)parameters.
+\item{...}{Additional model-specific MCMC settings and (hyper)parameters.
 These arguments are passed to the \code{SetupMCMC()} method of the
-\code{R6} class corresponding to \code{model}. The available arguments depend
-on the selected model. See \code{Details} for a summary.}
+\code{R6} class corresponding to \code{model}.
+The available arguments depend on the selected model.
+For further details see
+\href{#method-ZANIMBART-SetupMCMC}{\code{ZANIMBART$SetupMCMC()}},
+\href{#method-ZANIMLNBART-SetupMCMC}{\code{ZANIMLNBART$SetupMCMC()}},
+\href{#method-MultinomialBART-SetupMCMC}{\code{MultinomialBART$SetupMCMC()}},
+\href{#method-MultinomialLNBART-SetupMCMC}{\code{MultinomialLNBART$SetupMCMC()}}.}
 }
 \value{
 An R6 object which class depends on the specified \code{model}.
@@ -158,6 +164,6 @@ This function is a high-level interface to an efficient \verb{C++} implementatio
 }
 \references{
 Menezes, A. F. B., Parnell, A. C. and Murphy, K. (2026),
-Bayesian nonparametric models for zero-inflated
-count-compositional data using ensembles of regression trees. \emph{arXiv preprint}, \strong{arXiv:2601.08067} \url{https://arxiv.org/abs/2601.08067v2}
+Bayesian nonparametric models for zero-inflated count-compositional data using
+ensembles of regression trees. \emph{arXiv preprint}, \strong{arXiv:2601.08067} \url{https://arxiv.org/abs/2601.08067v2}
 }

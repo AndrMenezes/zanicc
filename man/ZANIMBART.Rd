@@ -5,8 +5,14 @@
 \title{ZANIM-BART}
 \description{
 Carries out Bayesian inference for the zero-and-N-inflated multinomial logistic
-BART (ZANIM-BART) model through an efficient Markov chain Monte Carlo algorithm.
+BART (ZANIM-BART) model through the efficient Markov chain Monte Carlo algorithm
+proposed in Menezes et al. (2026).
 The \code{R6} class is an wrapper for the underlying \verb{C++} implementation.
+}
+\references{
+Menezes, A. F. B., Parnell, A. C. and Murphy, K. (2026),
+Bayesian nonparametric models for zero-inflated count-compositional data using
+ensembles of regression trees. \emph{arXiv preprint}, \strong{arXiv:2601.08067} \url{https://arxiv.org/abs/2601.08067v2}
 }
 \section{Public fields}{
 \if{html}{\out{<div class="r6-fields">}}
@@ -21,9 +27,9 @@ The \code{R6} class is an wrapper for the underlying \verb{C++} implementation.
 
 \item{\code{d}}{Number of categories.}
 
-\item{\code{p_theta}}{Number of covariates associated to the compositional components}
+\item{\code{p_theta}}{Number of covariates associated to the compositional components.}
 
-\item{\code{p_zeta}}{Number of covariates associated to the structural zero components}
+\item{\code{p_zeta}}{Number of covariates associated to the structural zero components.}
 
 \item{\code{ntrees_theta}}{Number of trees for the structural zero components.}
 
@@ -31,7 +37,7 @@ The \code{R6} class is an wrapper for the underlying \verb{C++} implementation.
 
 \item{\code{ndpost}}{Number of posterior MCMC draws to retain.}
 
-\item{\code{nskip}}{Number of posterior MCMC draws to discard as burn-in before retaining
+\item{\code{nskip}}{Number of MCMC draws to discard as burn-in before retaining
 posterior draws.}
 
 \item{\code{forests_dir}}{Character path indicating where to save the
@@ -62,7 +68,7 @@ of the structural zero components.}
 
 \item{\code{draws_zeta}}{Posterior draws of the population-level structural zero probabilities.}
 
-\item{\code{draws_abundance}}{Posterior draws of the individual-level structural zero probabilities.}
+\item{\code{draws_abundance}}{Posterior draws of the individual-level count probabilities.}
 
 \item{\code{keep_draws}}{Logical indicating whether posterior draws were retained.}
 
@@ -72,13 +78,13 @@ saved in disk.}
 \item{\code{varcount_theta}}{A three dimensional array with dimension \eqn{p_{\theta} \times d \times m},
 where \eqn{p_\theta} is the number of covariates for the compositional components,
 \eqn{d} is the number of categories and \eqn{m} is the number of posterior draws, \code{ndpost}.
-Contains the total count of the number of times that variable is used in a
+It contains the total count of the number of times that a covariate is used in a
 tree decision rule over all category-specific trees.}
 
 \item{\code{varcount_zeta}}{A three dimensional array with dimension \eqn{p_{\zeta} \times d \times m},
 where \eqn{p_\zeta} is the number of covariates for the structural zero components,
 \eqn{d} is the number of categories and \eqn{m} is the number of posterior draws, \code{ndpost}.
-Contains the total count of the number of times that variable is used in a
+It contains the total count of the number of times that a covariate is used in a
 tree decision rule over all category-specific trees.}
 
 \item{\code{mppi_theta}}{A matrix with rows being the covariates and columns the categories.
@@ -167,10 +173,10 @@ This method must be called before \href{#method-ZANIMBART-RunMCMC}{\code{ZANIMBA
   alpha_sparse = c(1, 1),
   alpha_random = c(FALSE, FALSE),
   sparse_parms = c(self$p_zeta, 0.5, 1, self$p_theta, 0.5, 1),
-  xinfo = matrix(),
-  forests_dir = tempdir(),
   keep_draws = TRUE,
-  save_trees = FALSE
+  save_trees = FALSE,
+  forests_dir = tempdir(),
+  xinfo = matrix()
 )}\if{html}{\out{</div>}}
 }
 
@@ -210,7 +216,7 @@ generate \code{numcut} equally space cut points, \eqn{c_b} in the range of the c
 \code{grow}, \code{prune}, and \code{change} tree moves, respectively.
 Default probabilities are \eqn{0.25}, \eqn{0.25} and \eqn{0.50}, respectively.}
 
-\item{\code{update_sigma_theta}}{Logical indicating whether the hyperprior should be
+\item{\code{update_sigma_theta}}{Logical indicating whether a hyperprior should be
 used for the shrinkage hyperparameter, \code{v0_theta}. If so, then we use slice
 sampling to update this hyperparameter during the MCMC.}
 
@@ -250,23 +256,25 @@ with further hyperprior parameters \eqn{\rho}, \eqn{a} and \eqn{b}.}
 the structural-zero component and the last three to the compositional
 component. By default, these are \code{c(p_zeta, 0.5, 1.0, p_theta, 0.5, 1.0)}.}
 
-\item{\code{xinfo}}{Optional matrix containing the cut points information of each
-covariate supplied to the underlying \verb{C++} implementation.
-An empty matrix requests that the cut points be determined internally.}
+\item{\code{keep_draws}}{Logical indicating whether to retain posterior draws. Default is \code{TRUE}.}
 
-\item{\code{forests_dir}}{Character path indicating where to save the
-\code{forests_theta_j.bin} and \code{forests_zeta_j.bin} files. Default is to \code{\link[=tempdir]{tempdir()}}.}
-
-\item{\code{keep_draws}}{Logical, defaults to \code{TRUE}. Governs whether to retain posterior draws.}
-
-\item{\code{save_trees}}{Logical, defaults to \code{FALSE}. Governs whether to save the posterior draws of the BART
-tree topologies and terminal-node parameters to \code{.bin} files. For BART-based
-models, this creates files named \code{forests_theta_j.bin} for the
-category-specific compositional regression trees and, for zero-inflated
-models, \code{forests_zeta_j.bin} for the structural-zero regression trees.
+\item{\code{save_trees}}{Logical indicating whether to save the posterior draws of the BART
+tree topologies and terminal-node parameters to \code{.bin} files.
+Default is \code{FALSE}.
+This creates files named \code{forests_theta_j.bin} for the category-specific
+compositional regression trees and, \code{forests_zeta_j.bin}
+for the structural-zero regression trees.
 Here, \code{j} indexes the category, and each file contains the corresponding
 tree topologies and terminal node parameters across all \code{ndpost} posterior
-draws.
+draws. Such files are written in disk in the directory indicated by the argument \code{forests_dir}.}
+
+\item{\code{forests_dir}}{Character path indicating where to save the
+\code{forests_theta_j.bin} and \code{forests_zeta_j.bin} files when \code{save_trees=TRUE}.
+Default is to \code{\link[=tempdir]{tempdir()}}.}
+
+\item{\code{xinfo}}{Optional matrix containing the cut points information of each
+covariate supplied to the underlying \verb{C++} implementation.
+An empty matrix implies that the cut points are determined internally.
 Run the MCMC algorithm of ZANIM-BART}
 }
 \if{html}{\out{</div>}}
