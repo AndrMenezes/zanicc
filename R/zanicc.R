@@ -30,9 +30,10 @@
 #' models, `forests_zeta_j.bin` for the structural-zero regression trees.
 #' Here, `j` indexes the category, and each file contains the corresponding
 #' tree topologies and terminal node parameters across all `ndpost` posterior
-#' draws.
+#' draws. Such files are written in disk in the directory indicated by the argument `forests_dir`.
 #' @param forests_dir Character path indicating where to save the
-#' `forests_theta_j.bin` and `forests_zeta_j.bin` files. Default is to [tempdir()].
+#' `forests_theta_j.bin` and `forests_zeta_j.bin` files when `save_trees=TRUE`.
+#' Default is to [tempdir()].
 #' @param covariance_type Character string specifying the prior on the covariance
 #' matrix for the logistic-normal random effects. Defaults to `fa_mgp`, for nonparametric factor
 #'  analysis with a multiplicative gamma process shrinkage prior. Other options include `fa` (factor analysis without such a prior),
@@ -43,10 +44,16 @@
 #' @param S_prior_beta_zi Prior covariance matrix for
 #' the regression coefficients associated with `X_zi`, i.e., the structural zero
 #' components.
-#' @param ... Additional model-specific MCMC and (hyper)parameters.
+#' @param ... Additional model-specific MCMC settings and (hyper)parameters.
 #' These arguments are passed to the `SetupMCMC()` method of the
-#' `R6` class corresponding to `model`. The available arguments depend
-#' on the selected model. See \code{Details} for a summary.
+#' `R6` class corresponding to `model`.
+#' The available arguments depend on the selected model.
+#' For further details see
+#' \href{#method-ZANIMBART-SetupMCMC}{\code{ZANIMBART$SetupMCMC()}},
+#' \href{#method-ZANIMLNBART-SetupMCMC}{\code{ZANIMLNBART$SetupMCMC()}},
+#' \href{#method-MultinomialBART-SetupMCMC}{\code{MultinomialBART$SetupMCMC()}},
+#' \href{#method-MultinomialLNBART-SetupMCMC}{\code{MultinomialLNBART$SetupMCMC()}}.
+#'
 #'
 #' @details
 #' The available models differ in their treatment of the compositional
@@ -118,8 +125,8 @@
 #' @return An R6 object which class depends on the specified `model`.
 #'
 #' @references Menezes, A. F. B., Parnell, A. C. and Murphy, K. (2026),
-#' Bayesian nonparametric models for zero-inflated
-#' count-compositional data using ensembles of regression trees. \emph{arXiv preprint}, \strong{arXiv:2601.08067} <https://arxiv.org/abs/2601.08067v2>
+#' Bayesian nonparametric models for zero-inflated count-compositional data using
+#' ensembles of regression trees. \emph{arXiv preprint}, \strong{arXiv:2601.08067} <https://arxiv.org/abs/2601.08067v2>
 #'
 #' @importFrom R6 "R6Class"
 #'
@@ -139,6 +146,7 @@ zanicc <- function(Y, X_count, X_zi = NULL,
                    S_prior_beta_zi = diag(1.0, ncol(X_zi)),
                    ...) {
   model <- match.arg(model)
+  covariance_type <- match.arg(covariance_type)
 
   switch(model,
     "ml_bart" = {
