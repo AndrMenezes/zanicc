@@ -104,7 +104,7 @@
 #' \describe{
 #'   \item{`"ml_bart"`}{Multinomial logistic BART model.}
 #'   \item{`"mln_bart"`}{Multinomial logistic-normal BART model.}
-#'   \item{`"zanim_bart"`}{Zero-and-N-inflated multinomial logistic regression model.}
+#'   \item{`"zanim_bart"`}{Zero-and-N-inflated multinomial logistic BART model.}
 #'   \item{`"zanim_ln_bart"`}{Zero-and-N-inflated multinomial logistic-normal BART model.}
 #'   \item{`"dm_reg"`}{Dirichlet-multinomial regression model.}
 #'   \item{`"zanidm_reg"`}{Zero-and-N-inflated Dirichlet-multinomial regression model.}

@@ -145,7 +145,7 @@ The following models are available through \code{model}.
 \describe{
 \item{\code{"ml_bart"}}{Multinomial logistic BART model.}
 \item{\code{"mln_bart"}}{Multinomial logistic-normal BART model.}
-\item{\code{"zanim_bart"}}{Zero-and-N-inflated multinomial logistic regression model.}
+\item{\code{"zanim_bart"}}{Zero-and-N-inflated multinomial logistic BART model.}
 \item{\code{"zanim_ln_bart"}}{Zero-and-N-inflated multinomial logistic-normal BART model.}
 \item{\code{"dm_reg"}}{Dirichlet-multinomial regression model.}
 \item{\code{"zanidm_reg"}}{Zero-and-N-inflated Dirichlet-multinomial regression model.}
