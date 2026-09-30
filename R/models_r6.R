@@ -610,9 +610,9 @@ MultinomialBART <- R6::R6Class(classname = "MultinomialBART", public = list(
   n_trials = integer(), n = integer(), d = integer(), p = integer(),
   ntrees = integer(), ndpost = integer(), nskip = integer(), forests_dir = character(),
   shared_trees = logical(),
-  elapsed_time = NULL, elapsed_time_log_lik = NULL, avg_leaves = NULL,
+  elapsed_time = NULL, avg_leaves = NULL,
   avg_depth = NULL, accept_rate = NULL, lpl = NULL, draws_theta = NULL,
-  draws_phi = NULL, keep_draws = logical(), save_trees = logical(),
+  keep_draws = logical(), save_trees = logical(),
   varcount = NULL, mppi = NULL,
   initialize = function(Y, X, shared_trees = FALSE) {
     self$shared_trees <- shared_trees
@@ -638,7 +638,8 @@ MultinomialBART <- R6::R6Class(classname = "MultinomialBART", public = list(
                        update_sigma = TRUE, s2_0 = 1 / ntrees, w_ss = 1.0,
                        splitprobs = rep(1 / self$p, self$p), sparse = FALSE,
                        sparse_parms = c(self$p, 0.5, 1.0), alpha_sparse = 1.0,
-                       alpha_random = FALSE, xinfo = matrix(), forests_dir = tempdir(),
+                       alpha_random = FALSE, xinfo = matrix(),
+                       forests_dir = tempdir(),
                        keep_draws = TRUE, save_trees = FALSE) {
     self$ntrees <- ntrees
     self$ndpost <- ndpost
@@ -650,7 +651,6 @@ MultinomialBART <- R6::R6Class(classname = "MultinomialBART", public = list(
       if (!is.list(splitprobs)) splitprobs <- replicate(self$d, splitprobs, simplify = FALSE)
       alpha_sparse <- rep(alpha_sparse, self$d)
     }
-    # Setup
     self$cpp_obj$SetMCMC(
       v0, ntrees, ndpost, nskip, numcut, power, base,
       proposals_prob, as.integer(update_sigma), s2_0, w_ss,
@@ -714,7 +714,8 @@ MultinomialLNBART <- R6::R6Class(classname = "MultinomialLNBART", public = list(
                        update_sigma = TRUE, s2_0 = 1 / ntrees, w_ss = 1.0,
                        splitprobs = rep(1 / self$p, self$p), sparse = FALSE,
                        sparse_parms = c(self$p, 0.5, 1.0), alpha_sparse = 1.0,
-                       alpha_random = FALSE, xinfo = matrix(), forests_dir = tempdir(),
+                       alpha_random = FALSE, xinfo = matrix(),
+                       forests_dir = tempdir(),
                        keep_draws = TRUE, save_trees = FALSE) {
     covariance_type <- match.arg(covariance_type)
     cov_type <- as.integer(which(covariance_type == c("diag", "wishart", "fa", "fa_mgp"))) - 1L
@@ -731,8 +732,6 @@ MultinomialLNBART <- R6::R6Class(classname = "MultinomialLNBART", public = list(
 
     B <- qr.Q(qr(stats::contr.sum(self$d)))
     self$Bt <- t(B)
-
-    # Setup
     self$cpp_obj$SetMCMC(
       v0, ntrees,
       B, cov_type,
