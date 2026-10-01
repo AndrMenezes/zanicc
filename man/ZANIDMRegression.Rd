@@ -84,8 +84,7 @@ regression coefficients were retained.}
 regression coefficients were saved in disk.}
 
 \item{\code{dir_draws}}{Character string indicating the directory where the
-posterior draws of the regression coefficients were saved.
-Create a new \code{ZANIDMRegression} object}
+posterior draws of the regression coefficients were saved.}
 }
 \if{html}{\out{</div>}}
 }
@@ -102,6 +101,7 @@ Create a new \code{ZANIDMRegression} object}
 \if{html}{\out{<a id="method-ZANIDMRegression-new"></a>}}
 \if{latex}{\out{\hypertarget{method-ZANIDMRegression-new}{}}}
 \subsection{Method \code{new()}}{
+Creates a new \code{ZANIDMRegression} object.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{ZANIDMRegression$new(Y, X_alpha, X_zeta)}\if{html}{\out{</div>}}
 }
@@ -116,8 +116,7 @@ Rows correspond to observations and columns correspond to categories.}
 Rows must correspond to the observations in \code{Y}.}
 
 \item{\code{X_zeta}}{A matrix of covariates used to model the structural zero probabilities.
-Rows must correspond to the observations in \code{Y}.
-Set up the settings for the MCMC algorithm}
+Rows must correspond to the observations in \code{Y}.}
 }
 \if{html}{\out{</div>}}
 }
@@ -167,14 +166,13 @@ as well as the individual-level count probabilities. Default is \code{TRUE}.}
 \item{\code{keep_draws_coef}}{Whether to keep the draws of the regression coefficients. Default is \code{TRUE}.}
 
 \item{\code{save_draws}}{Whether to save the draws of the regression coefficients in binary format.
-This creates to files \code{draws_betas_alpha.bin} for the count components and
+This creates the files \code{draws_betas_alpha.bin} for the count components and
 \code{draws_betas_zeta.bin} for the structural zero components. These files are
 created in the folder provided in the argument \code{dir_draws}.}
 
 \item{\code{dir_draws}}{Character string with the folder where the posterior draws
 of the regression coefficients should be saved, when \code{save_draws=TRUE}.
-Default is \code{\link[=tempdir]{tempdir()}}.
-Run the MCMC algorithm of ZANIDM-reg}
+Default is \code{\link[=tempdir]{tempdir()}}.}
 }
 \if{html}{\out{</div>}}
 }
@@ -187,7 +185,6 @@ Runs the MCMC sampler using the settings previously configured with
 \href{#method-ZANIDMRegression-SetupMCMC}{\code{ZANIDMRegression$SetupMCMC()}}.
 Posterior draws of the parameters are then transferred from the underlying \verb{C++}
 object to the \code{ZANIDMRegression} object.
-Posterior mean of the regression coefficients
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{ZANIDMRegression$RunMCMC()}\if{html}{\out{</div>}}
 }
@@ -197,6 +194,7 @@ Posterior mean of the regression coefficients
 \if{html}{\out{<a id="method-ZANIDMRegression-PosteriorMeanCoef"></a>}}
 \if{latex}{\out{\hypertarget{method-ZANIDMRegression-PosteriorMeanCoef}{}}}
 \subsection{Method \code{PosteriorMeanCoef()}}{
+Compute the posterior mean of the regression coefficients.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{ZANIDMRegression$PosteriorMeanCoef(parameter = c("alpha", "zeta"))}\if{html}{\out{</div>}}
 }

@@ -2,11 +2,72 @@
 % Please edit documentation in R/models_r6.R
 \name{DMRegression}
 \alias{DMRegression}
-\title{Posterior mean of the regression coefficients}
+\title{DM-reg}
 \description{
-Posterior mean of the regression coefficients
+Carries out Bayesian inference for the Dirichlet multinomial
+regression model (DM-reg) through an efficient Markov chain Monte Carlo algorithm.
+The \code{R6} class is an wrapper for the underlying \verb{C++} implementation.
+}
+\details{
+The MCMC algorithm leverages a data augmentation scheme using the representation of
+Dirichlet-multinomial through a vector of normalised independent gamma distributions.
+It assumes a log-linear link
+function for the count components, and update the regression coefficients using
+the elliptical slice sampling method of Murray et al. (2010).
+Normal priors are assumed for the regression coefficients.
+}
+\references{
+Murray, I., Adams, R. and MacKay, D. (2010), Elliptical slice sampling, in Y. W. Teh \& M. Titterington, eds,
+\emph{Proceedings of the Thirteenth International Conference on Artificial Intelligence and Statistics},
+\strong{Vol. 9 of Proceedings of Machine Learning Research, PMLR}, Chia Laguna Resort, Sardinia, Italy, pp. 541--548.
+}
+\section{Public fields}{
+\if{html}{\out{<div class="r6-fields">}}
+\describe{
+\item{\code{cpp_obj}}{Internal reference to the underlying \verb{C++} model object.}
 
-Posterior mean of the regression coefficients
+\item{\code{cpp_module_name}}{Internal name of the \code{Rcpp} module used by the model.}
+
+\item{\code{n_trials}}{Sample-specific total counts (number of trials), calculated as \code{rowSums(Y)}.}
+
+\item{\code{n}}{Number of samples.}
+
+\item{\code{d}}{Number of categories.}
+
+\item{\code{p}}{Number of covariates.}
+
+\item{\code{ndpost}}{Number of posterior MCMC draws to retain.}
+
+\item{\code{nskip}}{Number of MCMC draws to discard as burn-in before retaining
+posterior draws.}
+
+\item{\code{nthin}}{Number of MCMC draws to discard as thinning before retaining
+posterior draws.}
+
+\item{\code{draws_alpha}}{Posterior draws of the population-level concentration parameters.}
+
+\item{\code{draws_theta}}{Posterior draws of the population-level count probabilities.}
+
+\item{\code{draws_abundance}}{Posterior draws of the individual-level count probabilities.}
+
+\item{\code{draws_betas}}{Posterior draws of the category-specific regression
+coefficients.}
+
+\item{\code{elapsed_time}}{Elapsed time taken to run the MCMC algorithm.}
+
+\item{\code{keep_draws}}{Logical indicating whether posterior draws of the
+population-level compositional and structural probabilities were retained.}
+
+\item{\code{keep_draws_coef}}{Logical indicating whether posterior draws of the
+regression coefficients were retained.}
+
+\item{\code{save_draws}}{Logical indicating whether the posterior draws of the
+regression coefficients were saved in disk.}
+
+\item{\code{dir_draws}}{Character string indicating the directory where the
+posterior draws of the regression coefficients were saved.}
+}
+\if{html}{\out{</div>}}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -15,22 +76,36 @@ Posterior mean of the regression coefficients
 \item \href{#method-DMRegression-SetupMCMC}{\code{DMRegression$SetupMCMC()}}
 \item \href{#method-DMRegression-RunMCMC}{\code{DMRegression$RunMCMC()}}
 \item \href{#method-DMRegression-PosteriorMeanCoef}{\code{DMRegression$PosteriorMeanCoef()}}
-\item \href{#method-DMRegression-clone}{\code{DMRegression$clone()}}
 }
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DMRegression-new"></a>}}
 \if{latex}{\out{\hypertarget{method-DMRegression-new}{}}}
 \subsection{Method \code{new()}}{
+Creates a new \code{DMRegression} object.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DMRegression$new(Y, X)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{Y}}{A matrix of multivariate count-compositional data.
+Rows correspond to observations and columns correspond to categories.}
+
+\item{\code{X}}{A matrix of covariates used to model the count probabilities.
+Rows must correspond to the observations in \code{Y}.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DMRegression-SetupMCMC"></a>}}
 \if{latex}{\out{\hypertarget{method-DMRegression-SetupMCMC}{}}}
 \subsection{Method \code{SetupMCMC()}}{
+Configures priors and hyperparameters of the DM-reg model
+used by the underlying MCMC algorithm implemented in \verb{C++}.
+This method must be called before \href{#method-DMRegression-RunMCMC}{\code{DMRegression$RunMCMC()}}.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DMRegression$SetupMCMC(
   S_prior_betas = diag(1, self$p),
@@ -44,11 +119,45 @@ Posterior mean of the regression coefficients
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{S_prior_betas}}{A matrix of dimension \code{p} by \code{p} with the prior
+covariance matrix for the regression coefficients associated with \code{X}.
+Default is the identity matrix.}
+
+\item{\code{ndpost}}{Number of posterior MCMC draws to retain. The default is \code{ndpost=5000L}.}
+
+\item{\code{nskip}}{Number of MCMC iterations to discard as burn-in before retaining
+posterior draws. The default is \code{nskip=5000L}.}
+
+\item{\code{nthin}}{Currently not used.}
+
+\item{\code{keep_draws}}{Whether to keep the draws with the subject-specific predictions
+for the population-level count probabilities and structural zero probabilities,
+as well as the individual-level count probabilities. Default is \code{TRUE}.}
+
+\item{\code{keep_draws_coef}}{Whether to keep the draws of the regression coefficients. Default is \code{TRUE}.}
+
+\item{\code{save_draws}}{Whether to save the draws of the regression coefficients in binary format.
+This creates the file \code{draws_betas.bin} in the folder provided by the argument
+\code{dir_draws}.}
+
+\item{\code{dir_draws}}{Character string with the folder where the posterior draws
+of the regression coefficients should be saved, when \code{save_draws=TRUE}.
+Default is \code{\link[=tempdir]{tempdir()}}.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DMRegression-RunMCMC"></a>}}
 \if{latex}{\out{\hypertarget{method-DMRegression-RunMCMC}{}}}
 \subsection{Method \code{RunMCMC()}}{
+Runs the MCMC sampler using the settings previously configured with
+\href{#method-DMRegression-SetupMCMC}{\code{DMRegression$SetupMCMC()}}.
+Posterior draws of the parameters are then transferred from the underlying \verb{C++}
+object to the \code{DMRegression} object.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DMRegression$RunMCMC()}\if{html}{\out{</div>}}
 }
@@ -58,26 +167,10 @@ Posterior mean of the regression coefficients
 \if{html}{\out{<a id="method-DMRegression-PosteriorMeanCoef"></a>}}
 \if{latex}{\out{\hypertarget{method-DMRegression-PosteriorMeanCoef}{}}}
 \subsection{Method \code{PosteriorMeanCoef()}}{
+Compute the posterior mean of the regression coefficients.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DMRegression$PosteriorMeanCoef()}\if{html}{\out{</div>}}
 }
 
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-DMRegression-clone"></a>}}
-\if{latex}{\out{\hypertarget{method-DMRegression-clone}{}}}
-\subsection{Method \code{clone()}}{
-The objects of this class are cloneable with this method.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{DMRegression$clone(deep = FALSE)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{deep}}{Whether to make a deep clone.}
-}
-\if{html}{\out{</div>}}
-}
 }
 }

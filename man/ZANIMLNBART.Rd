@@ -100,8 +100,7 @@ It contains the posterior estimates of the marginal probability of inclusion
 (MPPI) for the category-specific covariates associated to the compositional components.}
 
 \item{\code{sigma_theta_hyperprior}}{Posterior distribution of the hyperparameter related to the
-shrinkage prior in the compositional component.
-Create a new \code{ZANIMLNBART} object}
+shrinkage prior in the compositional component.}
 }
 \if{html}{\out{</div>}}
 }
@@ -117,6 +116,7 @@ Create a new \code{ZANIMLNBART} object}
 \if{html}{\out{<a id="method-ZANIMLNBART-new"></a>}}
 \if{latex}{\out{\hypertarget{method-ZANIMLNBART-new}{}}}
 \subsection{Method \code{new()}}{
+Creates a new \code{ZANIMLNBART} object.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{ZANIMLNBART$new(Y, X_theta, X_zeta)}\if{html}{\out{</div>}}
 }

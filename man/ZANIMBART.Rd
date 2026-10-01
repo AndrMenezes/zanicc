@@ -96,8 +96,7 @@ It contains the posterior estimates of the marginal probability of inclusion
 (MPPI) for the category-specific covariates associated to the compositional components.}
 
 \item{\code{sigma_theta_hyperprior}}{Posterior distribution of the hyperparameter related to the
-shrinkage prior in the compositional component.
-Create a new \code{ZANIMBART} object}
+shrinkage prior in the compositional component.}
 }
 \if{html}{\out{</div>}}
 }
@@ -113,6 +112,7 @@ Create a new \code{ZANIMBART} object}
 \if{html}{\out{<a id="method-ZANIMBART-new"></a>}}
 \if{latex}{\out{\hypertarget{method-ZANIMBART-new}{}}}
 \subsection{Method \code{new()}}{
+Creates a new \code{ZANIMBART} object.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{ZANIMBART$new(
   Y,
@@ -139,8 +139,7 @@ Rows must correspond to the observations in \code{Y}.}
 Options are \code{probit} and \code{logit}. Default and recommended are \code{probit}.}
 
 \item{\code{shared_trees}}{Whether the shared trees are used for the structural
-zero components. Only applied for the \code{logit} link function.
-Set up the settings for the MCMC algorithm}
+zero components. Only applied for the \code{logit} link function.}
 }
 \if{html}{\out{</div>}}
 }

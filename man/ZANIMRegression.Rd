@@ -76,8 +76,7 @@ coefficients associated with the structural zero probabilities.}
 population-level compositional and structural probabilities were retained.}
 
 \item{\code{keep_draws_coef}}{Logical indicating whether posterior draws of the
-regression coefficients were retained.
-Create a new \code{ZANIMRegression} object}
+regression coefficients were retained.}
 }
 \if{html}{\out{</div>}}
 }
@@ -94,6 +93,7 @@ Create a new \code{ZANIMRegression} object}
 \if{html}{\out{<a id="method-ZANIMRegression-new"></a>}}
 \if{latex}{\out{\hypertarget{method-ZANIMRegression-new}{}}}
 \subsection{Method \code{new()}}{
+Creates a new \code{ZANIMRegression} object.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{ZANIMRegression$new(Y, X_theta, X_zeta)}\if{html}{\out{</div>}}
 }
@@ -108,8 +108,7 @@ Rows correspond to observations and columns correspond to categories.}
 Rows must correspond to the observations in \code{Y}.}
 
 \item{\code{X_zeta}}{A matrix of covariates used to model the structural zero probabilities.
-Rows must correspond to the observations in \code{Y}.
-Set up the settings for the MCMC algorithm}
+Rows must correspond to the observations in \code{Y}.}
 }
 \if{html}{\out{</div>}}
 }
@@ -154,8 +153,7 @@ posterior draws. The default is \code{nskip=5000}.}
 for the population-level count probabilities and structural zero probabilities,
 as well as the individual-level count probabilities. Default is \code{TRUE}.}
 
-\item{\code{keep_draws_coef}}{Whether to keep the draws of the regression coefficients. Default is \code{TRUE}.
-Run the MCMC algorithm of ZANIM-reg}
+\item{\code{keep_draws_coef}}{Whether to keep the draws of the regression coefficients. Default is \code{TRUE}.}
 }
 \if{html}{\out{</div>}}
 }
@@ -168,7 +166,6 @@ Runs the MCMC sampler using the settings previously configured with
 \href{#method-ZANIMRegression-SetupMCMC}{\code{ZANIMRegression$SetupMCMC()}}.
 Posterior draws of the parameters are then transferred from the underlying \verb{C++}
 object to the \code{ZANIMRegression} object.
-Posterior mean of the regression coefficients
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{ZANIMRegression$RunMCMC()}\if{html}{\out{</div>}}
 }
@@ -178,6 +175,7 @@ Posterior mean of the regression coefficients
 \if{html}{\out{<a id="method-ZANIMRegression-PosteriorMeanCoef"></a>}}
 \if{latex}{\out{\hypertarget{method-ZANIMRegression-PosteriorMeanCoef}{}}}
 \subsection{Method \code{PosteriorMeanCoef()}}{
+Compute the posterior mean of the regression coefficients.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{ZANIMRegression$PosteriorMeanCoef(parameter = c("theta", "zeta"))}\if{html}{\out{</div>}}
 }

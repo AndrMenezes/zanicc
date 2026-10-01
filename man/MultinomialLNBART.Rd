@@ -76,8 +76,7 @@ tree decision rule over all category-specific trees.}
 
 \item{\code{mppi}}{A matrix with rows being the covariates and columns the categories.
 It contains the posterior estimates of the marginal probability of inclusion
-(MPPI) for the category-specific covariates.
-Create a new \code{MultinomialLNBART} object}
+(MPPI) for the category-specific covariates.}
 }
 \if{html}{\out{</div>}}
 }
@@ -93,6 +92,7 @@ Create a new \code{MultinomialLNBART} object}
 \if{html}{\out{<a id="method-MultinomialLNBART-new"></a>}}
 \if{latex}{\out{\hypertarget{method-MultinomialLNBART-new}{}}}
 \subsection{Method \code{new()}}{
+Creates a new \code{MultinomialLNBART} object.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{MultinomialLNBART$new(Y, X)}\if{html}{\out{</div>}}
 }
@@ -105,8 +105,7 @@ Rows correspond to observations and columns correspond to categories.}
 
 \item{\code{X}}{A matrix of covariates used to model the category-specific
 count probabilities.
-Rows must correspond to the observations in \code{Y}.
-Set up the settings for the MCMC algorithm}
+Rows must correspond to the observations in \code{Y}.}
 }
 \if{html}{\out{</div>}}
 }
@@ -269,8 +268,7 @@ draws. Such files are written in disk in the directory indicated by the argument
 
 \item{\code{xinfo}}{Optional matrix containing the cut points information of each
 covariate supplied to the underlying \verb{C++} implementation.
-An empty matrix implies that the cut points are determined internally.
-Run the MCMC algorithm of MLN-BART}
+An empty matrix implies that the cut points are determined internally.}
 }
 \if{html}{\out{</div>}}
 }

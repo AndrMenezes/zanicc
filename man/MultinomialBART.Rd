@@ -67,8 +67,7 @@ tree decision rule over all category-specific trees.}
 
 \item{\code{mppi}}{A matrix with rows being the covariates and columns the categories.
 It contains the posterior estimates of the marginal probability of inclusion
-(MPPI) for the category-specific covariates.
-Create a new \code{MultinomialBART} object}
+(MPPI) for the category-specific covariates.}
 }
 \if{html}{\out{</div>}}
 }
@@ -84,6 +83,7 @@ Create a new \code{MultinomialBART} object}
 \if{html}{\out{<a id="method-MultinomialBART-new"></a>}}
 \if{latex}{\out{\hypertarget{method-MultinomialBART-new}{}}}
 \subsection{Method \code{new()}}{
+Creates a new \code{MultinomialBART} object.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{MultinomialBART$new(Y, X, shared_trees = FALSE)}\if{html}{\out{</div>}}
 }

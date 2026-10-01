@@ -87,8 +87,7 @@ covariance matrix of the logistic-normal random effects.}
 population-level compositional and structural probabilities were retained.}
 
 \item{\code{keep_draws_coef}}{Logical indicating whether posterior draws of the
-regression coefficients were retained.
-Create a new \code{ZANIMLNRegression} object}
+regression coefficients were retained.}
 }
 \if{html}{\out{</div>}}
 }
@@ -99,13 +98,13 @@ Create a new \code{ZANIMLNRegression} object}
 \item \href{#method-ZANIMLNRegression-SetupMCMC}{\code{ZANIMLNRegression$SetupMCMC()}}
 \item \href{#method-ZANIMLNRegression-RunMCMC}{\code{ZANIMLNRegression$RunMCMC()}}
 \item \href{#method-ZANIMLNRegression-PosteriorMeanCoef}{\code{ZANIMLNRegression$PosteriorMeanCoef()}}
-\item \href{#method-ZANIMLNRegression-clone}{\code{ZANIMLNRegression$clone()}}
 }
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-ZANIMLNRegression-new"></a>}}
 \if{latex}{\out{\hypertarget{method-ZANIMLNRegression-new}{}}}
 \subsection{Method \code{new()}}{
+Creates a new \code{ZANIMLNRegression} object.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{ZANIMLNRegression$new(Y, X_theta, X_zeta)}\if{html}{\out{</div>}}
 }
@@ -120,8 +119,7 @@ Rows correspond to observations and columns correspond to categories.}
 Rows must correspond to the observations in \code{Y}.}
 
 \item{\code{X_zeta}}{A matrix of covariates used to model the structural zero probabilities.
-Rows must correspond to the observations in \code{Y}.
-Set up the settings for the MCMC algorithm}
+Rows must correspond to the observations in \code{Y}.}
 }
 \if{html}{\out{</div>}}
 }
@@ -216,8 +214,7 @@ when \code{covariance_type="fa_mgp"}. Default values are \code{a1_gs=2.1} and \c
 for the population-level count probabilities and structural zero probabilities,
 as well as the individual-level count probabilities. Default is \code{TRUE}.}
 
-\item{\code{keep_draws_coef}}{Whether to keep the draws of the regression coefficients. Default is \code{TRUE}.
-Run the MCMC algorithm of ZANIM-reg}
+\item{\code{keep_draws_coef}}{Whether to keep the draws of the regression coefficients. Default is \code{TRUE}.}
 }
 \if{html}{\out{</div>}}
 }
@@ -230,7 +227,6 @@ Runs the MCMC sampler using the settings previously configured with
 \href{#method-ZANIMLNRegression-SetupMCMC}{\code{ZANIMLNRegression$SetupMCMC()}}.
 Posterior draws of the parameters are then transferred from the underlying \verb{C++}
 object to the \code{ZANIMLNRegression} object.
-Posterior mean of the regression coefficients
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{ZANIMLNRegression$RunMCMC()}\if{html}{\out{</div>}}
 }
@@ -240,6 +236,7 @@ Posterior mean of the regression coefficients
 \if{html}{\out{<a id="method-ZANIMLNRegression-PosteriorMeanCoef"></a>}}
 \if{latex}{\out{\hypertarget{method-ZANIMLNRegression-PosteriorMeanCoef}{}}}
 \subsection{Method \code{PosteriorMeanCoef()}}{
+Compute the posterior mean of the regression coefficients.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{ZANIMLNRegression$PosteriorMeanCoef(parameter = c("theta", "zeta"))}\if{html}{\out{</div>}}
 }
@@ -252,23 +249,6 @@ regression coefficients to compute. If \code{parameter="theta"}, then returns po
 mean for the regression coefficients associated to the compositional probabilities.
 Otherwise, if \code{parameter="zeta"} the return the posterior mean for the regression
 coefficients associated to the structural zero probabilities.}
-}
-\if{html}{\out{</div>}}
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-ZANIMLNRegression-clone"></a>}}
-\if{latex}{\out{\hypertarget{method-ZANIMLNRegression-clone}{}}}
-\subsection{Method \code{clone()}}{
-The objects of this class are cloneable with this method.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ZANIMLNRegression$clone(deep = FALSE)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{deep}}{Whether to make a deep clone.}
 }
 \if{html}{\out{</div>}}
 }
