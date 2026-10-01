@@ -126,7 +126,7 @@ runifconvexhull <- function(n, X) {
 #' @details
 #'
 #' This function implements the Bayesian modular framework proposed in
-#' in Menezes et al. (2026) to perform palaeoclimate reconstruction.
+#' in Menezes et al. (2026b) to perform palaeoclimate reconstruction.
 #'
 #' The function performs inverse prediction using a previously fitted
 #' ZANIM-LN-BART model.
@@ -153,7 +153,7 @@ runifconvexhull <- function(n, X) {
 #'
 #'
 #' @references
-#' Menezes, A. F. B., Parnell, A. C., Huntley, B., and Murphy, K. (2026),
+#' Menezes, A. F. B., Parnell, A. C., Huntley, B., and Murphy, K. (2026b),
 #' Bayesian palaeoclimate reconstruction from zero-inflated count-compositional pollen data: A case study of Lago Grande di Monticchio in southern Italy \emph{arXiv preprint}, \strong{arXiv:2609.08866} <https://arxiv.org/abs/2609.08866>
 #'
 #'

@@ -2,7 +2,7 @@
 % Please edit documentation in R/models_r6.R
 \name{ZANIMRegression}
 \alias{ZANIMRegression}
-\title{ZANIM-reg}
+\title{Zero-and-N-inflated multinomial logistic regression model}
 \description{
 Carries out Bayesian inference for the zero-and-N-inflated multinomial logistic
 regression model (ZANIM-reg) through an efficient Markov chain Monte Carlo algorithm.

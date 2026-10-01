@@ -2,15 +2,15 @@
 % Please edit documentation in R/models_r6.R
 \name{ZANIMBART}
 \alias{ZANIMBART}
-\title{ZANIM-BART}
+\title{Zero-and-N-inflated multinomial logistic BART model}
 \description{
 Carries out Bayesian inference for the zero-and-N-inflated multinomial logistic
 BART (ZANIM-BART) model through the efficient Markov chain Monte Carlo algorithm
-proposed in Menezes et al. (2026).
+proposed in Menezes et al. (2026a).
 The \code{R6} class is an wrapper for the underlying \verb{C++} implementation.
 }
 \references{
-Menezes, A. F. B., Parnell, A. C. and Murphy, K. (2026),
+Menezes, A. F. B., Parnell, A. C. and Murphy, K. (2026a),
 Bayesian nonparametric models for zero-inflated count-compositional data using
 ensembles of regression trees. \emph{arXiv preprint}, \strong{arXiv:2601.08067} \url{https://arxiv.org/abs/2601.08067v2}
 }

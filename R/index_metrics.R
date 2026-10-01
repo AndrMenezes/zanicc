@@ -36,7 +36,7 @@
 #' * `zi_binomial()`: zero-inflation index relative to the binomial distribution.
 #' See Kim et al. (2018) for details.
 #' * `zi_multinomial()`: multivariate zero-inflation index for count-compositional
-#' data relative to the multinomial distribution. See Menezes et al. (2026) for details.
+#' data relative to the multinomial distribution. See Menezes et al. (2026a) for details.
 #'
 #' ## Dispersion and variability indices
 #'
@@ -66,7 +66,7 @@
 #' Kokonendji, C. C. and Puig, P. (2018), Fisher dispersion index for multivariate count distributions: A review
 #' and a new proposal, Journal of Multivariate Analysis \strong{165}, 180--193.
 #'
-#' Menezes, A. F. B., Parnell, A. C. and Murphy, K. (2026), Bayesian nonparametric models for zero-inflated
+#' Menezes, A. F. B., Parnell, A. C. and Murphy, K. (2026a), Bayesian nonparametric models for zero-inflated
 #' count-compositional data using ensembles of regression trees. \emph{arXiv preprint}, \strong{arXiv:2601.08067} <https://arxiv.org/abs/2601.08067v2>
 
 
@@ -215,7 +215,7 @@ zi_binomial <- function(x, N, standardise = FALSE) {
 #' * `compute_coverage()`: Compute the empirical coverage given the credible interval
 #' of the parameters.
 #'
-#' In the simulation studies conducted in Menezes et al. (2025), we assessed
+#' In the simulation studies conducted in Menezes et al. (2026a), we assessed
 #' and compared different models with respect to their ability to estimate the
 #' following parameters:
 #'
@@ -256,7 +256,7 @@ zi_binomial <- function(x, N, standardise = FALSE) {
 #' }
 #'
 #' @references
-#' Menezes, A. F. B., Parnell, A. C. and Murphy, K. (2026), Bayesian nonparametric models for zero-inflated
+#' Menezes, A. F. B., Parnell, A. C. and Murphy, K. (2026a), Bayesian nonparametric models for zero-inflated
 #' count-compositional data using ensembles of regression trees. \emph{arXiv preprint}, \strong{arXiv:2601.08067} <https://arxiv.org/abs/2601.08067v2>
 #'
 #' @return

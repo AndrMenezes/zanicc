@@ -2,7 +2,7 @@
 % Please edit documentation in R/models_r6.R
 \name{ZANIDMRegression}
 \alias{ZANIDMRegression}
-\title{ZANIDM-reg}
+\title{Zero-and-N-inflated Dirichlet-multinomial regression model}
 \description{
 Carries out Bayesian inference for the zero-and-N-inflated Dirichlet multinomial
 regression model (ZANIDM-reg) through an efficient Markov chain Monte Carlo algorithm.

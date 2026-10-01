@@ -52,7 +52,11 @@
 #' \href{#method-ZANIMBART-SetupMCMC}{\code{ZANIMBART$SetupMCMC()}},
 #' \href{#method-ZANIMLNBART-SetupMCMC}{\code{ZANIMLNBART$SetupMCMC()}},
 #' \href{#method-MultinomialBART-SetupMCMC}{\code{MultinomialBART$SetupMCMC()}},
-#' \href{#method-MultinomialLNBART-SetupMCMC}{\code{MultinomialLNBART$SetupMCMC()}}.
+#' \href{#method-MultinomialLNBART-SetupMCMC}{\code{MultinomialLNBART$SetupMCMC()}},
+#' \href{#method-ZANIMRegression-SetupMCMC}{\code{ZANIMRegression$SetupMCMC()}},
+#' \href{#method-ZANIMLNRegression-SetupMCMC}{\code{ZANIMLNRegression$SetupMCMC()}},
+#' \href{#method-ZANIDMRegression-SetupMCMC}{\code{ZANIDMRegression$SetupMCMC()}}, and
+#' \href{#method-DMRegression-SetupMCMC}{\code{DMRegression$SetupMCMC()}}.
 #'
 #'
 #' @details
@@ -124,7 +128,7 @@
 #'
 #' @return An R6 object which class depends on the specified `model`.
 #'
-#' @references Menezes, A. F. B., Parnell, A. C. and Murphy, K. (2026),
+#' @references Menezes, A. F. B., Parnell, A. C. and Murphy, K. (2026a),
 #' Bayesian nonparametric models for zero-inflated count-compositional data using
 #' ensembles of regression trees. \emph{arXiv preprint}, \strong{arXiv:2601.08067} <https://arxiv.org/abs/2601.08067v2>
 #'

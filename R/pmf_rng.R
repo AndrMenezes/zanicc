@@ -23,7 +23,7 @@
 #' `d` columns, where `d` is the number of categories.
 #'
 #' @references Menezes, A. F. B., Parnell, A. C., and Murphy, K. (2025), Finite mixture representations of
-#' zero-and-N -inflated distributions for count-compositional data. \emph{Journal of Multivariate Analysis},
+#' zero-and-N-inflated distributions for count-compositional data. \emph{Journal of Multivariate Analysis},
 #' \strong{210:105492}. <https://doi.org/10.1016/j.jmva.2025.105492>.
 #'
 #' @rdname zanim

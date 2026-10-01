@@ -2,7 +2,7 @@
 % Please edit documentation in R/models_r6.R
 \name{MultinomialBART}
 \alias{MultinomialBART}
-\title{Multinomial-BART}
+\title{Multinomial logistic BART model}
 \description{
 Carries out Bayesian inference for the multinomial logistic BART (ML-BART)
 model through the efficient Markov chain Monte Carlo algorithm proposed by

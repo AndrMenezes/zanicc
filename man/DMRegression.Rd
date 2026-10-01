@@ -2,7 +2,7 @@
 % Please edit documentation in R/models_r6.R
 \name{DMRegression}
 \alias{DMRegression}
-\title{DM-reg}
+\title{Dirichlet multinomial regression model}
 \description{
 Carries out Bayesian inference for the Dirichlet multinomial
 regression model (DM-reg) through an efficient Markov chain Monte Carlo algorithm.

@@ -87,7 +87,7 @@ posterior estimates.
 of the parameters.
 }
 
-In the simulation studies conducted in Menezes et al. (2025), we assessed
+In the simulation studies conducted in Menezes et al. (2026a), we assessed
 and compared different models with respect to their ability to estimate the
 following parameters:
 
@@ -129,6 +129,6 @@ averaged over the observations for these parameters, implemented in the function
 }
 }
 \references{
-Menezes, A. F. B., Parnell, A. C. and Murphy, K. (2026), Bayesian nonparametric models for zero-inflated
+Menezes, A. F. B., Parnell, A. C. and Murphy, K. (2026a), Bayesian nonparametric models for zero-inflated
 count-compositional data using ensembles of regression trees. \emph{arXiv preprint}, \strong{arXiv:2601.08067} \url{https://arxiv.org/abs/2601.08067v2}
 }

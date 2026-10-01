@@ -1,12 +1,12 @@
-#' @title ZANIM-BART
+#' @title Zero-and-N-inflated multinomial logistic BART model
 #'
 #' @description
 #' Carries out Bayesian inference for the zero-and-N-inflated multinomial logistic
 #' BART (ZANIM-BART) model through the efficient Markov chain Monte Carlo algorithm
-#' proposed in Menezes et al. (2026).
+#' proposed in Menezes et al. (2026a).
 #' The `R6` class is an wrapper for the underlying `C++` implementation.
 #'
-#' @references Menezes, A. F. B., Parnell, A. C. and Murphy, K. (2026),
+#' @references Menezes, A. F. B., Parnell, A. C. and Murphy, K. (2026a),
 #' Bayesian nonparametric models for zero-inflated count-compositional data using
 #' ensembles of regression trees. \emph{arXiv preprint}, \strong{arXiv:2601.08067} <https://arxiv.org/abs/2601.08067v2>
 #'
@@ -291,15 +291,15 @@ ZANIMBART <- R6::R6Class(classname = "ZANIMBART", cloneable = FALSE, public = li
   }
 ))
 
-#' @title ZANIM-LN-BART
+#' @title Zero-and-N-inflated multinomial logistic-normal BART model
 #'
 #' @description
 #' Carries out Bayesian inference for the zero-and-N-inflated multinomial
 #' logistic-normal BART (ZANIM-LN-BART) model through the efficient
-#' Markov chain Monte Carlo algorithm proposed in Menezes et al. (2026).
+#' Markov chain Monte Carlo algorithm proposed in Menezes et al. (2026a).
 #' The `R6` class is an wrapper for the underlying `C++` implementation.
 #'
-#' @references Menezes, A. F. B., Parnell, A. C. and Murphy, K. (2026),
+#' @references Menezes, A. F. B., Parnell, A. C. and Murphy, K. (2026a),
 #' Bayesian nonparametric models for zero-inflated count-compositional data using
 #' ensembles of regression trees. \emph{arXiv preprint}, \strong{arXiv:2601.08067} <https://arxiv.org/abs/2601.08067v2>
 #'
@@ -619,7 +619,7 @@ ZANIMLNBART <- R6::R6Class(classname = "ZANIMLNBART", cloneable = FALSE,
 ))
 
 
-#' @title Multinomial-BART
+#' @title Multinomial logistic BART model
 #'
 #' @description
 #' Carries out Bayesian inference for the multinomial logistic BART (ML-BART)
@@ -836,15 +836,15 @@ MultinomialBART <- R6::R6Class(classname = "MultinomialBART", cloneable = FALSE,
 ))
 
 
-#' @title Multinomial-BART
+#' @title Multinomial logistic-normal BART model
 #'
 #' @description
 #' Carries out Bayesian inference for the multinomial logistic-normal BART (MLN-BART)
 #' model through the efficient Markov chain Monte Carlo algorithm proposed by
-#' Menezes et al. (2026).
+#' Menezes et al. (2026a).
 #' The `R6` class is an wrapper for the underlying `C++` implementation.
 #'
-#' @references Menezes, A. F. B., Parnell, A. C. and Murphy, K. (2026),
+#' @references Menezes, A. F. B., Parnell, A. C. and Murphy, K. (2026a),
 #' Bayesian nonparametric models for zero-inflated count-compositional data using
 #' ensembles of regression trees. \emph{arXiv preprint}, \strong{arXiv:2601.08067} <https://arxiv.org/abs/2601.08067v2>
 #'
@@ -1098,7 +1098,7 @@ MultinomialLNBART <- R6::R6Class(
 ))
 
 
-#' @title ZANIM-reg
+#' @title Zero-and-N-inflated multinomial logistic regression model
 #'
 #' @description
 #' Carries out Bayesian inference for the zero-and-N-inflated multinomial logistic
@@ -1265,7 +1265,7 @@ ZANIMRegression <- R6::R6Class(
 )
 
 
-#' @title ZANIDM-reg
+#' @title Zero-and-N-inflated Dirichlet-multinomial regression model
 #'
 #' @description
 #' Carries out Bayesian inference for the zero-and-N-inflated Dirichlet multinomial
@@ -1457,7 +1457,7 @@ ZANIDMRegression <- R6::R6Class(
   )
 )
 
-#' @title ZANIM-LN-reg
+#' @title zero-and-N-inflated multinomial logistic-normal regression model
 #'
 #' @description
 #' Carries out Bayesian inference for the zero-and-N-inflated multinomial logistic-normal
@@ -1690,7 +1690,7 @@ ZANIMLNRegression <- R6::R6Class(
 )
 
 
-#' @title DM-reg
+#' @title Dirichlet multinomial regression model
 #'
 #' @description
 #' Carries out Bayesian inference for the Dirichlet multinomial
