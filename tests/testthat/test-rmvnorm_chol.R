@@ -13,15 +13,17 @@ test_that("multiplication works", {
 
   rand_norm <- matrix(stats::rnorm(p * n), ncol = p, nrow = n)
 
-  # R implementation
+  # R implementation: correct because we are simulating x' = (R'z + mu)' = z'R + mu'.
+  # Here `rand_norm` is treat as row vector
   x_R <- matrix(nrow = n, ncol = p)
   for (i in seq_len(n)) x_R[i, ] <- drop(rand_norm[i, ] %*% Sigma_chol + mu)
 
-  # R v2 implementation
+  # R v2 implementation: correct as x = R'z + mu
+  # Here `rand_norm` is treat as column vector
   x_R2 <- matrix(nrow = n, ncol = p)
   for (i in seq_len(n)) x_R2[i, ] <- drop(SigL %*% rand_norm[i, ] + mu)
 
-  # R v2 implementation
+  # R v3 implementation: this is wrong!
   x_R3 <- matrix(nrow = n, ncol = p)
   for (i in seq_len(n)) x_R3[i, ] <- drop(Sigma_chol %*% rand_norm[i, ] + mu)
 
