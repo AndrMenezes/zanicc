@@ -443,11 +443,8 @@ compute_kl_prob_chain <- function(reference_values, draws) {
   for (j in seq_len(p)) {
     isin[j] <- x[j] >= interval[j, 1] && x[j] <= interval[j, 2]
   }
-  if (all(isin)) {
-    return(1L)
-  } else {
-    return(0L)
-  }
+  if (all(isin)) return(1L)
+  else return(0L)
 }
 
 # Compute the mode using kernel density estimates
@@ -458,41 +455,189 @@ compute_kl_prob_chain <- function(reference_values, draws) {
   })
 }
 
+# Compute metrics for p = 1
+.get_metrics_1p <- function(x, x_draws, probs) {
+
+  mu <- mean(x_draws)
+  md <- stats::median(x_draws)
+  dd <- stats::density(x_draws)
+  mo <- dd$x[which.max(dd$y)]
+
+  # HPD coverages
+  coverages <- numeric(length = length(probs))
+  coda_obj <- coda::as.mcmc(x_draws)
+  for (k in seq_len(length(probs))) {
+    hdi <- coda::HPDinterval(coda_obj, prob = probs[k])
+    coverages[k] <- x >= hdi[1, 1] && x <= hdi[1, 2]
+  }
+  names(coverages) <- paste0("coverage_", 100*probs)
+
+  c(mae = abs(x - md),
+    msep = (x - mu)^2,
+    dmode = (x - mo)^2,
+    crps = scoringRules::crps_sample(y = x, dat = t(x_draws)),
+    coverages)
+}
+
+# Compute metrics for p > 1
+.get_metrics_p <- function(x, x_draws, probs, joint_coverage, method_kde,
+                           binned_kde, pilot_kde) {
+  x <- unname(x)
+  p <- length(x)
+  mu <- colMeans(x_draws)
+  md <- apply(x_draws, 2, stats::median)
+  # Marginal HPD coverages
+  marginal_coverages <- numeric(length = length(probs)*p)
+  coda_obj <- coda::as.mcmc(x_draws)
+  for (k in seq_len(length(probs))) {
+    hdi <- coda::HPDinterval(coda_obj, prob = probs[k])
+    for (j in seq_len(p)) {
+      marginal_coverages[(k - 1)*p + j] <- x[j] >= hdi[j, 1] && x[j] <= hdi[j, 2]
+    }
+  }
+  names(marginal_coverages) <- unlist(lapply(paste0("coverage_", 100*probs),
+                                             function(u) paste0(u, "_x", 1:p)))
+  # CRPS for each covariate
+  crps <- sapply(seq_len(p), function(j) {
+    scoringRules::crps_sample(y = x[j], dat = t(x_draws[,j]))
+  })
+  names(crps) <- paste0("crps_", 1:p)
+  # Energy score
+  es <- scoringRules::es_sample(y = x, dat = t(x_draws))
+  # Joint coverage and `dmode` statistic
+  dmode <- coverage <- NULL
+  if (joint_coverage) {
+    if (method_kde == "kde") {
+      H <- tryCatch(ks::Hpi(x = x_draws, binned = binned_kde, pilot = pilot_kde),
+                    error = function(e) NULL)
+      test <- tryCatch(expr = chol(H), error = function(e) NULL)
+      # If binned=TRUE doesn't work, then fit KDE without binned
+      if (is.null(test)) H <- ks::Hpi(x = x_draws, binned = FALSE, pilot = "dscalar")
+      den_kde <- ks::kde(x = x_draws, H = H, binned = binned_kde)
+      # Evaluate density at posterior draws
+      dens_draws <- stats::predict(den_kde, x = x_draws)
+      # Evaluate density at observed values of x
+      dens_x <- stats::predict(den_kde, x = x)
+    } else if (method_kde == "vine") {
+      den_vine <- rvinecopulib::vine(data = x_draws)
+      dens_draws <- rvinecopulib::dvine(x = x_draws, vine = den_vine)
+      dens_x <- rvinecopulib::dvine(x = x, vine = den_vine)
+    }
+    # Compute cutoff for the HPD using the method of Hyndman (1996)
+    cutoffs <- stats::quantile(dens_draws, prob = 1.0 - probs)
+    coverage <- as.integer(dens_x >= cutoffs)
+    names(coverage) <- paste0("coverage_", 100*probs)
+    # mode
+    index <- which.max(dens_draws)
+    mo <- x_draws[index, ]
+    dmode <- sum((x - mo)^2)
+  }
+  # Output
+  c(mae = sum(abs(x - md)), msep = sum((x - mu)^2),
+    dmode = dmode, es = es, coverage, marginal_coverages, crps)
+}
+
 #' Prediction metrics
 #' @param x A matrix of observed values, with rows corresponding to observations
 #' and columns to variables.
 #' @param draws An array of posterior draws. The first two dimensions contain
 #' posterior draws and variables, respectively, and the third dimension indexes
 #' observations.
-#' @return A named vector containing the mean prediction metrics across
-#' observations.
-#' The metrics are mean absolute error (`mae`), mean squared error based on
-#' posterior means (`msep`), squared error based on posterior modes (`dmode`),
-#' continuous ranked probability score (`crps`), and 95\% and 50\% empirical
-#' coverage of the highest posterior interval (`coverage_95` and `coverage_50`).
+#' @param probs Numeric vector with the probability level of the marginal and joint
+#' HPD interval and region, respectively.
+#' @param joint_coverage Logical. Whether to compute the joint coverage when the
+#' dimension of `x` is greater than one. This implements the density quantile method
+#' of Hyndman (1996) using a kernel density estimate of the multivariate density function.
+#' @param parallel Logical. Whether to compute the metrics in parallel for each sample.
+#' Useful if `joint_coverage=TRUE` and the number of samples are large.
+#' It uses the function `mclapply` of the `parallel` package, so it only works on Unix-based systems.
+#' @param ncores Number of cores to compute the metrics in parallel.
+#' @param verbose Logical. Whether to print the progress by each sample.
+#' @param method_kde Character indicating which kernel density estimate to use when
+#' computing the joint coverage. Options are the `kde` and `vine`.
+#' The `kde` option calls the function [ks::kde()] for the kernel density estimate, and
+#' it suffers from the curse of dimensionality, while the option `vine` calls
+#' the function [rvinecopulib::vine()] which uses vine copula to compute multivariate
+#' kernel density estimates for high-dimensional cases.
+#' @param method_kde Character indicating which kernel density estimate to use when
+#' computing the joint coverage.
+#' Options are `kde` and `vine`. The `kde` option calls [ks::kde()] for the kernel
+#' density estimate, while vine` calls [rvinecopulib::vine()] for
+#' high-dimensional cases.
+#' @param binned_kde,pilot_kde Further arguments passed to [ks::kde()].
+#' @param binned_kde,pilot_kde Further arguments passed to [ks::kde()].
+#'
+#' @return A named vector containing the mean prediction metrics across observations.
+#' The metrics are mean absolute error (`mae`),
+#' mean squared error based on posterior means (`msep`),
+#' mean squared error based on posterior modes (`dmode`),
+#' energy score (`es`) for `p > 1`,
+#' marginal continuous ranked probability score (`crps_x{j}`) for each dimension of `x`,
+#' and marginal empirical coverage of the highest posterior density intervals for
+#' different specified probability level `probs`. (`coverage_{prob}_x{j}`).
+#' If `joint_coverage=TRUE` and `p > 1`, joint HPD region coverage is additionally
+#' returned as `coverage_{prob}`.
+#'
+#' @references
+#' Hyndman, R. J. (1996), Computing and graphing highest density regions, \emph{The American Statistician}
+#' \strong{50(2)}, 120--126.
+#'
 #' @export
-#' @importFrom coda "as.mcmc" "HPDinterval"
-#' @importFrom scoringRules "crps_sample"
-compute_prediction_metrics <- function(x, draws) {
-  n <- nrow(x)
-  stopifnot(n == dim(draws)[3L])
-  l <- lapply(seq_len(n), function(i) {
-    post <- as.matrix(draws[, , i])
-    mu <- colMeans(post)
-    md <- apply(post, 2, stats::median)
-    mo <- .get_mode(post)
-    c(
-      mae = sum(abs(x[i, ] - md)),
-      msep = sum((x[i, ] - mu)^2),
-      dmode = sum((x[i, ] - mo)^2),
-      crps = scoringRules::crps_sample(y = x[i, ], dat = t(post)),
-      coverage_95 = .is_inside(coda::HPDinterval(coda::as.mcmc(post), prob = 0.95), x[i, ]),
-      coverage_50 = .is_inside(coda::HPDinterval(coda::as.mcmc(post), prob = 0.50), x[i, ])
-    )
-  })
-  rowMeans(do.call(cbind, l))
-}
+compute_prediction_metrics <- function(x, draws,
+                                       probs = c(0.95, 0.50),
+                                       joint_coverage = TRUE,
+                                       parallel = FALSE, ncores = 10L,
+                                       verbose = TRUE,
+                                       method_kde = c("kde", "vine"),
+                                       binned_kde = TRUE, pilot_kde = "dscalar") {
 
+  method_kde <- match.arg(method_kde)
+  n <- nrow(x)
+  p <- ncol(x)
+  stopifnot(n == dim(draws)[3L])
+  stopifnot(p == dim(draws)[2L])
+
+
+  if (p > 6 && method_kde == "kde") {
+    warning("Using {method_kde='vine'} as kde::ks does not support p > 5")
+    method_kde <- "vine"
+  }
+
+  if (p == 1L) {
+    if (parallel) {
+      totalcores <- parallel::detectCores()
+      if (ncores - 1L >= totalcores) ncores <- totalcores - 1L
+      by_draws <- parallel::mclapply(seq_len(n), function(i) {
+        if (verbose) cat(i, "of", n, "\n")
+        .get_metrics_1p(x = x[i, ], x_draws = draws[,1L,i], probs = probs)
+      }, mc.cores = ncores)
+    } else {
+      by_draws <- lapply(seq_len(n), function(i) {
+        if (verbose) cat(i, "of", n, "\n")
+        .get_metrics_1p(x = x[i, ], x_draws = draws[,1L,i], probs = probs)
+      })
+    }
+  } else {
+    if (parallel) {
+      totalcores <- parallel::detectCores()
+      if (ncores - 1L >= totalcores) ncores <- totalcores - 1L
+      by_draws <- parallel::mclapply(seq_len(n), function(i) {
+        if (verbose) cat(i, "of", n, "\n")
+        .get_metrics_p(x = x[i, , drop = TRUE], x_draws = draws[,,i], probs = probs,
+                       joint_coverage = joint_coverage, method_kde = method_kde,
+                       binned_kde = binned_kde, pilot_kde = pilot_kde)
+      }, mc.cores = ncores)
+    } else {
+      by_draws <- lapply(seq_len(n), function(i) {
+        if (verbose) cat(i, "of", n, "\n")
+        .get_metrics_p(x = x[i, , drop = TRUE], x_draws = draws[,,i], probs = probs,
+                       joint_coverage = joint_coverage, method_kde = method_kde,
+                       binned_kde = binned_kde, pilot_kde = pilot_kde)
+      })
+    }
+  }
+  rowMeans(do.call(cbind, by_draws))
+}
 
 #' Classification metrics
 #'
