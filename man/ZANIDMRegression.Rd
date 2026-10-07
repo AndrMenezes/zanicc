@@ -26,10 +26,10 @@ Bayesian analysis of binary and polychotomous response data,
 \emph{Journal of the American Statistical Association}, \strong{88}(442), 669--679.
 
 Menezes, A. F. B., Parnell, A. C., and Murphy, K. (2025), Finite mixture representations of
-zero-and-N -inflated distributions for count-compositional data. \emph{Journal of Multivariate Analysis},
+zero-and-N-inflated distributions for count-compositional data. \emph{Journal of Multivariate Analysis},
 \strong{210:105492}. \url{https://doi.org/10.1016/j.jmva.2025.105492}.
 
-Murray, I., Adams, R. and MacKay, D. (2010), Elliptical slice sampling, in Y. W. Teh \& M. Titterington, eds,
+Murray, I., Adams, R. and MacKay, D. (2010), Elliptical slice sampling, in Y. W. Teh & M. Titterington, eds,
 \emph{Proceedings of the Thirteenth International Conference on Artificial Intelligence and Statistics},
 \strong{Vol. 9 of Proceedings of Machine Learning Research, PMLR}, Chia Laguna Resort, Sardinia, Italy, pp. 541--548.
 }

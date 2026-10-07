@@ -17,7 +17,7 @@ the elliptical slice sampling method of Murray et al. (2010).
 Normal priors are assumed for the regression coefficients.
 }
 \references{
-Murray, I., Adams, R. and MacKay, D. (2010), Elliptical slice sampling, in Y. W. Teh \& M. Titterington, eds,
+Murray, I., Adams, R. and MacKay, D. (2010), Elliptical slice sampling, in Y. W. Teh & M. Titterington, eds,
 \emph{Proceedings of the Thirteenth International Conference on Artificial Intelligence and Statistics},
 \strong{Vol. 9 of Proceedings of Machine Learning Research, PMLR}, Chia Laguna Resort, Sardinia, Italy, pp. 541--548.
 }

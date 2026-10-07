@@ -4,7 +4,18 @@
 \alias{compute_prediction_metrics}
 \title{Prediction metrics}
 \usage{
-compute_prediction_metrics(x, draws)
+compute_prediction_metrics(
+  x,
+  draws,
+  probs = c(0.95, 0.5),
+  joint_coverage = TRUE,
+  parallel = FALSE,
+  ncores = 10L,
+  verbose = TRUE,
+  method_kde = c("kde", "vine"),
+  binned_kde = TRUE,
+  pilot_kde = "dscalar"
+)
 }
 \arguments{
 \item{x}{A matrix of observed values, with rows corresponding to observations
@@ -13,15 +24,46 @@ and columns to variables.}
 \item{draws}{An array of posterior draws. The first two dimensions contain
 posterior draws and variables, respectively, and the third dimension indexes
 observations.}
+
+\item{probs}{Numeric vector with the probability level of the marginal and joint
+HPD interval and region, respectively.}
+
+\item{joint_coverage}{Logical. Whether to compute the joint coverage when the
+dimension of \code{x} is greater than one. This implements the density quantile method
+of Hyndman (1996) using a kernel density estimate of the multivariate density function.}
+
+\item{parallel}{Logical. Whether to compute the metrics in parallel for each sample.
+Useful if \code{joint_coverage=TRUE} and the number of samples are large.
+It uses the function \code{mclapply} of the \code{parallel} package, so it only works on Unix-based systems.}
+
+\item{ncores}{Number of cores to compute the metrics in parallel.}
+
+\item{verbose}{Logical. Whether to print the progress by each sample.}
+
+\item{method_kde}{Character indicating which kernel density estimate to use when
+computing the joint coverage.
+Options are \code{kde} and \code{vine}. The \code{kde} option calls \code{\link[ks:kde]{ks::kde()}} for the kernel
+density estimate, while vine` calls \code{\link[rvinecopulib:vine]{rvinecopulib::vine()}} for
+high-dimensional cases.}
+
+\item{binned_kde, pilot_kde}{Further arguments passed to \code{\link[ks:kde]{ks::kde()}}.}
 }
 \value{
-A named vector containing the mean prediction metrics across
-observations.
-The metrics are mean absolute error (\code{mae}), mean squared error based on
-posterior means (\code{msep}), squared error based on posterior modes (\code{dmode}),
-continuous ranked probability score (\code{crps}), and 95\\% and 50\\% empirical
-coverage of the highest posterior interval (\code{coverage_95} and \code{coverage_50}).
+A named vector containing the mean prediction metrics across observations.
+The metrics are mean absolute error (\code{mae}),
+mean squared error based on posterior means (\code{msep}),
+mean squared error based on posterior modes (\code{dmode}),
+energy score (\code{es}) for \code{p > 1},
+marginal continuous ranked probability score (\verb{crps_x\{j\}}) for each dimension of \code{x},
+and marginal empirical coverage of the highest posterior density intervals for
+different specified probability level \code{probs}. (\verb{coverage_\{prob\}_x\{j\}}).
+If \code{joint_coverage=TRUE} and \code{p > 1}, joint HPD region coverage is additionally
+returned as \verb{coverage_\{prob\}}.
 }
 \description{
 Prediction metrics
+}
+\references{
+Hyndman, R. J. (1996), Computing and graphing highest density regions, \emph{The American Statistician}
+\strong{50(2)}, 120--126.
 }
