@@ -63,6 +63,43 @@ returned as \verb{coverage_\{prob\}}.
 \description{
 Prediction metrics
 }
+\examples{
+set.seed(54)
+ndpost <- 1000L
+p <- 3L
+n <- 100L
+Sigma <- tcrossprod(stats::rnorm(p)) + diag(stats::rgamma(n = p, shape = 2, rate = 0.5))
+Sigma_inv <- solve(Sigma)
+lower_chol_Sigma <- t(chol(Sigma))
+mu <- stats::rnorm(p, mean = 1.0)
+x <- matrix(nrow = n, ncol = p)
+for (i in seq_len(n)) x[i, ] <- drop(lower_chol_Sigma \%*\% stats::rnorm(p) + mu)
+mu_0 <- rep(0.0, p)
+Sigma_0 <- diag(x = 1, nrow = p, ncol = p)
+Sigma_0_inv <- solve(Sigma_0)
+xbar <- colMeans(x)
+Sigma_post <- solve(Sigma_0_inv + n * Sigma_inv)
+mu_post <- Sigma_post \%*\% (Sigma_0_inv \%*\% mu_0 + n * Sigma_inv \%*\% xbar)
+Sigma_pp <- Sigma_post + Sigma
+x_draws <- array(dim = c(ndpost, p, n))
+lower_chol_Sigma_pp <- t(chol(Sigma_pp))
+for (k in seq_len(ndpost)) {
+ for (i in seq_len(n)) {
+    x_draws[k,,i] <- drop(lower_chol_Sigma_pp \%*\% stats::rnorm(p) + mu_post)
+  }
+}
+res1 <- compute_prediction_metrics(x = x, draws = x_draws, parallel = FALSE,
+                                   verbose = FALSE, joint_coverage = FALSE)
+res1
+res2 <- compute_prediction_metrics(x = x, draws = x_draws, parallel = FALSE,
+                                   verbose = TRUE, joint_coverage = TRUE,
+                                   method_kde = "kdevine")
+res3 <- compute_prediction_metrics(x = x, draws = x_draws, parallel = TRUE,
+                                   verbose = TRUE, joint_coverage = TRUE,
+                                   ncores = 4L, method_kde = "kde")
+cbind(res2, res3)
+
+}
 \references{
 Hyndman, R. J. (1996), Computing and graphing highest density regions, \emph{The American Statistician}
 \strong{50(2)}, 120--126.

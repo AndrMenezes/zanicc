@@ -22,9 +22,9 @@ test_that("Check compute_metrics for p = 1", {
   # Simulate from the posterior predictive distribution
   x_draws <- array(stats::rnorm(n = n*ndpost, mean = mu_post, sd = sd_pp),
                    dim = c(ndpost, 1, n))
-  .compute_prediction_metrics(x = x, draws = x_draws, parallel = FALSE, verbose = FALSE)
-  .compute_prediction_metrics(x = x, draws = x_draws, parallel = FALSE, verbose = TRUE)
-  .compute_prediction_metrics(x = x, draws = x_draws, parallel = TRUE)
+  compute_prediction_metrics(x = x, draws = x_draws, parallel = FALSE, verbose = FALSE)
+  compute_prediction_metrics(x = x, draws = x_draws, parallel = FALSE, verbose = TRUE)
+  compute_prediction_metrics(x = x, draws = x_draws, parallel = TRUE)
 
 })
 
@@ -48,7 +48,7 @@ test_that("Check compute_metrics for p > 1", {
   mu_0 <- rep(0.0, p)
   Sigma_0 <- diag(x = 1, nrow = p, ncol = p)
   Sigma_0_inv <- solve(Sigma_0)
-  # Posterior and posterior-predictive parameters
+  # Parameters of the posterior-predictive distribution
   xbar <- colMeans(x)
   Sigma_post <- solve(Sigma_0_inv + n * Sigma_inv)
   mu_post <- Sigma_post %*% (Sigma_0_inv %*% mu_0 + n * Sigma_inv %*% xbar)
@@ -63,14 +63,14 @@ test_that("Check compute_metrics for p > 1", {
     }
   }
 
-  res1 <- .compute_prediction_metrics(x = x, draws = x_draws, parallel = FALSE,
-                                      verbose = FALSE, joint_coverage = FALSE)
-  res2 <- .compute_prediction_metrics(x = x, draws = x_draws, parallel = FALSE,
-                                      verbose = TRUE, joint_coverage = TRUE,
-                                      method_kde = "kdevine")
-  res3 <- .compute_prediction_metrics(x = x, draws = x_draws, parallel = TRUE,
-                                      verbose = TRUE, joint_coverage = TRUE,
-                                      ncores = 4L, method_kde = "kde")
+  res1 <- compute_prediction_metrics(x = x, draws = x_draws, parallel = FALSE,
+                                     verbose = FALSE, joint_coverage = FALSE)
+  res2 <- compute_prediction_metrics(x = x, draws = x_draws, parallel = FALSE,
+                                     verbose = TRUE, joint_coverage = TRUE,
+                                     method_kde = "kdevine")
+  res3 <- compute_prediction_metrics(x = x, draws = x_draws, parallel = TRUE,
+                                     verbose = TRUE, joint_coverage = TRUE,
+                                     ncores = 4L, method_kde = "kde")
   cbind(res2, res3)
 
 
