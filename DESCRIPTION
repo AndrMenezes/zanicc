@@ -25,6 +25,8 @@ Imports:
     Rcpp,
     scoringRules,
     splines,
+    ks,
+    rvinecopulib,
     truncnorm
 Suggests: 
     rmarkdown,
