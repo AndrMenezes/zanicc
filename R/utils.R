@@ -222,15 +222,37 @@ summarise_draws.array <- function(x, prob = 0.05) {
 }
 
 #' Create a rectangular uniform grid inside the region of the observed data
-#' @param X matrix with the observed data. It should have at least two columns.
-#' @param step_size double with the step size to create an exhaustive grid.
-#' @param scale_factors vector with double to re-scale the values `X[,j]` from 0 to `scale_factor[j]`.
-#' @description
-#' First, create an exhaustive grid using `seq(0.0, scale_factors[j], by = step_size)`,
-#' then filter each point in this grid checking if at least one observed value of `X`
-#' is inside the grid.
 #'
-create_rectangular_grid <- function(X, step_size = 1.0,
+#' @param X matrix with the observed data. It should have at least two columns.
+#' @param step_size Vector with same dimension as the number of columns of `X`
+#' with step size to create the exhaustive grid.
+#' @param scale_factors Vector with same dimension as the number of columns in `X`
+#' indicating to rescale each the values `X[,j]` from 0 to `scale_factor[j]`.
+#'
+#' @description
+#' First, it creates an exhaustive grid using [expand.grid()] with
+#' `seq(0.0, scale_factors[j], by = step_size)` for each dimension of `X`.
+#' Then, filters each point in this grid by checking whether
+#' at least one observed value of `X` is inside the grid.
+#'
+#' @examples
+#' data(pollen_climate, package = "zanicc")
+#' X <- pollen_climate$X[, c("gdd5", "mtco", "aet.pet")]
+#' X_grid <- create_rectangular_grid(X = unique(X))
+#' colnames(X_grid) <- colnames(X)
+#' par(mfrow = c(1, 3))
+#' plot(X[, "gdd5"], X[, "mtco"], main = "GDD5 vs MTCO")
+#' points(X_grid[, "gdd5"], X_grid[, "mtco"], col = "red", pch = 4)
+#' plot(X[, "gdd5"], X[, "aet.pet"], main = "GDD5 vs AET.PET")
+#' points(X_grid[, "gdd5"], X_grid[, "aet.pet"], col = "red", pch = 4)
+#' plot(X[, "aet.pet"], X[, "mtco"], main = "MTCO vs AET.PET")
+#' points(X_grid[, "aet.pet"], X_grid[, "mtco"], col = "red", pch = 19)
+#' graphics.off()
+#'
+#' @return A matrix containing a rectangular grid around the observed input `X`.
+#'
+#' @export
+create_rectangular_grid <- function(X, step_size = rep(1.0, ncol(X)),
                                     scale_factors = rep(20, ncol(X))) {
   p <- ncol(X)
   if (p < 2L) stop("Create uniform grid for p>1 covariates")
@@ -248,26 +270,23 @@ create_rectangular_grid <- function(X, step_size = 1.0,
   }
   # Create an exhaustive grid (TODO: this is inefficient, need to think a better way)
   X_grid <- expand.grid(lapply(seq_len(p), function(j) {
-    seq(0.0, scale_factors[j],
-      by = step_size
-    )
+    seq(0.0, scale_factors[j], by = step_size[j])
   }))
   X_grid <- as.matrix(X_grid)
   n_grid <- nrow(X_grid)
   # Loop through the exhaustive grid and keep only the points that belongs to observed data +- step_size
   keep <- logical(length = n_grid)
   for (i in seq_len(n_grid)) {
-    cond <- abs(sweep(X_scale, 2, X_grid[i, ], "-")) < step_size
+    cond <- abs(sweep(X_scale, 2, X_grid[i, ], "-")) < step_size[j]
     keep[i] <- any(rowSums(cond) == p)
   }
   if (sum(keep) == 0) stop("Did not find any points inside the observed data.")
-  cat("Keep", 100 * mean(keep), "% of the ", n_grid, "points in the uniform exhaustive grid.")
+  cat("Keep", round(100 * mean(keep), 2), "% of the", n_grid, "points in the uniform exhaustive grid.\n")
   # Filter the data and scale the grid into the original scale of X
   X_grid <- X_grid[keep, ]
-  for (j in seq_len(p)) {
+  for (j in seq_len(p))
     X_grid[, j] <- X_grid[, j] * range_[j] / scale_factors[j] + min_[j]
-  }
-  # Return the grid
+
   X_grid
 }
 

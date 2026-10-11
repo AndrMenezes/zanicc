@@ -40,7 +40,18 @@ exponential random variables.
 coordinates using the vertices of the selected simplex.
 }
 }
+}
+\examples{
+data(pollen_climate, package = "zanicc")
+X <- pollen_climate$X[, c("gdd5", "mtco", "aet.pet")]
+X_ch <- runifconvexhull(n = 2000L, X = unique(X))
+par(mfrow = c(1, 3))
+plot(X_ch[, 1], X_ch[, 2], pch = 4, col = "red")
+points(X[, 1], X[, 2])
+plot(X_ch[, 1], X_ch[, 3], pch = 4, col = "red")
+points(X[, 1], X[, 3])
+plot(X_ch[, 2], X_ch[, 3], pch = 4, col = "red")
+points(X[, 2], X[, 3])
+graphics.off()
 
-This implementation follows the method described by Stack Exchange user  \strong{whuber}:
-\url{https://stats.stackexchange.com/questions/663559/transform-convex-hull-vertex-weights-for-uniform-distribution/663594#663594}.
 }

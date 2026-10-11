@@ -100,7 +100,7 @@
 #' For these models, a latent indicator
 #' \eqn{z_{ij} \sim \operatorname{Bernoulli}\lbrack 1-\zeta_{ij} \rbrack}
 #' determines whether the observed zero from sample \eqn{i} of category \eqn{j}
-#' is structural zero with probability \eqn{1-\zeta_{ij}}.
+#' is structural zero with probability \eqn{\zeta_{ij}}.
 #'
 #' The structural-zero probabilities \eqn{\zeta_{ij}} can themselves depend
 #' on covariates.
@@ -110,7 +110,8 @@
 #'
 #' \subsection{Available models}{
 #'
-#' The following models are available through `model`.
+#'
+#' The following models are available through the `model` argument.
 #'
 #' \describe{
 #'   \item{`"ml_bart"`}{Multinomial logistic BART model.}

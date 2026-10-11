@@ -140,7 +140,7 @@ structural zeros from zeros arising from the sampling distribution.
 For these models, a latent indicator
 \eqn{z_{ij} \sim \operatorname{Bernoulli}\lbrack 1-\zeta_{ij} \rbrack}
 determines whether the observed zero from sample \eqn{i} of category \eqn{j}
-is structural zero with probability \eqn{1-\zeta_{ij}}.
+is structural zero with probability \eqn{\zeta_{ij}}.
 
 The structural-zero probabilities \eqn{\zeta_{ij}} can themselves depend
 on covariates.
@@ -150,7 +150,7 @@ function, whereas probit regression is employed for the parametric models.
 
 \subsection{Available models}{
 
-The following models are available through \code{model}.
+The following models are available through the \code{model} argument.
 
 \describe{
 \item{\code{"ml_bart"}}{Multinomial logistic BART model.}

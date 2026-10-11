@@ -4,17 +4,42 @@
 \alias{create_rectangular_grid}
 \title{Create a rectangular uniform grid inside the region of the observed data}
 \usage{
-create_rectangular_grid(X, step_size = 1, scale_factors = rep(20, ncol(X)))
+create_rectangular_grid(
+  X,
+  step_size = rep(1, ncol(X)),
+  scale_factors = rep(20, ncol(X))
+)
 }
 \arguments{
 \item{X}{matrix with the observed data. It should have at least two columns.}
 
-\item{step_size}{double with the step size to create an exhaustive grid.}
+\item{step_size}{Vector with same dimension as the number of columns of \code{X}
+with step size to create the exhaustive grid.}
 
-\item{scale_factors}{vector with double to re-scale the values \code{X[,j]} from 0 to \code{scale_factor[j]}.}
+\item{scale_factors}{Vector with same dimension as the number of columns in \code{X}
+indicating to rescale each the values \code{X[,j]} from 0 to \code{scale_factor[j]}.}
+}
+\value{
+A matrix containing a rectangular grid around the observed input \code{X}.
 }
 \description{
-First, create an exhaustive grid using \code{seq(0.0, scale_factors[j], by = step_size)},
-then filter each point in this grid checking if at least one observed value of \code{X}
-is inside the grid.
+First, it creates an exhaustive grid using \code{\link[=expand.grid]{expand.grid()}} with
+\code{seq(0.0, scale_factors[j], by = step_size)} for each dimension of \code{X}.
+Then, filters each point in this grid by checking whether
+at least one observed value of \code{X} is inside the grid.
+}
+\examples{
+data(pollen_climate, package = "zanicc")
+X <- pollen_climate$X[, c("gdd5", "mtco", "aet.pet")]
+X_grid <- create_rectangular_grid(X = unique(X))
+colnames(X_grid) <- colnames(X)
+par(mfrow = c(1, 3))
+plot(X[, "gdd5"], X[, "mtco"], main = "GDD5 vs MTCO")
+points(X_grid[, "gdd5"], X_grid[, "mtco"], col = "red", pch = 4)
+plot(X[, "gdd5"], X[, "aet.pet"], main = "GDD5 vs AET.PET")
+points(X_grid[, "gdd5"], X_grid[, "aet.pet"], col = "red", pch = 4)
+plot(X[, "aet.pet"], X[, "mtco"], main = "MTCO vs AET.PET")
+points(X_grid[, "aet.pet"], X_grid[, "mtco"], col = "red", pch = 19)
+graphics.off()
+
 }

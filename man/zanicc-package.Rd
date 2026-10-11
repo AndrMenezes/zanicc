@@ -4,19 +4,21 @@
 \alias{zanicc-package}
 \title{\pkg{zanicc}: zero-and-N-inflated count-compositional models}
 \description{
-The \pkg{zanicc} is an R package for Bayesian (non)parametric regression analysis of
-zero-inflated count-compositional data.
+The \pkg{zanicc} package provides tools for Bayesian (non)parametric regression
+analysis of zero-inflated count-compositional data.
 
-Most notably, the package implements the Bayesian inference schemes for the
-ZANIM-BART and ZANIM-LN-BART models developed by Menezes et al. (2026a).
+Its primary contribution is the implementation of Bayesian inference schemes
+for the ZANIM-BART and ZANIM-LN-BART models developed by Menezes et al. (2026a).
+The package also implements other models, including the ML-BART model of Murray (2021) and the
+ZANIDM (ZIDM) linear regression model of Koslovsky (2023).
 
-It provides efficient implementation of the finite mixture probability
-mass functions (PMFs) of ZANIM and ZANIDM distributions as proposed by Menezes et al. (2025).
-
-It implements Bayesian modular framework proposed by Menezes et al. (2026b)
+In addition to these regression models, \pkg{zanicc} provides efficient
+implementations of the finite-mixture probability mass functions (PMFs) for
+the ZANIM and ZANIDM distributions proposed by Menezes et al. (2025).
+Finally, it implements Bayesian modular framework proposed by Menezes et al. (2026b)
 for performing pollen-based palaeoclimate reconstruction.
 
-For efficient computing, the core implementation of MCMC algorithms and
+For efficient computing, the core implementation of the MCMC algorithms and
 related functions are written in C++.
 
 The terminology \code{zani} ("zero-and-N-inflation") comes from the fact that, in
@@ -36,13 +38,17 @@ zero, the count for the remaining category coincides with the number of trials.
 \section{Usage}{
 
 
-The most important functions of the package are \code{\link[=zanicc]{zanicc()}} for carrying out Bayesian
-inference in several (non)parametric count compositional models and
+The most important functions of the package are \code{\link[=zanicc]{zanicc()}}, which performs
+Bayesian inference for several (non)parametric count compositional models, and
 \code{\link[=inverse_posterior_zanimlnbart]{inverse_posterior_zanimlnbart()}} for performing pollen-based palaeoclimate
-reconstruction under a modular framework build on the ZANIM-LN-BART model.
+reconstruction using a modular framework built on a previously fitted
+ZANIM-LN-BART model.
 }
 
 \references{
+Koslovsky, M. D. (2023), A Bayesian zero-inflated Dirichlet-multinomial regression model for multivariate
+compositional count data, \emph{Biometrics} \strong{79(4)}, 3239–3251
+
 Menezes, A. F. B., Parnell, A. C., and Murphy, K. (2025), Finite mixture representations of
 zero-and-N-inflated distributions for count-compositional data. \emph{Journal of Multivariate Analysis},
 \strong{210:105492}. \url{https://doi.org/10.1016/j.jmva.2025.105492}.
@@ -56,6 +62,10 @@ Menezes, A. F. B., Parnell, A. C., Huntley, B., and Murphy, K. (2026b),
 Bayesian palaeoclimate reconstruction from zero-inflated count-compositional pollen data:
 A case study of Lago Grande di Monticchio in southern Italy \emph{arXiv preprint},
 \strong{arXiv:2609.08866} \url{https://arxiv.org/abs/2609.08866}
+
+Murray, J. S. (2021), Log-linear Bayesian additive regression trees for
+multinomial logistic and count regression models
+\emph{Journal of the American Statistical Association}, \strong{116} (534), 756--769.
 }
 \author{
 André F. B. Menezes \email{andrefelipemaringa@gmail.com}
