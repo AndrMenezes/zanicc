@@ -11,7 +11,7 @@ The \code{R6} class is an wrapper for the underlying \verb{C++} implementation.
 }
 \references{
 Murray, J. S. (2021),
-Log-linear Bayesian additive regression trees for multinomial logistic and count regression models
+Log-linear Bayesian additive regression trees for multinomial logistic and count regression models.
 \emph{Journal of the American Statistical Association}, \strong{116} (534), 756--769.
 }
 \section{Public fields}{

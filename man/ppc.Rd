@@ -6,47 +6,68 @@
 \alias{plot_ppc}
 \title{Posterior predictive check for count-compositional models}
 \usage{
-stat_ppc(Y, Y_ppc, stat_fun)
+stat_ppc(Y, Y_ppd, stat_fun)
 
-plot_ppc(Y, Y_ppc = NULL, object = NULL, output = FALSE)
+plot_ppc(Y, Y_ppd, output = FALSE, order_labels = NULL)
 }
 \arguments{
 \item{Y}{A matrix of observed count-compositional data with samples in rows and
 categories in columns.}
 
-\item{Y_ppc}{A three-dimensional array containing the posterior predictive
-distribution. The first dimension indexes the posterior samples, while the
-remaining dimensions correspond to replicated count-compositional matrices.
-If \code{NULL}, then the \code{plot_ppc} function generates the posterior predictive
-distribution from the model \code{object}.}
+\item{Y_ppd}{Posterior predictive distribution.
+For \code{stat_ppc()}, this must be a three-dimensional array, with posterior draws
+in the first dimension and the dimensions of each replicated count matrix in
+the remaining dimensions.
+For \code{plot_ppc()}, this can be either a three-dimensional array containing
+posterior predictive replicates from a single model or a named list of
+such arrays, with one element per model. Each array must have posterior
+draws in the first dimension, followed by the rows and columns of the
+replicated count matrices.}
 
 \item{stat_fun}{A function that computes a scalar diagnostic statistic from a
-count-compositional matrix.}
+count-compositional matrix. Used by \code{stat_ppc()}.}
 
-\item{object}{A fitted model object of class \code{zanicc} used to generate posterior
-predictive samples via the method \code{\link[=ppd]{ppd()}}. Only used when \code{Y_ppc = NULL}.}
+\item{output}{Logical. For \code{plot_ppc()}, if \code{TRUE}, return the plot together
+with the data used to construct it. If \code{FALSE} (the default), return only
+the plot.}
 
-\item{output}{Logical. If \code{TRUE}, return the computed posterior predictive
-statistics in addition to producing the plots. The default is \code{FALSE}.}
+\item{order_labels}{An optional character vector specifying the order of
+model labels in the posterior predictive density plots. Applicable when
+\code{Y_ppd} is a list of arrays.}
 }
 \value{
-\code{ppc_stat()} returns a list with two elements:
+\code{stat_ppc()} returns a list with two elements:
 \describe{
-\item{\code{t_ppc}}{A vector containing the diagnostic statistic evaluated on
-each posterior predictive replicate.}
-\item{\code{t_obs}}{The diagnostic statistic computed from the observed data.}
+\item{\code{t_ppc}}{A numeric vector containing the diagnostic statistic
+evaluated on each posterior predictive replicate.}
+\item{\code{t_obs}}{The diagnostic statistic evaluated on the observed data.}
 }
 
-\code{plot_ppc()} is called for its side effect of producing four posterior
-predictive check plot:
-Shannon entropy (\code{entropy}), multiple dispersion index (\code{mdi}),
-proportion of zeros (\code{prop_zero}), and multivariate zero-inflation index (\code{zi})).
-If \code{output = TRUE}, it returns a named list with the corresponding results
-from \code{ppc_stat()}.
+\code{plot_ppc()} returns a plot when \code{output = FALSE}. When \code{output = TRUE},
+it returns a list containing the plot and the data used to construct it.
+The structure of this list depends on the input:
+\describe{
+\item{Single model}{A list containing the plot (\code{p_out}), the observed
+diagnostic statistics (\code{empirical}), and the posterior predictive
+statistics (\code{ppcs}).}
+\item{Multiple models}{A list containing the plot (\code{p_out}) and
+four data frames of posterior predictive statistics: \code{entropy}, \code{mdi},
+\code{prop_zero}, and \code{zi}. Each data frame contains the simulated statistic
+values and their corresponding model labels.}
+}
 }
 \description{
 Compute and visualise posterior predictive checks for count-compositional models.
-The function \code{stat_ppc()} evaluates user-defined diagnostic statistics on both
-the observed data and the posterior predictive distribution, while \code{plot_ppc()}
-summarises four built-in diagnostics through density plots.
+
+\code{stat_ppc()} evaluates a user defined diagnostic statistic on the observed
+data and on posterior predictive replicates.
+
+\code{plot_ppc()} visualises four built-in diagnostic statistics by comparing
+their observed values with their posterior predictive distributions:
+Shannon entropy, the multiple dispersion index (MDI), the proportion of
+zeros, and the multivariate zero-inflation index (ZI).
+
+When posterior predictive samples from multiple models are supplied,
+\code{plot_ppc()} displays the distributions for each model in the same panels,
+allowing their diagnostic behaviour to be compared.
 }

@@ -93,7 +93,7 @@ It contains the posterior estimates of the marginal probability of inclusion
 
 \item{\code{mppi_zeta}}{A matrix with rows being the covariates and columns the categories.
 It contains the posterior estimates of the marginal probability of inclusion
-(MPPI) for the category-specific covariates associated to the compositional components.}
+(MPPI) for the category-specific covariates associated to the structural zero components.}
 
 \item{\code{sigma_theta_hyperprior}}{Posterior distribution of the hyperparameter related to the
 shrinkage prior in the compositional component.}
