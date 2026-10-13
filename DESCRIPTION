@@ -27,7 +27,9 @@ Imports:
     splines,
     ks,
     rvinecopulib,
-    truncnorm
+    truncnorm,
+    scales,
+    cowplot
 Suggests: 
     knitr,
     rmarkdown,
