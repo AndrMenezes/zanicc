@@ -583,6 +583,7 @@ compute_kl_prob_chain <- function(reference_values, draws) {
 #' \strong{50(2)}, 120--126.
 #'
 #' @examples
+#'\donttest{
 #' set.seed(54)
 #' ndpost <- 1000L
 #' p <- 3L
@@ -620,11 +621,12 @@ compute_kl_prob_chain <- function(reference_values, draws) {
 #' res1
 #' res2 <- compute_prediction_metrics(x = x, draws = x_draws, parallel = FALSE,
 #'                                    verbose = TRUE, joint_coverage = TRUE,
-#'                                    method_kde = "kdevine")
-#' res3 <- compute_prediction_metrics(x = x, draws = x_draws, parallel = TRUE,
+#'                                    method_kde = "vine")
+#' res3 <- compute_prediction_metrics(x = x, draws = x_draws, parallel = FALSE,
 #'                                    verbose = TRUE, joint_coverage = TRUE,
-#'                                    ncores = 4L, method_kde = "kde")
+#'                                    method_kde = "kde")
 #' cbind(res2, res3)
+#'}
 #'
 #' @export
 compute_prediction_metrics <- function(x, draws,

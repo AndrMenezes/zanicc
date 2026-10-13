@@ -88,7 +88,7 @@ ZANIMBART <- R6::R6Class(classname = "ZANIMBART", cloneable = FALSE, public = li
   mppi_theta = NULL,
   #' @field mppi_zeta A matrix with rows being the covariates and columns the categories.
   #' It contains the posterior estimates of the marginal probability of inclusion
-  #' (MPPI) for the category-specific covariates associated to the compositional components.
+  #' (MPPI) for the category-specific covariates associated to the structural zero components.
   mppi_zeta = NULL,
   #' @field sigma_theta_hyperprior Posterior distribution of the hyperparameter related to the
   #' shrinkage prior in the compositional component.
@@ -386,7 +386,7 @@ ZANIMLNBART <- R6::R6Class(classname = "ZANIMLNBART", cloneable = FALSE,
   mppi_theta = NULL,
   #' @field mppi_zeta A matrix with rows being the covariates and columns the categories.
   #' It contains the posterior estimates of the marginal probability of inclusion
-  #' (MPPI) for the category-specific covariates associated to the compositional components.
+  #' (MPPI) for the category-specific covariates associated to the structural zero components.
   mppi_zeta = NULL,
   #' @field sigma_theta_hyperprior Posterior distribution of the hyperparameter related to the
   #' shrinkage prior in the compositional component.
@@ -628,7 +628,7 @@ ZANIMLNBART <- R6::R6Class(classname = "ZANIMLNBART", cloneable = FALSE,
 #' The `R6` class is an wrapper for the underlying `C++` implementation.
 #'
 #' @references Murray, J. S. (2021),
-#' Log-linear Bayesian additive regression trees for multinomial logistic and count regression models
+#' Log-linear Bayesian additive regression trees for multinomial logistic and count regression models.
 #' \emph{Journal of the American Statistical Association}, \strong{116} (534), 756--769.
 #'
 #' @export

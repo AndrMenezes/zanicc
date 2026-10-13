@@ -1,4 +1,6 @@
-if (getRversion() >= "2.15.1") utils::globalVariables(c("self", "private", "x", "theta", "ci_lower", "ci_upper"))
+if (getRversion() >= "2.15.1") utils::globalVariables(c("self", "private", "x",
+                                                        "theta", "ci_lower", "ci_upper",
+                                                        "label_model"))
 #' @name zanicc-package
 #' @aliases zanicc-package
 #'
@@ -61,7 +63,7 @@ if (getRversion() >= "2.15.1") utils::globalVariables(c("self", "private", "x", 
 #' @references
 #'
 #' Koslovsky, M. D. (2023), A Bayesian zero-inflated Dirichlet-multinomial regression model for multivariate
-#' compositional count data, \emph{Biometrics} \strong{79(4)}, 3239–3251
+#' compositional count data. \emph{Biometrics} \strong{79(4)}, 3239–3251.
 #'
 #' Menezes, A. F. B., Parnell, A. C., and Murphy, K. (2025), Finite mixture representations of
 #' zero-and-N-inflated distributions for count-compositional data. \emph{Journal of Multivariate Analysis},
@@ -70,15 +72,15 @@ if (getRversion() >= "2.15.1") utils::globalVariables(c("self", "private", "x", 
 #' Menezes, A. F. B., Parnell, A. C. and Murphy, K. (2026a),
 #' Bayesian nonparametric models for zero-inflated count-compositional data using
 #' ensembles of regression trees. \emph{arXiv preprint}, \strong{arXiv:2601.08067}
-#' <https://arxiv.org/abs/2601.08067v2>
+#' <https://arxiv.org/abs/2601.08067v2>.
 #'
 #' Menezes, A. F. B., Parnell, A. C., Huntley, B., and Murphy, K. (2026b),
 #' Bayesian palaeoclimate reconstruction from zero-inflated count-compositional pollen data:
-#' A case study of Lago Grande di Monticchio in southern Italy \emph{arXiv preprint},
-#' \strong{arXiv:2609.08866} <https://arxiv.org/abs/2609.08866>
+#' A case study of Lago Grande di Monticchio in southern Italy. \emph{arXiv preprint},
+#' \strong{arXiv:2609.08866} <https://arxiv.org/abs/2609.08866>.
 #'
 #' Murray, J. S. (2021), Log-linear Bayesian additive regression trees for
-#' multinomial logistic and count regression models
+#' multinomial logistic and count regression models.
 #' \emph{Journal of the American Statistical Association}, \strong{116} (534), 756--769.
 #'
 #' @author
