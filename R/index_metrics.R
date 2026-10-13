@@ -581,9 +581,8 @@ compute_kl_prob_chain <- function(reference_values, draws) {
 #' @references
 #' Hyndman, R. J. (1996), Computing and graphing highest density regions, \emph{The American Statistician}
 #' \strong{50(2)}, 120--126.
-#'
 #' @examples
-#'\donttest{
+#' \dontrun{
 #' set.seed(54)
 #' ndpost <- 1000L
 #' p <- 3L

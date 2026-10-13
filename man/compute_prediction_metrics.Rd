@@ -64,7 +64,7 @@ returned as \verb{coverage_\{prob\}}.
 Prediction metrics
 }
 \examples{
-\donttest{
+\dontrun{
 set.seed(54)
 ndpost <- 1000L
 p <- 3L
