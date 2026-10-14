@@ -3,7 +3,7 @@
 
 constexpr double PI_2 = 6.283185307179586231996;
 
-DMLinearReg::DMLinearReg(const arma::umat &Y, const arma::mat &X) : Y(Y), X(X), rng() {
+DMLinearReg::DMLinearReg(const arma::umat &Y, const arma::mat &X) : rng(), Y(Y), X(X) {
   d = Y.n_cols;
   n = Y.n_rows;
   p = X.n_cols;
