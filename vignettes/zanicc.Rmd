@@ -1,5 +1,5 @@
 ---
-title: "Get started"
+title: "zanicc: Bayesian nonparametric regression models for zero-inflated count-compositional data"
 author: "André Menezes and Keefe Murphy"
 date: "`r paste0('zanicc ', packageVersion('zanicc'), ', ' , Sys.Date())`"
 urlcolor: blue
@@ -8,7 +8,7 @@ output:
     toc: true
     toc_depth: 3
 vignette: >
-  %\VignetteIndexEntry{Get started}
+  %\VignetteIndexEntry{zanicc: Bayesian nonparametric regression models for zero-inflated count-compositional data}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
