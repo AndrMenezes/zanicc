@@ -41,6 +41,9 @@ r_outputs <- readRDS("./r_outputs.rds")
 
 The `zanicc` package provides tools for Bayesian (non)parametric regression
 analysis of zero-inflated count-compositional data.
+In particular, the package provides functions for performing Bayesian inference 
+through efficient Markov chain Monte Carlo (MCMC) algorithms for various 
+nonparametric and parametric count-compositional models.
 
 Its primary contribution is the implementation of Bayesian inference schemes
 for the ZANIM-BART and ZANIM-LN-BART models developed by
@@ -50,16 +53,13 @@ The package also implements other models, including the ML-BART model of
 and the ZANIDM (ZIDM) linear regression model of
 [Koslovsky (2023)](https://doi.org/10.1111/biom.13853).
 We stress that the ML-BART model was introduced by
-<!-- [Murray (2021)](https://doi.org/10.1080/01621459.2020.1813587) in the context of multiclass classification problems. -->
-
-The package provides functions for performing Bayesian inference through efficient
-Markov chain Monte Carlo (MCMC) algorithms for various nonparametric and
-parametric count-compositional models.
+[Murray (2021)](https://doi.org/10.1080/01621459.2020.1813587) in the context of multiclass classification problems; in this package, it can be employed with arbitrary numbers of sample-specific trials. 
+Another extension of ML-BART incorporating logistic-normal random effects, MLN-BART, is also provided.
 
 The nonparametric models available in `zanicc` use ensembles of regression
-trees through appropriate Bayesian additive regression trees (BART) priors.
-While the parametric models assumed parametric linear functional form relating the
-covariates to the parameters of the model
+trees through appropriate Bayesian additive regression trees (BART) priors,
+while the parametric models assume parametric linear functional forms for relating 
+the covariates to the parameters of the model.
 
 The following model are available through their corresponding `R6` class:
 
@@ -72,14 +72,14 @@ The following model are available through their corresponding `R6` class:
 - [`ZANIMRegression`](): Zero-and-N-inflated multinomial logistic linear regression (ZANIM-reg).
 - [`ZANIMLNRegression`](): Zero-and-N-inflated multinomial logistic-normal linear regression (ZANIM-LN-reg).
 
-Underlying the `R6` classes of each model there are efficient C++ implementation
-of their MCMC algorithm for performing Bayesian inference.
+Underlying the `R6` classes of each model, there are efficient C++ implementations
+of their MCMC algorithms for performing Bayesian inference.
 All the R6 classes have at least three methods:
 
 - `new`: creates an instance of the class, requiring the data, i.e., the matrices 
 with the count-compositional responses, and the covariates.
-- `SetupMCMC`: configures prior, hyperparameters and MCMC settings.
-- `RunMCMC`: runs the MCMC sampler using the settings previously configures with 
+- `SetupMCMC`: configures priors, hyperparameters and MCMC settings.
+- `RunMCMC`: runs the MCMC sampler using the settings previously configured with 
 `SetupMCMC`.
 
 However, the user does not need to know all these details, since the function
@@ -87,7 +87,7 @@ However, the user does not need to know all these details, since the function
 can be use for convenience when fitting the models.
 
 This vignette illustrates how the `zanicc` package is useful for modelling a
-real world count-compositional data.
+real world count-compositional data set.
 
 We first give instructions for installing the package.
 
@@ -111,10 +111,9 @@ To illustrate the functionalities of the `zanicc` package, we consider the
 modern pollen-climate data set, which motivates the development of the
 ZANIM-BART and ZANIM-LN-BART models in
 [Menezes et al. (2026)](https://arxiv.org/abs/2601.08067v2).
-This data set compromises $n=7,832$ samples collected around the Northern Hemisphere
+This data set compromises $n=7832$ samples collected around the Northern Hemisphere
 of compositional counts from $d=28$ pollen taxa, along with different climate 
-variables.
-Climate variables are also available for each sample.
+variables which are also available for each sample.
 Here, we focus on the following three climate covariates: 
 (i) GDD5, growing degree days above 5◦C,
 the annual sum of daily temperatures exceeding this threshold (◦C days);
@@ -126,13 +125,13 @@ Overall, the three-dimensional climate vector characterises at each location the
 length and warmth of the growing season (GDD5), winter severity (MTCO), and
 the moisture available to plants (AET/PET).
 
-This data set can be load from the `zanicc` package as follows:
+This data set can be loaded from the `zanicc` package as follows:
 ```{r pollen-climate}
 data(pollen_climate, package = "zanicc")
 str(pollen_climate)
 ```
 
-Here, we use a subset of size $1000$ the pollen-climate data, as follows
+In the subsequent demonstrations, we use a subset of size $1000$ of the pollen-climate data, as follows
 ```{r subset}
 set.seed(1212)
 n_sample <- 1000L
@@ -149,7 +148,7 @@ For the a detailed analysis of this data set, we refer to
 
 ## Fitting the models
 
-Fit a model in the `zanicc` package means to perform Bayesian inference using
+Fitting a model in the `zanicc` package means to perform Bayesian inference using
 efficient MCMC algorithms.
 A list of all hyperparameters, prior options, and optional arguments are given in
 the help page of the R6 class of each model, see for example:
@@ -158,20 +157,20 @@ the help page of the R6 class of each model, see for example:
 ?ZANIMLNBART
 ```
 
-Alternatively, the simplest way to fit the available models in `zanicc` package is
-using the [zanicc()]() function, which internally dispatch the appropriate R6 class.
+Alternatively, the simplest way to fit the available models in the `zanicc` package is
+using the [zanicc()]() function, which internally dispatches the appropriate R6 class.
 The arguments available to the `setupMCMC` method of each R6 class can be passed
-to the [zanicc()]().
-Here, we modify the number of burn-in and posterior samples to be $1000$,
+through the [zanicc()]() wrapper, for advanced users who wish to deviate from the default arguments.
+Here, we modify the number of burn-in and posterior samples to be $1000$ (each),
 and the number of trees to $20$ trees for the category-specific regression trees of
 the BART-based models.
 However, we stress that in the analysis conducted in the paper
 [Menezes et al. (2026)](https://arxiv.org/abs/2601.08067v2), 
-we use a large number of trees and MCMC iterations.
+we use a larger number of trees and MCMC iterations.
 
 We consider the ZANIM-LN-BART (`zanim_ln_bart`) and ZANIM-BART (`zanim_bart`) models.
 Both models accommodate 
-structural zeros, depending on covariates, in count-compositional data with the
+structural zeros and dependence on covariates in count-compositional data with the
 former also equipped with logistic-normal random effects to capture complex
 dependencies and latent heterogeneity.
 In our comparison, we include the corresponding special cases of these models that
@@ -188,7 +187,7 @@ MODELS <- c("zanidm_reg", "ml_bart", "mln_bart", "zanim_bart", "zanim_ln_bart")
 
 We then fit the models by running the code below. This process takes time and because
 we are retaining the posterior draws (since `keep_draws = TRUE`), it requires to have
-at least 2GB (using the above settings) of free space in memory RAM.
+at least 2GB (using the above settings, and this comparatively large data set) of free space in RAM.
 ```{r fitting, eval=FALSE}
 list_models <- lapply(MODELS, function(m) {
   zanicc(Y = Y, X_count = X, X_zi = X, model = m, ndpost = NDPOST, nskip = NSKIP,
@@ -209,19 +208,19 @@ r_outputs[[1L]]
 ```
 
 Each of these R6 classes have different public fields, which keep various information 
-of the data, model and posterior samples. See the help page of the R6 classes for a
+of the data, model, and posterior samples. See the help page of the R6 classes for a
 list of all fields.
-In general, when `keep_draws=TRUE` several information regarding posterior draws and
+In general, when `keep_draws=TRUE` several pieces of information regarding posterior draws and
 diagnostics statistics are stored in the R6 object.
 The important fields containing the posterior samples for the model parameter
 are `draws_theta` for the population-count probabilities, 
 `draws_zeta` for the population-level structural 
 zero probabilities, and `draws_abundance` for the individual-level count probabilities.
 
-For the BART-based model some diagnostics statistics of the category-specific 
+For the BART-based model, some diagnostic statistics of the category-specific 
 regression trees are also available. 
-In particular, the acceptance rate of the Metropolis-Hastings proposals, 
-grow, prune and change, are kept in `accept_rate_theta` (or `accept_rate`)
+In particular, the acceptance rate of the Metropolis-Hastings proposals 
+(grow, prune, and change) are kept in `accept_rate_theta`
 and `accept_rate_zeta`.
 For instance, the category-specific acceptance rate of the MH proposals associated 
 to the compositional components of the ZANIM-LN-BART model are:
@@ -236,8 +235,8 @@ r_outputs[[2L]]
 ```
 
 The average number of leaves across the posterior draws are given in
-`avg_leaves_theta` (or `avg_leaves`) and `avg_leaves_zeta`.
-For instance, the code above shows average number of leaves for each pollen taxa
+`avg_leaves_theta` and `avg_leaves_zeta`.
+For instance, the code above shows the average number of leaves for each pollen taxa
 across the `ntrees_theta=20` regression trees under the ZANIM-LN-BART model.
 ```{r avg-leaves, eval=FALSE}
 dim(list_models$zanim_ln_bart$avg_leaves_theta)
@@ -250,16 +249,16 @@ leaves
 r_outputs[[3L]]
 ```
 
-Finally, posterior statistics for variable importance (selection) metrics for
+Finally, posterior statistics for variable importance (selection) metrics for the
 BART-based models are stored in 
-`varcount_theta` (or `varcount`) and `varcount_zeta`, which gives the
+`varcount_theta` and `varcount_zeta`, which gives the
 total count of the number of times that variable is used in a tree decision rule
-over all trees.
+over all corresponding trees.
 In addition, the marginal probability of inclusion for the category-specific 
-covariates associated to compositional (`mppi_theta` or `mppi`) and
-structural zero (`mppi_zeta`) components.
-For instance, the code above shows the variable importance metrics
-under the ZANIM-LN-BART model for each covariate across all the $d=28$ pollen taxa.
+covariates associated to the compositional (`mppi_theta` or `mppi`) and
+structural zero (`mppi_zeta`) components are also provided.
+For instance, the code below shows the variable importance metrics
+under the ZANIM-LN-BART model for each covariate across all $d=28$ pollen taxa.
 ```{r var-imp, eval=FALSE}
 var_imp <- apply(list_models$zanim_ln_bart$varcount_theta, c(1, 2), mean)
 rownames(var_imp) <- colnames(X)
@@ -273,9 +272,9 @@ r_outputs[[4L]]
 
 
 Effectively, we can see that the three covariates are important across all the taxa,
-although some covariates are more important for given taxa, for instance,
+although some covariates are more important for particular taxa; for instance,
 GDD5 and MTCO are more important than AET/PET in explaining the compositional counts
-of _Picea_.
+of the _Picea_ taxon.
 
 Another interesting information to inspect is the elapsed time of the MCMC algorithm
 of each model. This is given in the `elapsed_time` field:
@@ -291,10 +290,10 @@ r_outputs[[5L]]
 We can see that the runtime to each fit model took less than a minute, 
 considering $2000$ iterations for their MCMC algorithm, and 
 `ntrees_theta=ntrees_zeta=20` for the
-BART-based models
+BART-based models.
 Since the number of regression trees are $20$ for the category-specific BART priors,
 the BART-based models (`ml_bart`, `mln_bart`, `zanim_bart`, `zanim_ln_bart`)
-have faster MCMC runtime than the `zanidm_reg` model.
+have faster MCMC runtimes than the `zanidm_reg` model.
 
 
 ## Posterior predictive checks
@@ -305,20 +304,20 @@ The basic idea is to compare features of the observed data with a reference
 distribution, that is, the posterior predictive distribution implied by the model.
 
 Let $y^{\mathrm{obs}}$ denote the observed data, and assume a model with
-density function $f(\cdot \mid \theta)$ parametrised by $\theta$.
-The posterior predictive distribution of is defined as
+density function $f(\cdot \mid \theta)$ parameterised by $\theta$.
+The posterior predictive distribution is defined as
 $$
-p(y^{\mathrm{rep}} \mid y^{\mathrm{obs}}) = \int f(y^{\mathrm{rep}} \mid \theta) p(\theta \mid y^{\mathrm{obs}}) \mathrm{d}\theta
+p(y^{\mathrm{rep}} \mid y^{\mathrm{obs}}) = \int f(y^{\mathrm{rep}} \mid \theta) p(\theta \mid y^{\mathrm{obs}}) \mathrm{d}\theta,
 $$
 where $y^{\mathrm{rep}}$ denotes the replicated data, and $p(\theta \mid y^{\mathrm{obs}})$ is the
 posterior distribution of the model parameter $\theta$.
 
 For the count-compositional models implemented in `zanicc`, the posterior predictive
 distribution is not available in closed form.
-Therefore, Monte Carlo simulation are used to generated the posterior
+Therefore, Monte Carlo simulation is used to generated the posterior
 predictive distribution given the posterior draws of the model's parameters.
 
-To perform a PPC, we select a diagnostic statistics, $d(\cdot)$ and compare its
+To perform a PPC, we select a diagnostic statistic, $d(\cdot)$ and compare its
 observed value $d(y^{\mathrm{obs}})$, with its posterior predictive distribution
 $$
 p(d(y^{\mathrm{rep}}) \mid y^{\mathrm{obs}}).
@@ -351,8 +350,8 @@ distribution, and [plot_ppc()]() for plotting appropriate diagnostic statistics
 comparing the observed data, $y^{\mathrm{obs}}$ to the reference
 (posterior predictive) distribution.
 In fact, each of the R6 classes of the count-compositional models implemented in `zanicc`
-have their specific S3 `ppd` method. 
-The code below computes the posterior predictive distribution for all the models
+have their own specific S3 `ppd` method. 
+The code below computes the posterior predictive distribution for all models
 in `list_models`.
 
 ```{r ppd, eval=FALSE}
@@ -361,13 +360,12 @@ list_ppds <- lapply(list_models, ppd)
 
 The object `list_ppds` contains the the posterior predictive distribution for
 each model.
-The [plot_ppc()]() function displays four diagnostics statistics
+The [plot_ppc()]() function simultaneously displays four diagnostic statistics
 that capture different aspects of count-compositional data:
 - multiple dispersion index (MDI): summarises the overdispersion across the taxa.
 - average compositional entropy: measures the average diversity of the observed composition.
 - proportion of zeros: measures the overall proportion of zero counts.
-- multivariate zero-inflated index: assesses zero inflation in multinomial data.
-for multinomial data.
+- multivariate zero-inflation index: assesses zero-inflation in multinomial data.
 For further details on these statistics, see [Menezes et al. (2026)](https://arxiv.org/abs/2601.08067v2).
 
 ```{r plot-ppcs, eval=FALSE}
@@ -409,23 +407,21 @@ knitr::include_graphics("./ppc_hellinger.png")
 
 In general, assessing convergence for multivariate models is cumbersome, 
 because of the large number of parameters. 
-These difficulties are even more pronounced for the BART-based models, which have
-are nonparametric models with large number of parameters.
+These difficulties are even more pronounced for the BART-based models.
 To overcome this problem, we adapt traditional MCMC diagnostics to our case using the
 Frobenius norm between the empirical compositions, $y_{ij}/N_i$, and the
 corresponding model-based predictions given by the posterior draws of the
 individual-level count-probabilities, $\vartheta^{(t)}_{ij}$, where
 the superscript $(t)$ refers to the iteration index. 
 This quantity is defined by
-\begin{equation}
+$$
 \operatorname{FROB}\left(\vartheta^{(t)}\right) = \sqrt{\sum_{i=1}^n\sum_{j=1}^d \left(y_{ij}/N_i - \vartheta^{(t)}_{ij} \right)^2},
 \quad t\in\{1,\ldots,R\},
-\end{equation}
-and can be assessed in the field `draws_abundance` of the R6 class of each model, except
-that for the ML-BART model, which which incorporates neither observation-specific
+$$
+and can be accessed in the field `draws_abundance` of the R6 class of each model. The ML-BART model is an exception in this regard, as it incorporates neither observation-specific
 random effects nor structural zero probabilities. In such cases,
-$\smash{\theta^{(t)}_{ij}}$ is used in place of $\smash{\vartheta^{(t)}_{ij}}$, which
-can be assessed in the field `draws_theta`.
+$\theta^{(t)}_{ij}$ is used in place of $\vartheta^{(t)}_{ij}$, which
+can be accessed in the field `draws_theta`.
 
 ```{r frob-convergence, eval=FALSE}
 frobs <- compute_frob_chain(reference_values = Y_rel,
@@ -463,9 +459,9 @@ zanim_ln_bart <- zanicc(Y = Y, X_count = X, X_zi = X, model = "zanim_ln_bart",
                         forests_dir = dir_forests)
 ```
 
-The directory contains several .bin files storing the category-specific regression 
+The directory contains several `.bin` files storing the category-specific regression 
 tree ensembles for the compositional components (`forests_theta_j.bin`) and the 
-structural zero components (`forests_zeta_j.bin`). For the ZANIM-LN-BART model,
+structural zero components (`forests_zeta_j.bin`) in a raw, lightweight binary format. For the ZANIM-LN-BART model,
 the posterior draws of the random-effects covariance matrix are also saved
 through its Cholesky decomposition (`chol_Sigma_V.bin`).
 
@@ -530,7 +526,7 @@ data_summaries_zeta$taxa <- pollen_names[data_summaries_zeta$category]
 Finally, we can plot the predicted compositional and structural zero probabilities
 for different taxa across pairs of covariates.
 For example, the following plots show the posterior median compositional and
-structural zero probabilities for Picea as functions of GDD5 and MTCO.
+structural zero probabilities for the _Picea_ taxon as functions of GDD5 and MTCO.
 
 ```{r plot-predictions, eval=FALSE}
 data_theta_picea <- data_summaries_theta[data_summaries_theta$taxa == "Picea", ] 
@@ -569,10 +565,10 @@ cowplot::plot_grid(p_theta, p_zeta, ncol = 2)
 knitr::include_graphics("./predictions.png")
 ```
 
-The inferential results suggest that structural zeros for Picea are more likely
+The inferential results suggest that structural zeros for _Picea_ are more likely
 in warmer climates, where both GDD5 and MTCO are high.
-In contrast, the highest predicted abundance of Picea occurs in colder climates,
-particularly when GDD5 is around 1,000.
+In contrast, the highest predicted abundance of _Picea_ occurs in colder climates,
+particularly when GDD5 is around 1000.
 
 
 # References
@@ -583,5 +579,3 @@ compositional count data. _Biometrics_ **79(4)**, 3239–3251.
 Menezes, A. F. B., Parnell, A. C. and Murphy, K. (2026), Bayesian nonparametric models for zero-inflated count-compositional data using ensembles of regression trees. _arXiv preprint_, **arXiv:2601.08067** <https://arxiv.org/abs/2601.08067v2>.
 
 Murray, J. S. (2021), Log-linear Bayesian additive regression trees for  multinomial logistic and count regression models. _Journal of the American Statistical Association_, **116(534)**, 756--769.
-
-

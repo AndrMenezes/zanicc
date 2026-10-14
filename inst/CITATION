@@ -1,0 +1,56 @@
+citHeader("To cite the 'zanicc' package in publications, please use:")
+
+bibentry(
+  bibtype = "Unpublished",
+  author  = c(person(given=c("André", "F. B."), family="Menezes"),
+              person(given=c("Andrew", "C."), family="Parnell"),
+              person(given=c("Keefe"), family="Murphy")),
+  title   = "Bayesian nonparametric models for zero-inflated count-compositional data using ensembles of regression trees",
+  year    = "2026",
+  note    = "arXiv preprint",
+  url     = "https://arxiv.org/abs/2601.08067",
+
+  textVersion  =
+    paste0("André F. B. Menezes, Andrew C. Parnell, and Keefe Murphy (2026). ",
+           "Bayesian nonparametric models for zero-inflated count-compositional data using ensembles of regression trees. ",
+           "arXiv preprint. ",
+           "URL: https://arxiv.org/abs/2601.08067. ")
+)
+
+bibentry(
+  bibtype = "Unpublished",
+  author  = c(person(given=c("André", "F. B."), family="Menezes"),
+              person(given=c("Andrew", "C."), family="Parnell"),
+              person(given=c("Brian"), family="Huntley"),
+              person(given=c("Keefe"), family="Murphy")),
+  title   = "Bayesian palaeoclimate reconstruction from zero-inflated count-compositional pollen data: {A} case study of Lago Grande di Monticchio in southern Italy",
+  year    = "2026",
+  note    = "arXiv preprint",
+  url     = "https://arxiv.org/abs/2609.08866",
+
+  textVersion  =
+    paste0("André F. B. Menezes, Andrew C. Parnell, Brian Huntley, and Keefe Murphy (2026). ",
+           "Bayesian palaeoclimate reconstruction from zero-inflated count-compositional pollen data: A case study of Lago Grande di Monticchio in southern Italy. ",
+           "arXiv preprint. ",
+           "URL: https://arxiv.org/abs/2609.08866.")
+)
+
+year     <- ifelse(!is.null(meta$Date), sub(".*(2[[:digit:]]{3})-.*", "\\1", meta$Date), format(Sys.Date(), "%Y"))
+vers     <- paste0("package version ", meta$Version)
+auth     <- utils::as.person(meta$Author)
+
+bibentry(
+  bibtype = "Manual",
+  author  = "André F. B. Menezes and Keefe Murphy",
+  title   = "\\texttt{\\textup{zanicc}}: {B}ayesian nonparametric models for zero-inflated count-compositional
+    data",
+  year    = year,
+  note    = paste0("\\textsf{R} ", vers),
+  url     = "https://cran.r-project.org/package=zanicc",
+
+  textVersion  =
+    paste0("André F. B. Menezes and Keefe Murphy (", year, "). ",
+           "zanicc: Bayesian nonparametric models for zero-inflated count-compositional data. ", 
+           "R ", vers, 
+           ". URL: https://cran.r-project.org/package=zanicc.")
+)
