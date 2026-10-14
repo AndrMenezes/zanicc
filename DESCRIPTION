@@ -1,5 +1,5 @@
 Package: zanicc
-Title: Bayesian nonparametric models for zero-inflated count-compositional
+Title: Bayesian nonparametric regression models for zero-inflated count-compositional
     data
 Version: 0.0.2
 Authors@R: c(
