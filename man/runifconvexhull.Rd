@@ -42,6 +42,8 @@ coordinates using the vertices of the selected simplex.
 }
 }
 \examples{
+
+\dontrun{
 data(pollen_climate, package = "zanicc")
 X <- pollen_climate$X[, c("gdd5", "mtco", "aet.pet")]
 X_ch <- runifconvexhull(n = 2000L, X = unique(X))
@@ -53,5 +55,6 @@ points(X[, 1], X[, 3])
 plot(X_ch[, 2], X_ch[, 3], pch = 4, col = "red")
 points(X[, 2], X[, 3])
 graphics.off()
+}
 
 }

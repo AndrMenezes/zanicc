@@ -31,3 +31,6 @@
 
 # Exclude development subfolder
 # dev/
+inst/doc
+/doc/
+/Meta/

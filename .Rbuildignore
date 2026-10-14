@@ -6,3 +6,13 @@
 ^inst$
 ^tests$
 ^data-raw$
+^doc$
+^Meta$
+^/vignettes/forests/
+^/vignettes/data_summaries.rds
+^/vignettes/fitted_models.rds
+^/vignettes/ppd_models.rds
+^/vignettes/zanim_ln_bart.rds
+^/vignettes/theta_ij.bin
+^/vignettes/zeta_ij.bin
+

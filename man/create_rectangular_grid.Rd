@@ -29,6 +29,7 @@ Then, filters each point in this grid by checking whether
 at least one observed value of \code{X} is inside the grid.
 }
 \examples{
+\dontrun{
 data(pollen_climate, package = "zanicc")
 X <- pollen_climate$X[, c("gdd5", "mtco", "aet.pet")]
 X_grid <- create_rectangular_grid(X = unique(X))
@@ -41,5 +42,5 @@ points(X_grid[, "gdd5"], X_grid[, "aet.pet"], col = "red", pch = 4)
 plot(X[, "aet.pet"], X[, "mtco"], main = "MTCO vs AET.PET")
 points(X_grid[, "aet.pet"], X_grid[, "mtco"], col = "red", pch = 19)
 graphics.off()
-
+}
 }

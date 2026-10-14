@@ -236,6 +236,7 @@ summarise_draws.array <- function(x, prob = 0.05) {
 #' at least one observed value of `X` is inside the grid.
 #'
 #' @examples
+#' \dontrun{
 #' data(pollen_climate, package = "zanicc")
 #' X <- pollen_climate$X[, c("gdd5", "mtco", "aet.pet")]
 #' X_grid <- create_rectangular_grid(X = unique(X))
@@ -248,7 +249,7 @@ summarise_draws.array <- function(x, prob = 0.05) {
 #' plot(X[, "aet.pet"], X[, "mtco"], main = "MTCO vs AET.PET")
 #' points(X_grid[, "aet.pet"], X_grid[, "mtco"], col = "red", pch = 19)
 #' graphics.off()
-#'
+#' }
 #' @return A matrix containing a rectangular grid around the observed input `X`.
 #'
 #' @export
