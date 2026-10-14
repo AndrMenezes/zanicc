@@ -61,7 +61,7 @@ trees through appropriate Bayesian additive regression trees (BART) priors,
 while the parametric models assume parametric linear functional forms for relating 
 the covariates to the parameters of the model.
 
-The following model are available through their corresponding `R6` class:
+The following models are available through their corresponding `R6` class:
 
 - [`MultinomialBART`](): Multinomial logistic BART (ML-BART).
 - [`MultinomialLNBART`](): Multinomial logistic-normal BART (MLN-BART).
@@ -99,7 +99,7 @@ To install the latest development version of the package, you can type:
 remotes::install_github("AndrMenezes/zanicc")
 ```
 
-After that, you can load the package as
+After that, you can load the package as:
 ```{r load-pkg, eval=FALSE}
 library(zanicc)
 ```
@@ -131,7 +131,8 @@ data(pollen_climate, package = "zanicc")
 str(pollen_climate)
 ```
 
-In the subsequent demonstrations, we use a subset of size $1000$ of the pollen-climate data, as follows
+In the subsequent demonstrations, we use a subset of size $1000$ of the 
+pollen-climate data.
 ```{r subset}
 set.seed(1212)
 n_sample <- 1000L
@@ -143,8 +144,11 @@ Y_rel <- sweep(x = Y, MARGIN = 1, STATS = n_trials, FUN = "/")
 pollen_names <- colnames(Y)
 ```
 
-For the a detailed analysis of this data set, we refer to 
-[Menezes et al. (2026)](https://arxiv.org/abs/2601.08067v2).
+For a detailed analysis of this data set, we refer to
+[Menezes et al. (2026)](https://arxiv.org/abs/2601.08067v2), and the accompanying
+Github repository
+[AndrMenezes/reproduce__zanim_ln_bart](https://github.com/AndrMenezes/reproduce__zanim_ln_bart/),
+which contains scripts to reproduce all analyses and simulations in the paper.
 
 ## Fitting the models
 
@@ -287,7 +291,7 @@ r_outputs[[5L]]
 ```
 
 
-We can see that the runtime to each fit model took less than a minute, 
+We can see that the runtime to fit each model took less than a minute, 
 considering $2000$ iterations for their MCMC algorithm, and 
 `ntrees_theta=ntrees_zeta=20` for the
 BART-based models.
@@ -362,10 +366,12 @@ The object `list_ppds` contains the the posterior predictive distribution for
 each model.
 The [plot_ppc()]() function simultaneously displays four diagnostic statistics
 that capture different aspects of count-compositional data:
+
 - multiple dispersion index (MDI): summarises the overdispersion across the taxa.
 - average compositional entropy: measures the average diversity of the observed composition.
 - proportion of zeros: measures the overall proportion of zero counts.
 - multivariate zero-inflation index: assesses zero-inflation in multinomial data.
+
 For further details on these statistics, see [Menezes et al. (2026)](https://arxiv.org/abs/2601.08067v2).
 
 ```{r plot-ppcs, eval=FALSE}
@@ -416,9 +422,12 @@ the superscript $(t)$ refers to the iteration index.
 This quantity is defined by
 $$
 \operatorname{FROB}\left(\vartheta^{(t)}\right) = \sqrt{\sum_{i=1}^n\sum_{j=1}^d \left(y_{ij}/N_i - \vartheta^{(t)}_{ij} \right)^2},
-\quad t\in\{1,\ldots,R\},
+\quad t\in\{1,\ldots,R\}.
 $$
-and can be accessed in the field `draws_abundance` of the R6 class of each model. The ML-BART model is an exception in this regard, as it incorporates neither observation-specific
+
+The individual-level count-probabilities, $\vartheta^{(t)}_{ij}$ can be accessed in
+the field `draws_abundance` of the R6 class of each model.
+The ML-BART model is an exception in this regard, as it incorporates neither observation-specific
 random effects nor structural zero probabilities. In such cases,
 $\theta^{(t)}_{ij}$ is used in place of $\vartheta^{(t)}_{ij}$, which
 can be accessed in the field `draws_theta`.
