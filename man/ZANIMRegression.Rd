@@ -34,94 +34,95 @@ Murray, I., Adams, R. and MacKay, D. (2010), Elliptical slice sampling, in Y. W.
 \strong{Vol. 9 of Proceedings of Machine Learning Research, PMLR}, Chia Laguna Resort, Sardinia, Italy, pp. 541--548.
 }
 \section{Public fields}{
-\if{html}{\out{<div class="r6-fields">}}
-\describe{
-\item{\code{cpp_obj}}{Internal reference to the underlying \verb{C++} model object.}
+  \if{html}{\out{<div class="r6-fields">}}
+  \describe{
+    \item{\code{cpp_obj}}{Internal reference to the underlying \verb{C++} model object.}
 
-\item{\code{cpp_module_name}}{Internal name of the \code{Rcpp} module used by the model.}
+    \item{\code{cpp_module_name}}{Internal name of the \code{Rcpp} module used by the model.}
 
-\item{\code{n_trials}}{Sample-specific total counts (number of trials), calculated as \code{rowSums(Y)}.}
+    \item{\code{n_trials}}{Sample-specific total counts (number of trials), calculated as \code{rowSums(Y)}.}
 
-\item{\code{n}}{Number of samples.}
+    \item{\code{n}}{Number of samples.}
 
-\item{\code{d}}{Number of categories.}
+    \item{\code{d}}{Number of categories.}
 
-\item{\code{p_theta}}{Number of covariates associated to the compositional components.}
+    \item{\code{p_theta}}{Number of covariates associated to the compositional components.}
 
-\item{\code{p_zeta}}{Number of covariates associated to the structural zero components.}
+    \item{\code{p_zeta}}{Number of covariates associated to the structural zero components.}
 
-\item{\code{ndpost}}{Number of posterior MCMC draws to retain.}
+    \item{\code{ndpost}}{Number of posterior MCMC draws to retain.}
 
-\item{\code{nskip}}{Number of MCMC draws to discard as burn-in before retaining
+    \item{\code{nskip}}{Number of MCMC draws to discard as burn-in before retaining
 posterior draws.}
 
-\item{\code{nthin}}{Number of MCMC draws to discard as thinning before retaining
+    \item{\code{nthin}}{Number of MCMC draws to discard as thinning before retaining
 posterior draws.}
 
-\item{\code{draws_theta}}{Posterior draws of the population-level count probabilities.}
+    \item{\code{draws_theta}}{Posterior draws of the population-level count probabilities.}
 
-\item{\code{draws_zeta}}{Posterior draws of the population-level structural zero probabilities.}
+    \item{\code{draws_zeta}}{Posterior draws of the population-level structural zero probabilities.}
 
-\item{\code{draws_abundance}}{Posterior draws of the individual-level count probabilities.}
+    \item{\code{draws_abundance}}{Posterior draws of the individual-level count probabilities.}
 
-\item{\code{draws_betas_theta}}{Posterior draws of the category-specific regression
+    \item{\code{draws_betas_theta}}{Posterior draws of the category-specific regression
 coefficients associated with the compositional probabilities.}
 
-\item{\code{draws_betas_zeta}}{Posterior draws of the category-specific regression
+    \item{\code{draws_betas_zeta}}{Posterior draws of the category-specific regression
 coefficients associated with the structural zero probabilities.}
 
-\item{\code{elapsed_time}}{Elapsed time taken to run the MCMC algorithm.}
+    \item{\code{elapsed_time}}{Elapsed time taken to run the MCMC algorithm.}
 
-\item{\code{keep_draws}}{Logical indicating whether posterior draws of the
+    \item{\code{keep_draws}}{Logical indicating whether posterior draws of the
 population-level compositional and structural probabilities were retained.}
 
-\item{\code{keep_draws_coef}}{Logical indicating whether posterior draws of the
+    \item{\code{keep_draws_coef}}{Logical indicating whether posterior draws of the
 regression coefficients were retained.}
-}
-\if{html}{\out{</div>}}
+  }
+  \if{html}{\out{</div>}}
 }
 \section{Methods}{
 \subsection{Public methods}{
-\itemize{
-\item \href{#method-ZANIMRegression-new}{\code{ZANIMRegression$new()}}
-\item \href{#method-ZANIMRegression-SetupMCMC}{\code{ZANIMRegression$SetupMCMC()}}
-\item \href{#method-ZANIMRegression-RunMCMC}{\code{ZANIMRegression$RunMCMC()}}
-\item \href{#method-ZANIMRegression-PosteriorMeanCoef}{\code{ZANIMRegression$PosteriorMeanCoef()}}
-}
+  \itemize{
+    \item \href{#method-ZANIMRegression-initialize}{\code{ZANIMRegression$new()}}
+    \item \href{#method-ZANIMRegression-SetupMCMC}{\code{ZANIMRegression$SetupMCMC()}}
+    \item \href{#method-ZANIMRegression-RunMCMC}{\code{ZANIMRegression$RunMCMC()}}
+    \item \href{#method-ZANIMRegression-PosteriorMeanCoef}{\code{ZANIMRegression$PosteriorMeanCoef()}}
+  }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-ZANIMRegression-new"></a>}}
-\if{latex}{\out{\hypertarget{method-ZANIMRegression-new}{}}}
-\subsection{Method \code{new()}}{
-Creates a new \code{ZANIMRegression} object.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ZANIMRegression$new(Y, X_theta, X_zeta)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{Y}}{A matrix of multivariate count-compositional data.
+\if{html}{\out{<a id="method-ZANIMRegression-initialize"></a>}}
+\if{latex}{\out{\hypertarget{method-ZANIMRegression-initialize}{}}}
+\subsection{\code{ZANIMRegression$new()}}{
+  Creates a new \code{ZANIMRegression} object.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{ZANIMRegression$new(Y, X_theta, X_zeta)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{Y}}{A matrix of multivariate count-compositional data.
 Rows correspond to observations and columns correspond to categories.}
-
-\item{\code{X_theta}}{A matrix of covariates used to model the count probabilities.
+      \item{\code{X_theta}}{A matrix of covariates used to model the count probabilities.
 Rows must correspond to the observations in \code{Y}.}
-
-\item{\code{X_zeta}}{A matrix of covariates used to model the structural zero probabilities.
+      \item{\code{X_zeta}}{A matrix of covariates used to model the structural zero probabilities.
 Rows must correspond to the observations in \code{Y}.}
+    }
+    \if{html}{\out{</div>}}
+  }
 }
-\if{html}{\out{</div>}}
-}
-}
+
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-ZANIMRegression-SetupMCMC"></a>}}
 \if{latex}{\out{\hypertarget{method-ZANIMRegression-SetupMCMC}{}}}
-\subsection{Method \code{SetupMCMC()}}{
-Configures priors and hyperparameters of the ZANIM-reg model
+\subsection{\code{ZANIMRegression$SetupMCMC()}}{
+  Configures priors and hyperparameters of the ZANIM-reg model
 used by the underlying MCMC algorithm implemented in \verb{C++}.
 This method must be called before \href{#method-ZANIMRegression-RunMCMC}{\code{ZANIMRegression$RunMCMC()}}.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ZANIMRegression$SetupMCMC(
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{ZANIMRegression$SetupMCMC(
   sd_prior_beta_theta = rep(1, self$p_theta),
   S_prior_beta_zeta = diag(1, self$p_zeta),
   ndpost = 5000L,
@@ -129,67 +130,66 @@ This method must be called before \href{#method-ZANIMRegression-RunMCMC}{\code{Z
   nthin = 1L,
   keep_draws = TRUE,
   keep_draws_coef = TRUE
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{sd_prior_beta_theta}}{Numeric vector of length \code{p_theta} with the
+)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{sd_prior_beta_theta}}{Numeric vector of length \code{p_theta} with the
 prior standard deviation for the regression coefficients associated with \code{X_theta}.}
-
-\item{\code{S_prior_beta_zeta}}{A matrix \code{p_zeta} by \code{p_zeta} with the prior
+      \item{\code{S_prior_beta_zeta}}{A matrix \code{p_zeta} by \code{p_zeta} with the prior
 covariance matrix for the regression coefficients associated with \code{X_zeta}.
 Default is the identity matrix.}
-
-\item{\code{ndpost}}{Number of posterior MCMC draws to retain. The default is \code{ndpost=5000}.}
-
-\item{\code{nskip}}{Number of MCMC iterations to discard as burn-in before retaining
+      \item{\code{ndpost}}{Number of posterior MCMC draws to retain. The default is \code{ndpost=5000}.}
+      \item{\code{nskip}}{Number of MCMC iterations to discard as burn-in before retaining
 posterior draws. The default is \code{nskip=5000}.}
-
-\item{\code{nthin}}{Currently not used.}
-
-\item{\code{keep_draws}}{Whether to keep the draws with the subject-specific predictions
+      \item{\code{nthin}}{Currently not used.}
+      \item{\code{keep_draws}}{Whether to keep the draws with the subject-specific predictions
 for the population-level count probabilities and structural zero probabilities,
 as well as the individual-level count probabilities. Default is \code{TRUE}.}
+      \item{\code{keep_draws_coef}}{Whether to keep the draws of the regression coefficients. Default is \code{TRUE}.}
+    }
+    \if{html}{\out{</div>}}
+  }
+}
 
-\item{\code{keep_draws_coef}}{Whether to keep the draws of the regression coefficients. Default is \code{TRUE}.}
-}
-\if{html}{\out{</div>}}
-}
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-ZANIMRegression-RunMCMC"></a>}}
 \if{latex}{\out{\hypertarget{method-ZANIMRegression-RunMCMC}{}}}
-\subsection{Method \code{RunMCMC()}}{
-Runs the MCMC sampler using the settings previously configured with
+\subsection{\code{ZANIMRegression$RunMCMC()}}{
+  Runs the MCMC sampler using the settings previously configured with
 \href{#method-ZANIMRegression-SetupMCMC}{\code{ZANIMRegression$SetupMCMC()}}.
 Posterior draws of the parameters are then transferred from the underlying \verb{C++}
 object to the \code{ZANIMRegression} object.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ZANIMRegression$RunMCMC()}\if{html}{\out{</div>}}
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{ZANIMRegression$RunMCMC()}
+    \if{html}{\out{</div>}}
+  }
 }
 
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-ZANIMRegression-PosteriorMeanCoef"></a>}}
 \if{latex}{\out{\hypertarget{method-ZANIMRegression-PosteriorMeanCoef}{}}}
-\subsection{Method \code{PosteriorMeanCoef()}}{
-Compute the posterior mean of the regression coefficients.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ZANIMRegression$PosteriorMeanCoef(parameter = c("theta", "zeta"))}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{parameter}}{Character string indicating which posterior mean of
+\subsection{\code{ZANIMRegression$PosteriorMeanCoef()}}{
+  Compute the posterior mean of the regression coefficients.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{ZANIMRegression$PosteriorMeanCoef(parameter = c("theta", "zeta"))}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{parameter}}{Character string indicating which posterior mean of
 regression coefficients to compute. If \code{parameter="theta"}, then returns posterior
 mean for the regression coefficients associated to the compositional probabilities.
 Otherwise, if \code{parameter="zeta"} the return the posterior mean for the regression
 coefficients associated to the structural zero probabilities.}
+    }
+    \if{html}{\out{</div>}}
+  }
 }
-\if{html}{\out{</div>}}
-}
-}
+
 }

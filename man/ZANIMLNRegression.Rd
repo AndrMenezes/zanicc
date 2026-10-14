@@ -36,103 +36,104 @@ Murray, I., Adams, R. and MacKay, D. (2010), Elliptical slice sampling, in Y. W.
 \strong{Vol. 9 of Proceedings of Machine Learning Research, PMLR}, Chia Laguna Resort, Sardinia, Italy, pp. 541--548.
 }
 \section{Public fields}{
-\if{html}{\out{<div class="r6-fields">}}
-\describe{
-\item{\code{cpp_obj}}{Internal reference to the underlying \verb{C++} model object.}
+  \if{html}{\out{<div class="r6-fields">}}
+  \describe{
+    \item{\code{cpp_obj}}{Internal reference to the underlying \verb{C++} model object.}
 
-\item{\code{cpp_module_name}}{Internal name of the \code{Rcpp} module used by the model.}
+    \item{\code{cpp_module_name}}{Internal name of the \code{Rcpp} module used by the model.}
 
-\item{\code{n_trials}}{Sample-specific total counts (number of trials), calculated as \code{rowSums(Y)}.}
+    \item{\code{n_trials}}{Sample-specific total counts (number of trials), calculated as \code{rowSums(Y)}.}
 
-\item{\code{n}}{Number of samples.}
+    \item{\code{n}}{Number of samples.}
 
-\item{\code{d}}{Number of categories.}
+    \item{\code{d}}{Number of categories.}
 
-\item{\code{p_theta}}{Number of covariates associated to the compositional components.}
+    \item{\code{p_theta}}{Number of covariates associated to the compositional components.}
 
-\item{\code{p_zeta}}{Number of covariates associated to the structural zero components.}
+    \item{\code{p_zeta}}{Number of covariates associated to the structural zero components.}
 
-\item{\code{ndpost}}{Number of posterior MCMC draws to retain.}
+    \item{\code{ndpost}}{Number of posterior MCMC draws to retain.}
 
-\item{\code{nskip}}{Number of MCMC draws to discard as burn-in before retaining
+    \item{\code{nskip}}{Number of MCMC draws to discard as burn-in before retaining
 posterior draws.}
 
-\item{\code{nthin}}{Number of MCMC draws to discard as thinning before retaining
+    \item{\code{nthin}}{Number of MCMC draws to discard as thinning before retaining
 posterior draws.}
 
-\item{\code{covariance_type}}{Character string with the prior used for the covariance
+    \item{\code{covariance_type}}{Character string with the prior used for the covariance
 matrix for the logistic-normal random effects.}
 
-\item{\code{Bt}}{Transpose of the orthogonal matrix for the sum-to-zero constraint
+    \item{\code{Bt}}{Transpose of the orthogonal matrix for the sum-to-zero constraint
 in the logistic random effects.}
 
-\item{\code{draws_theta}}{Posterior draws of the population-level count probabilities.}
+    \item{\code{draws_theta}}{Posterior draws of the population-level count probabilities.}
 
-\item{\code{draws_zeta}}{Posterior draws of the population-level structural zero probabilities.}
+    \item{\code{draws_zeta}}{Posterior draws of the population-level structural zero probabilities.}
 
-\item{\code{draws_abundance}}{Posterior draws of the individual-level count probabilities.}
+    \item{\code{draws_abundance}}{Posterior draws of the individual-level count probabilities.}
 
-\item{\code{draws_betas_theta}}{Posterior draws of the category-specific regression
+    \item{\code{draws_betas_theta}}{Posterior draws of the category-specific regression
 coefficients associated with the compositional probabilities.}
 
-\item{\code{draws_betas_zeta}}{Posterior draws of the category-specific regression
+    \item{\code{draws_betas_zeta}}{Posterior draws of the category-specific regression
 coefficients associated with the structural zero probabilities.}
 
-\item{\code{draws_chol_Sigma_V}}{Posterior draws of the Cholesky decomposition of the
+    \item{\code{draws_chol_Sigma_V}}{Posterior draws of the Cholesky decomposition of the
 covariance matrix of the logistic-normal random effects.}
 
-\item{\code{elapsed_time}}{Elapsed time taken to run the MCMC algorithm.}
+    \item{\code{elapsed_time}}{Elapsed time taken to run the MCMC algorithm.}
 
-\item{\code{keep_draws}}{Logical indicating whether posterior draws of the
+    \item{\code{keep_draws}}{Logical indicating whether posterior draws of the
 population-level compositional and structural probabilities were retained.}
 
-\item{\code{keep_draws_coef}}{Logical indicating whether posterior draws of the
+    \item{\code{keep_draws_coef}}{Logical indicating whether posterior draws of the
 regression coefficients were retained.}
-}
-\if{html}{\out{</div>}}
+  }
+  \if{html}{\out{</div>}}
 }
 \section{Methods}{
 \subsection{Public methods}{
-\itemize{
-\item \href{#method-ZANIMLNRegression-new}{\code{ZANIMLNRegression$new()}}
-\item \href{#method-ZANIMLNRegression-SetupMCMC}{\code{ZANIMLNRegression$SetupMCMC()}}
-\item \href{#method-ZANIMLNRegression-RunMCMC}{\code{ZANIMLNRegression$RunMCMC()}}
-\item \href{#method-ZANIMLNRegression-PosteriorMeanCoef}{\code{ZANIMLNRegression$PosteriorMeanCoef()}}
-}
+  \itemize{
+    \item \href{#method-ZANIMLNRegression-initialize}{\code{ZANIMLNRegression$new()}}
+    \item \href{#method-ZANIMLNRegression-SetupMCMC}{\code{ZANIMLNRegression$SetupMCMC()}}
+    \item \href{#method-ZANIMLNRegression-RunMCMC}{\code{ZANIMLNRegression$RunMCMC()}}
+    \item \href{#method-ZANIMLNRegression-PosteriorMeanCoef}{\code{ZANIMLNRegression$PosteriorMeanCoef()}}
+  }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-ZANIMLNRegression-new"></a>}}
-\if{latex}{\out{\hypertarget{method-ZANIMLNRegression-new}{}}}
-\subsection{Method \code{new()}}{
-Creates a new \code{ZANIMLNRegression} object.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ZANIMLNRegression$new(Y, X_theta, X_zeta)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{Y}}{A matrix of multivariate count-compositional data.
+\if{html}{\out{<a id="method-ZANIMLNRegression-initialize"></a>}}
+\if{latex}{\out{\hypertarget{method-ZANIMLNRegression-initialize}{}}}
+\subsection{\code{ZANIMLNRegression$new()}}{
+  Creates a new \code{ZANIMLNRegression} object.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{ZANIMLNRegression$new(Y, X_theta, X_zeta)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{Y}}{A matrix of multivariate count-compositional data.
 Rows correspond to observations and columns correspond to categories.}
-
-\item{\code{X_theta}}{A matrix of covariates used to model the count probabilities.
+      \item{\code{X_theta}}{A matrix of covariates used to model the count probabilities.
 Rows must correspond to the observations in \code{Y}.}
-
-\item{\code{X_zeta}}{A matrix of covariates used to model the structural zero probabilities.
+      \item{\code{X_zeta}}{A matrix of covariates used to model the structural zero probabilities.
 Rows must correspond to the observations in \code{Y}.}
+    }
+    \if{html}{\out{</div>}}
+  }
 }
-\if{html}{\out{</div>}}
-}
-}
+
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-ZANIMLNRegression-SetupMCMC"></a>}}
 \if{latex}{\out{\hypertarget{method-ZANIMLNRegression-SetupMCMC}{}}}
-\subsection{Method \code{SetupMCMC()}}{
-Configures priors and hyperparameters of the ZANIM-LN-reg model
+\subsection{\code{ZANIMLNRegression$SetupMCMC()}}{
+  Configures priors and hyperparameters of the ZANIM-LN-reg model
 used by the underlying MCMC algorithm implemented in \verb{C++}.
 This method must be called before \href{#method-ZANIDMRegression-RunMCMC}{\code{ZANIDMRegression$RunMCMC()}}.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ZANIMLNRegression$SetupMCMC(
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{ZANIMLNRegression$SetupMCMC(
   sd_prior_beta_theta = rep(1, self$p_theta),
   S_prior_beta_zeta = diag(1, self$p_zeta),
   ndpost = 5000L,
@@ -152,105 +153,95 @@ This method must be called before \href{#method-ZANIDMRegression-RunMCMC}{\code{
   a2_gs = 3.1,
   keep_draws = TRUE,
   keep_draws_coef = TRUE
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{sd_prior_beta_theta}}{Numeric vector of length \code{p_alpha} with the
+)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{sd_prior_beta_theta}}{Numeric vector of length \code{p_alpha} with the
 prior standard deviation for the regression coefficients associated with \code{X_theta}.}
-
-\item{\code{S_prior_beta_zeta}}{A matrix \code{p_zeta} by \code{p_zeta} with the prior
+      \item{\code{S_prior_beta_zeta}}{A matrix \code{p_zeta} by \code{p_zeta} with the prior
 covariance matrix for the regression coefficients associated with \code{X_zeta}.
 Default is the identity matrix.}
-
-\item{\code{ndpost}}{Number of posterior MCMC draws to retain. The default is \code{ndpost=5000}.}
-
-\item{\code{nskip}}{Number of MCMC iterations to discard as burn-in before retaining
+      \item{\code{ndpost}}{Number of posterior MCMC draws to retain. The default is \code{ndpost=5000}.}
+      \item{\code{nskip}}{Number of MCMC iterations to discard as burn-in before retaining
 posterior draws. The default is \code{nskip=5000}.}
-
-\item{\code{nthin}}{Currently not used.}
-
-\item{\code{covariance_type}}{Character string specifying the prior on the covariance
+      \item{\code{nthin}}{Currently not used.}
+      \item{\code{covariance_type}}{Character string specifying the prior on the covariance
 matrix for the logistic-normal random effects. Default is \code{fa_mgp}, for nonparametric factor
 analysis with a multiplicative gamma process shrinkage prior. Other options include \code{fa} (factor analysis without such a prior),
 \code{diag} (for a diagonal covariance matrix with inverse-gamma priors), and \code{wishart} (for an inverse Wishart prior).}
-
-\item{\code{nu_prior}}{Degrees of freedom for the inverse-Wishart prior on the
+      \item{\code{nu_prior}}{Degrees of freedom for the inverse-Wishart prior on the
 covariance matrix of random effects, when \code{covariance_type="wishart"}.
 Default is number of categories, \code{self$d}.}
-
-\item{\code{Psi_prior}}{Prior scale matrix for the inverse-Wishart prior on the
+      \item{\code{Psi_prior}}{Prior scale matrix for the inverse-Wishart prior on the
 covariance matrix of random effects, when \code{covariance_type="wishart"}.
 Default is \eqn{\mathbf{I}_{d-1}d}, where \eqn{d} is the number of categories,
 \code{self$d}.}
-
-\item{\code{a_sigma, b_sigma}}{Shape and scale prior parameters for the independent
+      \item{\code{a_sigma, b_sigma}}{Shape and scale prior parameters for the independent
 gamma priors on the covariance matrix, i.e., when \code{covariance_type="diag"}.
 Default is \code{a_sigma=b_sigma=1.0}.}
-
-\item{\code{q_factors}}{Number of factors when the prior for the covariance matrix is
+      \item{\code{q_factors}}{Number of factors when the prior for the covariance matrix is
 has a factor-analytic representation, i.e., \code{covariance_type="fa"} or
 \code{covariance_type="fa_mgp"}. Default is the Ledermann bound of
 the dimension of the full covariance matrix.}
-
-\item{\code{sigma2_gamma}}{Scale (variance) hyperparameter of the normal prior on the
+      \item{\code{sigma2_gamma}}{Scale (variance) hyperparameter of the normal prior on the
 factor loadings, when \code{covariance_type="fa"}.}
-
-\item{\code{a_psi, b_psi}}{Shape and rate hyperparameters, respectively for the gamma
+      \item{\code{a_psi, b_psi}}{Shape and rate hyperparameters, respectively for the gamma
 prior on the residual precisions of the error term when \code{covariance_type="fa"}
 or \code{covariance_type="fa_mgp"}.}
-
-\item{\code{shape_lsphis}}{Shape hyperprameter of the gamma prior on local shrinkage
+      \item{\code{shape_lsphis}}{Shape hyperprameter of the gamma prior on local shrinkage
 parameters under the multiplicative gamma process (MGP) prior, i.e.,
 when \code{covariance_type="fa_mgp"}. Default is \code{shape_lsphis=3.0}.}
-
-\item{\code{a1_gs, a2_gs}}{Shaper hyperparameters for the gamma prior on the column-wise
+      \item{\code{a1_gs, a2_gs}}{Shaper hyperparameters for the gamma prior on the column-wise
 global shrinkage paraemters under the multiplicative gamma process (MGP) prior, i.e.,
 when \code{covariance_type="fa_mgp"}. Default values are \code{a1_gs=2.1} and \code{a2_gs=3.1}.}
-
-\item{\code{keep_draws}}{Whether to keep the draws with the subject-specific predictions
+      \item{\code{keep_draws}}{Whether to keep the draws with the subject-specific predictions
 for the population-level count probabilities and structural zero probabilities,
 as well as the individual-level count probabilities. Default is \code{TRUE}.}
+      \item{\code{keep_draws_coef}}{Whether to keep the draws of the regression coefficients. Default is \code{TRUE}.}
+    }
+    \if{html}{\out{</div>}}
+  }
+}
 
-\item{\code{keep_draws_coef}}{Whether to keep the draws of the regression coefficients. Default is \code{TRUE}.}
-}
-\if{html}{\out{</div>}}
-}
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-ZANIMLNRegression-RunMCMC"></a>}}
 \if{latex}{\out{\hypertarget{method-ZANIMLNRegression-RunMCMC}{}}}
-\subsection{Method \code{RunMCMC()}}{
-Runs the MCMC sampler using the settings previously configured with
+\subsection{\code{ZANIMLNRegression$RunMCMC()}}{
+  Runs the MCMC sampler using the settings previously configured with
 \href{#method-ZANIMLNRegression-SetupMCMC}{\code{ZANIMLNRegression$SetupMCMC()}}.
 Posterior draws of the parameters are then transferred from the underlying \verb{C++}
 object to the \code{ZANIMLNRegression} object.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ZANIMLNRegression$RunMCMC()}\if{html}{\out{</div>}}
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{ZANIMLNRegression$RunMCMC()}
+    \if{html}{\out{</div>}}
+  }
 }
 
-}
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-ZANIMLNRegression-PosteriorMeanCoef"></a>}}
 \if{latex}{\out{\hypertarget{method-ZANIMLNRegression-PosteriorMeanCoef}{}}}
-\subsection{Method \code{PosteriorMeanCoef()}}{
-Compute the posterior mean of the regression coefficients.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ZANIMLNRegression$PosteriorMeanCoef(parameter = c("theta", "zeta"))}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{parameter}}{Character string indicating which posterior mean of
+\subsection{\code{ZANIMLNRegression$PosteriorMeanCoef()}}{
+  Compute the posterior mean of the regression coefficients.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{ZANIMLNRegression$PosteriorMeanCoef(parameter = c("theta", "zeta"))}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{parameter}}{Character string indicating which posterior mean of
 regression coefficients to compute. If \code{parameter="theta"}, then returns posterior
 mean for the regression coefficients associated to the compositional probabilities.
 Otherwise, if \code{parameter="zeta"} the return the posterior mean for the regression
 coefficients associated to the structural zero probabilities.}
+    }
+    \if{html}{\out{</div>}}
+  }
 }
-\if{html}{\out{</div>}}
-}
-}
+
 }

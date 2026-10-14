@@ -72,10 +72,12 @@ export(zi_binomial)
 export(zi_multinomial)
 export(zi_neg_bin)
 export(zi_poisson)
-importFrom(R6,"R6Class")
-importFrom(Rcpp,"Module")
-importFrom(Rcpp,sourceCpp)
-importFrom(geometry,"delaunayn")
-importFrom(splines,"bs")
-importFrom(truncnorm,"rtruncnorm")
+importFrom(R6,R6Class)
+importFrom(Rcpp,
+  Module,
+  sourceCpp
+)
+importFrom(geometry,delaunayn)
+importFrom(splines,bs)
+importFrom(truncnorm,rtruncnorm)
 useDynLib(zanicc, .registration = TRUE)

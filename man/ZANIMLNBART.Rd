@@ -15,138 +15,139 @@ Bayesian nonparametric models for zero-inflated count-compositional data using
 ensembles of regression trees. \emph{arXiv preprint}, \strong{arXiv:2601.08067} \url{https://arxiv.org/abs/2601.08067v2}
 }
 \section{Public fields}{
-\if{html}{\out{<div class="r6-fields">}}
-\describe{
-\item{\code{cpp_obj}}{Internal reference to the underlying \verb{C++} model object.}
+  \if{html}{\out{<div class="r6-fields">}}
+  \describe{
+    \item{\code{cpp_obj}}{Internal reference to the underlying \verb{C++} model object.}
 
-\item{\code{cpp_module_name}}{Internal name of the \code{Rcpp} module used by the model.}
+    \item{\code{cpp_module_name}}{Internal name of the \code{Rcpp} module used by the model.}
 
-\item{\code{n_trials}}{Sample-specific total counts (number of trials), calculated as \code{rowSums(Y)}.}
+    \item{\code{n_trials}}{Sample-specific total counts (number of trials), calculated as \code{rowSums(Y)}.}
 
-\item{\code{n}}{Number of samples.}
+    \item{\code{n}}{Number of samples.}
 
-\item{\code{d}}{Number of categories.}
+    \item{\code{d}}{Number of categories.}
 
-\item{\code{p_theta}}{Number of covariates associated to the compositional components.}
+    \item{\code{p_theta}}{Number of covariates associated to the compositional components.}
 
-\item{\code{p_zeta}}{Number of covariates associated to the structural zero components.}
+    \item{\code{p_zeta}}{Number of covariates associated to the structural zero components.}
 
-\item{\code{ntrees_theta}}{Number of trees for the structural zero components.}
+    \item{\code{ntrees_theta}}{Number of trees for the structural zero components.}
 
-\item{\code{ntrees_zeta}}{Number of trees for the structural zero components.}
+    \item{\code{ntrees_zeta}}{Number of trees for the structural zero components.}
 
-\item{\code{ndpost}}{Number of posterior MCMC draws to retain.}
+    \item{\code{ndpost}}{Number of posterior MCMC draws to retain.}
 
-\item{\code{nskip}}{Number of MCMC draws to discard as burn-in before retaining
+    \item{\code{nskip}}{Number of MCMC draws to discard as burn-in before retaining
 posterior draws.}
 
-\item{\code{forests_dir}}{Character path indicating where to save the
+    \item{\code{forests_dir}}{Character path indicating where to save the
 \code{forests_theta_j.bin} and \code{forests_zeta_j.bin} files.}
 
-\item{\code{covariance_type}}{Character string with the prior used for the covariance
+    \item{\code{covariance_type}}{Character string with the prior used for the covariance
 matrix for the logistic-normal random effects.}
 
-\item{\code{Bt}}{Transpose of the orthogonal matrix for the sum-to-zero constraint
+    \item{\code{Bt}}{Transpose of the orthogonal matrix for the sum-to-zero constraint
 in the logistic random effects.}
 
-\item{\code{elapsed_time}}{Elapsed time taken to run the MCMC algorithm.}
+    \item{\code{elapsed_time}}{Elapsed time taken to run the MCMC algorithm.}
 
-\item{\code{avg_leaves_theta}}{Average number of leaves across the posterior draws \code{ndpost}
+    \item{\code{avg_leaves_theta}}{Average number of leaves across the posterior draws \code{ndpost}
 for the category-specific regression tree ensembles of the compositional components.}
 
-\item{\code{avg_leaves_zeta}}{Average number of leaves across the posterior draws \code{ndpost} for
+    \item{\code{avg_leaves_zeta}}{Average number of leaves across the posterior draws \code{ndpost} for
 the category-specific regression tree ensembles of the structural zero components.}
 
-\item{\code{accept_rate_theta}}{Acceptance rate of the Metropolis-Hastings proposals,
+    \item{\code{accept_rate_theta}}{Acceptance rate of the Metropolis-Hastings proposals,
 \code{grow}, \code{prune}, \code{change}, for the category-specific regression tree ensembles
 of the compositional components.}
 
-\item{\code{accept_rate_zeta}}{Acceptance rate of the Metropolis-Hastings proposals,
+    \item{\code{accept_rate_zeta}}{Acceptance rate of the Metropolis-Hastings proposals,
 \code{grow}, \code{prune}, \code{change}, for category-specific regression tree ensembles
 of the structural zero components.}
 
-\item{\code{draws_theta}}{Posterior draws of the population-level count probabilities.}
+    \item{\code{draws_theta}}{Posterior draws of the population-level count probabilities.}
 
-\item{\code{draws_zeta}}{Posterior draws of the population-level structural zero probabilities.}
+    \item{\code{draws_zeta}}{Posterior draws of the population-level structural zero probabilities.}
 
-\item{\code{draws_chol_Sigma_V}}{Posterior draws of the Cholesky decomposition of the
+    \item{\code{draws_chol_Sigma_V}}{Posterior draws of the Cholesky decomposition of the
 covariance matrix of the logistic-normal random effects.}
 
-\item{\code{draws_abundance}}{Posterior draws of the individual-level count probabilities.}
+    \item{\code{draws_abundance}}{Posterior draws of the individual-level count probabilities.}
 
-\item{\code{keep_draws}}{Logical indicating whether posterior draws were retained.}
+    \item{\code{keep_draws}}{Logical indicating whether posterior draws were retained.}
 
-\item{\code{save_trees}}{Logical indicating whether the posterior forests were
+    \item{\code{save_trees}}{Logical indicating whether the posterior forests were
 saved in disk.}
 
-\item{\code{varcount_theta}}{A three dimensional array with dimension \eqn{p_{\theta} \times d \times m},
+    \item{\code{varcount_theta}}{A three dimensional array with dimension \eqn{p_{\theta} \times d \times m},
 where \eqn{p_\theta} is the number of covariates for the compositional components,
 \eqn{d} is the number of categories and \eqn{m} is the number of posterior draws, \code{ndpost}.
 Contains the total count of the number of times that variable is used in a
 tree decision rule over all category-specific trees.}
 
-\item{\code{varcount_zeta}}{A three dimensional array with dimension \eqn{p_{\zeta} \times d \times m},
+    \item{\code{varcount_zeta}}{A three dimensional array with dimension \eqn{p_{\zeta} \times d \times m},
 where \eqn{p_\zeta} is the number of covariates for the structural zero components,
 \eqn{d} is the number of categories and \eqn{m} is the number of posterior draws, \code{ndpost}.
 Contains the total count of the number of times that variable is used in a
 tree decision rule over all category-specific trees.}
 
-\item{\code{mppi_theta}}{A matrix with rows being the covariates and columns the categories.
+    \item{\code{mppi_theta}}{A matrix with rows being the covariates and columns the categories.
 It contains the posterior estimates of the marginal probability of inclusion
 (MPPI) for the category-specific covariates associated to the compositional components.}
 
-\item{\code{mppi_zeta}}{A matrix with rows being the covariates and columns the categories.
+    \item{\code{mppi_zeta}}{A matrix with rows being the covariates and columns the categories.
 It contains the posterior estimates of the marginal probability of inclusion
 (MPPI) for the category-specific covariates associated to the structural zero components.}
 
-\item{\code{sigma_theta_hyperprior}}{Posterior distribution of the hyperparameter related to the
+    \item{\code{sigma_theta_hyperprior}}{Posterior distribution of the hyperparameter related to the
 shrinkage prior in the compositional component.}
-}
-\if{html}{\out{</div>}}
+  }
+  \if{html}{\out{</div>}}
 }
 \section{Methods}{
 \subsection{Public methods}{
-\itemize{
-\item \href{#method-ZANIMLNBART-new}{\code{ZANIMLNBART$new()}}
-\item \href{#method-ZANIMLNBART-SetupMCMC}{\code{ZANIMLNBART$SetupMCMC()}}
-\item \href{#method-ZANIMLNBART-RunMCMC}{\code{ZANIMLNBART$RunMCMC()}}
-}
+  \itemize{
+    \item \href{#method-ZANIMLNBART-initialize}{\code{ZANIMLNBART$new()}}
+    \item \href{#method-ZANIMLNBART-SetupMCMC}{\code{ZANIMLNBART$SetupMCMC()}}
+    \item \href{#method-ZANIMLNBART-RunMCMC}{\code{ZANIMLNBART$RunMCMC()}}
+  }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-ZANIMLNBART-new"></a>}}
-\if{latex}{\out{\hypertarget{method-ZANIMLNBART-new}{}}}
-\subsection{Method \code{new()}}{
-Creates a new \code{ZANIMLNBART} object.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ZANIMLNBART$new(Y, X_theta, X_zeta)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{Y}}{A matrix of multivariate count-compositional data.
+\if{html}{\out{<a id="method-ZANIMLNBART-initialize"></a>}}
+\if{latex}{\out{\hypertarget{method-ZANIMLNBART-initialize}{}}}
+\subsection{\code{ZANIMLNBART$new()}}{
+  Creates a new \code{ZANIMLNBART} object.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{ZANIMLNBART$new(Y, X_theta, X_zeta)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{Y}}{A matrix of multivariate count-compositional data.
 Rows correspond to observations and columns correspond to categories.}
-
-\item{\code{X_theta}}{A matrix of covariates used to model the count probabilities.
+      \item{\code{X_theta}}{A matrix of covariates used to model the count probabilities.
 Rows must correspond to the observations in \code{Y}.}
-
-\item{\code{X_zeta}}{A matrix of covariates used to model the structural zero probabilities.
+      \item{\code{X_zeta}}{A matrix of covariates used to model the structural zero probabilities.
 Rows must correspond to the observations in \code{Y}.
 Set up the settings for the MCMC algorithm}
+    }
+    \if{html}{\out{</div>}}
+  }
 }
-\if{html}{\out{</div>}}
-}
-}
+
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-ZANIMLNBART-SetupMCMC"></a>}}
 \if{latex}{\out{\hypertarget{method-ZANIMLNBART-SetupMCMC}{}}}
-\subsection{Method \code{SetupMCMC()}}{
-Configures priors and hyperparameters of the ZANIM-LN-BART model
+\subsection{\code{ZANIMLNBART$SetupMCMC()}}{
+  Configures priors and hyperparameters of the ZANIM-LN-BART model
 used by the underlying MCMC algorithm implemented in \verb{C++}.
 This method must be called before
 \href{#method-ZANIMLNBART-RunMCMC}{\code{ZANIMLNBART$RunMCMC()}}.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ZANIMLNBART$SetupMCMC(
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{ZANIMLNBART$SetupMCMC(
   v0_theta = 1.5/sqrt(2),
   k_zeta = 3,
   ntrees_theta = 100L,
@@ -182,126 +183,97 @@ This method must be called before
   save_trees = FALSE,
   forests_dir = tempdir(),
   xinfo = matrix()
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{v0_theta}}{Hyperparameter controlling the level of shrinkage of the
+)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{v0_theta}}{Hyperparameter controlling the level of shrinkage of the
 regression trees for the compositional component. The smaller \code{v0_theta} is,
 the more shrinkage is applied, i.e., shallow trees are expected.}
-
-\item{\code{k_zeta}}{Hyperparameter controlling the level of shrinkage of the
+      \item{\code{k_zeta}}{Hyperparameter controlling the level of shrinkage of the
 regression trees for the structural zero component. The smaller \code{k_zeta} is,
 the more shrinkage is applied, i.e., shallow trees are expected.
 Default is \code{k_zeta = 3.0}, which assigns a prior probability of 0.95 that the
 structural zero probability is between \code{qnorm(-3)} and \code{qnorm(3)}.}
-
-\item{\code{ntrees_theta}}{Number of trees used for the BART prior on the
+      \item{\code{ntrees_theta}}{Number of trees used for the BART prior on the
 count probabilities. The default is \code{ntrees_theta=100}.}
-
-\item{\code{ntrees_zeta}}{Number of trees used for the category-specific BART prior on the
+      \item{\code{ntrees_zeta}}{Number of trees used for the category-specific BART prior on the
 structural-zero probabilities. The default is \code{ntrees_zeta=100}.}
-
-\item{\code{ndpost}}{Number of posterior MCMC draws to retain. The default is \code{ndpost=5000}.}
-
-\item{\code{nskip}}{Number of MCMC iterations to discard as burn-in before retaining
+      \item{\code{ndpost}}{Number of posterior MCMC draws to retain. The default is \code{ndpost=5000}.}
+      \item{\code{nskip}}{Number of MCMC iterations to discard as burn-in before retaining
 posterior draws. The default is \code{nskip=5000}.}
-
-\item{\code{covariance_type}}{Character string specifying the prior on the covariance
+      \item{\code{covariance_type}}{Character string specifying the prior on the covariance
 matrix for the logistic-normal random effects. Defaults to \code{fa_mgp}, for nonparametric factor
 analysis with a multiplicative gamma process shrinkage prior. Other options include \code{fa} (factor analysis without such a prior),
 \code{diag} (for a diagonal covariance matrix with inverse-gamma priors), and \code{wishart} (for an inverse Wishart prior).}
-
-\item{\code{nu_prior}}{Degrees of freedom for the inverse-Wishart prior on the
+      \item{\code{nu_prior}}{Degrees of freedom for the inverse-Wishart prior on the
 covariance matrix of random effects, when \code{covariance_type="wishart"}.
 Default is number of categories, \code{self$d}.}
-
-\item{\code{Psi_prior}}{Prior scale matrix for the inverse-Wishart prior on the
+      \item{\code{Psi_prior}}{Prior scale matrix for the inverse-Wishart prior on the
 covariance matrix of random effects, when \code{covariance_type="wishart"}.
 Default is \eqn{\mathbf{I}_{d-1}d}, where \eqn{d} is the number of categories,
 \code{self$d}.}
-
-\item{\code{a_sigma, b_sigma}}{Shape and scale prior parameters for the independent
+      \item{\code{a_sigma, b_sigma}}{Shape and scale prior parameters for the independent
 gamma priors on the covariance matrix, i.e., when \code{covariance_type="diag"}.
 Default is \code{a_sigma=b_sigma=1.0}.}
-
-\item{\code{q_factors}}{Number of factors when the prior for the covariance matrix is
+      \item{\code{q_factors}}{Number of factors when the prior for the covariance matrix is
 has a factor-analytic representation, i.e., \code{covariance_type="fa"} or
 \code{covariance_type="fa_mgp"}. Default is the Ledermann bound of
 the dimension of the full covariance matrix.}
-
-\item{\code{a_psi, b_psi}}{Shape and rate hyperparameters, respectively for the gamma
+      \item{\code{a_psi, b_psi}}{Shape and rate hyperparameters, respectively for the gamma
 prior on the residual precisions of the error term when \code{covariance_type="fa"}
 or \code{covariance_type="fa_mgp"}.}
-
-\item{\code{sigma2_gamma}}{Scale (variance) hyperparameter of the normal prior on the
+      \item{\code{sigma2_gamma}}{Scale (variance) hyperparameter of the normal prior on the
 factor loadings, when \code{covariance_type="fa"}.}
-
-\item{\code{shape_lsphis}}{Shape hyperprameter of the gamma prior on local shrinkage
+      \item{\code{shape_lsphis}}{Shape hyperprameter of the gamma prior on local shrinkage
 parameters under the multiplicative gamma process (MGP) prior, i.e.,
 when \code{covariance_type="fa_mgp"}. Default is \code{shape_lsphis=3.0}.}
-
-\item{\code{a1_gs, a2_gs}}{Shaper hyperparameters for the gamma prior on the column-wise
+      \item{\code{a1_gs, a2_gs}}{Shaper hyperparameters for the gamma prior on the column-wise
 global shrinkage paraemters under the multiplicative gamma process (MGP) prior, i.e.,
 when \code{covariance_type="fa_mgp"}. Default values are \code{a1_gs=2.1} and \code{a2_gs=3.1}.}
-
-\item{\code{numcut}}{Total number of cut points \eqn{c_b} used to form
+      \item{\code{numcut}}{Total number of cut points \eqn{c_b} used to form
 the splitting decision rules \eqn{x_{jb} \leq c_b}. For each covariate we
 generate \code{numcut} equally space cut points, \eqn{c_b} in the range of the corresponding covariate. Default is \code{numcut=100}.}
-
-\item{\code{power}}{Power parameter regarding the tree prior. Default is \code{power=2.0}.}
-
-\item{\code{base}}{Base parameter regarding the tree prior. Default is \code{power=0.95}.}
-
-\item{\code{proposals_prob}}{Numeric vector of length three containing the probabilities of proposing the
+      \item{\code{power}}{Power parameter regarding the tree prior. Default is \code{power=2.0}.}
+      \item{\code{base}}{Base parameter regarding the tree prior. Default is \code{power=0.95}.}
+      \item{\code{proposals_prob}}{Numeric vector of length three containing the probabilities of proposing the
 \code{grow}, \code{prune}, and \code{change} tree moves, respectively.
 Default probabilities are \eqn{0.25}, \eqn{0.25} and \eqn{0.50}, respectively.}
-
-\item{\code{update_sigma_theta}}{Logical indicating whether a hyperprior should be
+      \item{\code{update_sigma_theta}}{Logical indicating whether a hyperprior should be
 used for the shrinkage hyperparameter, \code{v0_theta}. If so, then we use slice
 sampling to update this hyperparameter during the MCMC.}
-
-\item{\code{s0_2_theta}}{Hyperprior scale parameter for the \code{v0_theta} hyperparameter. Default is \code{1/ntrees_theta}.}
-
-\item{\code{w_ss}}{Hyperprameter for stepping out method in the slice sampling algorithm.
+      \item{\code{s0_2_theta}}{Hyperprior scale parameter for the \code{v0_theta} hyperparameter. Default is \code{1/ntrees_theta}.}
+      \item{\code{w_ss}}{Hyperprameter for stepping out method in the slice sampling algorithm.
 It controls the width of the slice.}
-
-\item{\code{splitprobs_zi}}{Numeric vector with the prior probabilities of each
+      \item{\code{splitprobs_zi}}{Numeric vector with the prior probabilities of each
 covariate in \code{X_zi} to generate a splitting rule. Default is \code{1/p_zeta}.}
-
-\item{\code{splitprobs_mult}}{Numeric vector with the prior probabilities of each
+      \item{\code{splitprobs_mult}}{Numeric vector with the prior probabilities of each
 covariate in \code{X_count} to generate a splitting rule. Default is \code{1/p_theta}.}
-
-\item{\code{sparse}}{Logical vector of length two indicating whether to perform
+      \item{\code{sparse}}{Logical vector of length two indicating whether to perform
 variable selection based on the sparse Dirichlet prior
 of Linero (2018) rather than uniform prior on the splitting probabilities of the
 structural zero and compositional components, respectively.
 This prior assumes that the splitting probability vector follows
 \eqn{\mathbf{s} \sim \operatorname{Dirichlet}\lbrack \alpha/p, \ldots, \alpha/p \rbrack},
 with \eqn{\alpha} a hyperparameter and \eqn{p} number of covariates.}
-
-\item{\code{sparse_parms}}{Numeric vector of length six for the hyperprior parameters
+      \item{\code{sparse_parms}}{Numeric vector of length six for the hyperprior parameters
 \eqn{\rho}, \eqn{a} and \eqn{b}. The first three entries correspond to
 the structural-zero component and the last three to the compositional
 component. By default, these are \code{c(p_zeta, 0.5, 1.0, p_theta, 0.5, 1.0)}.}
-
-\item{\code{alpha_sparse}}{Numeric vector of length two with the hyperprameter values
+      \item{\code{alpha_sparse}}{Numeric vector of length two with the hyperprameter values
 of \eqn{\alpha} which controls the level of sparsity of the Dirichlet prior on the splitting
 probabilities for the structural zero and compositional components, respectively.
 Default is \code{alpha_sparse = c(1, 1)}. As \eqn{\alpha \rightarrow \infty}, it recovers the
 default uniform prior on the splitting probabilities under BART.}
-
-\item{\code{alpha_random}}{Logical vector of length two indicating whether to put a
+      \item{\code{alpha_random}}{Logical vector of length two indicating whether to put a
 hyperprior on \eqn{\alpha} for the structural zero and compositional components,
 respectively. The hyperprior is of the form
 \eqn{\alpha / (\alpha + \rho) \sim \operatorname{Beta}\lbrack a, b \rbrack}
 with further hyperprior parameters \eqn{\rho}, \eqn{a} and \eqn{b}.}
-
-\item{\code{keep_draws}}{Logical indicating whether to retain posterior draws. Default is \code{TRUE}.}
-
-\item{\code{save_trees}}{Logical indicating whether to save the posterior draws of the BART
+      \item{\code{keep_draws}}{Logical indicating whether to retain posterior draws. Default is \code{TRUE}.}
+      \item{\code{save_trees}}{Logical indicating whether to save the posterior draws of the BART
 tree topologies and terminal-node parameters to \code{.bin} files.
 Default is \code{FALSE}.
 This creates files named \code{forests_theta_j.bin} for the category-specific
@@ -310,30 +282,31 @@ for the structural-zero regression trees.
 Here, \code{j} indexes the category, and each file contains the corresponding
 tree topologies and terminal node parameters across all \code{ndpost} posterior
 draws. Such files are written in disk in the directory indicated by the argument \code{forests_dir}.}
-
-\item{\code{forests_dir}}{Character path indicating where to save the
+      \item{\code{forests_dir}}{Character path indicating where to save the
 \code{forests_theta_j.bin} and \code{forests_zeta_j.bin} files when \code{save_trees=TRUE}.
 Default is to \code{\link[=tempdir]{tempdir()}}.}
-
-\item{\code{xinfo}}{Optional matrix containing the cut points information of each
+      \item{\code{xinfo}}{Optional matrix containing the cut points information of each
 covariate supplied to the underlying \verb{C++} implementation.
 An empty matrix implies that the cut points are determined internally.
 Run the MCMC algorithm of ZANIM-LN-BART}
+    }
+    \if{html}{\out{</div>}}
+  }
 }
-\if{html}{\out{</div>}}
-}
-}
+
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-ZANIMLNBART-RunMCMC"></a>}}
 \if{latex}{\out{\hypertarget{method-ZANIMLNBART-RunMCMC}{}}}
-\subsection{Method \code{RunMCMC()}}{
-Runs the MCMC sampler using the settings previously configured with
+\subsection{\code{ZANIMLNBART$RunMCMC()}}{
+  Runs the MCMC sampler using the settings previously configured with
 \href{#method-ZANIMLNBART-SetupMCMC}{\code{ZANIMLNBART$SetupMCMC()}}.
 Posterior draws, acceptance rates, and variable-selection statistics, are
 then transferred from the underlying \verb{C++} object to the \code{ZANIMLNBART} object.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ZANIMLNBART$RunMCMC()}\if{html}{\out{</div>}}
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{ZANIMLNBART$RunMCMC()}
+    \if{html}{\out{</div>}}
+  }
 }
 
-}
 }
