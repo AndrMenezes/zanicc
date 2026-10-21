@@ -1,7 +1,7 @@
 Package: zanicc
-Title: Bayesian nonparametric regression models for zero-inflated count-compositional
-    data
-Version: 0.0.2
+Title: Bayesian nonparametric regression models for zero-inflated
+    count-compositional data
+Version: 0.1.0
 Authors@R: c(
     person("André F. B.", "Menezes", , "andrefelipemaringa@gmail.com", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0002-3320-9834")),
@@ -9,27 +9,46 @@ Authors@R: c(
            comment = c(ORCID = "0000-0002-5668-7046"))
   )
 Maintainer: André F. B. Menezes <andrefelipemaringa@gmail.com>
-Description: Provides a collection of nonparametric and parametric models
-    for the analysis of zero-inflated count-compositional data, including
-    the zero-and-N-inflated multinomial (ZANIM)-BART and ZANIM
-    logistic-normal (ZANIM-LN)-BART models.
+Description: Provides flexible Bayesian nonparametric regression models
+    for zero-inflated count-compositional data, including the
+    zero-and-N-inflated multinomial (ZANIM)-BART and ZANIM logistic-normal
+    (ZANIM-LN)-BART models introduced by Menezes et al. (2026)
+    <doi:10.48550/arXiv.2601.08067>. These models use ensembles of
+    regression trees with Bayesian additive regression trees (BART) priors
+    to capture complex relationships between covariates and the
+    multivariate compositional counts. Bayesian inference for
+    model-specific parameters is performed using efficient Markov chain
+    Monte Carlo (MCMC) algorithms implemented in C++. The package also
+    includes implementations for other related count-compositional models,
+    particularly the multinomial logistic BART model of Murray (2021)
+    <doi:10.1080/01621459.2020.1813587> and the zero-and-N-inflated
+    Dirichlet-multinomial linear regression model of Koslovsky (2023)
+    <doi:10.1111/biom.13853>. Methods for conducting Bayesian
+    posterior predictive checks and computing posterior predictions for
+    new data are also provided. In addition, it provides efficient C++ 
+    implementations for the finite-mixture probability mass functions of 
+    the ZANIM and ZANIDM distributions as proposed by Menezes et al.
+    (2025)<doi:10.1016/j.jmva.2025.105492>. Finally, the package also
+    implements the Bayesian modular framework for pollen-based
+    palaeoclimate reconstruction based on the ZANIM-LN-BART model
+    developed by Menezes et al. (2026b)<doi:10.48550/arXiv.2609.08866>.
 License: GPL (>= 3)
 Depends: 
     R (>= 3.5.0)
 Imports:
     coda,
+    cowplot,
     geometry,
     ggplot2,
+    ks,
     methods,
     R6,
     Rcpp,
+    rvinecopulib,
+    scales,
     scoringRules,
     splines,
-    ks,
-    rvinecopulib,
-    truncnorm,
-    scales,
-    cowplot
+    truncnorm
 Suggests: 
     knitr,
     rmarkdown,
@@ -37,10 +56,11 @@ Suggests:
 LinkingTo: 
     Rcpp,
     RcppArmadillo
+VignetteBuilder: 
+    knitr
 Config/roxygen2/version: 8.1.1
 Config/testthat/edition: 3
 Encoding: UTF-8
 Language: en-GB
 LazyData: true
 Roxygen: list(markdown = TRUE)
-VignetteBuilder: knitr
