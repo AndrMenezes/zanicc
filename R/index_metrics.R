@@ -482,7 +482,10 @@ compute_kl_prob_chain <- function(reference_values, draws) {
 # Compute metrics for p > 1
 .get_metrics_p <- function(x, x_draws, probs, joint_coverage, method_kde,
                            binned_kde, pilot_kde) {
+
   x <- unname(x)
+  dimnames(x_draws)[[2]] <- NULL
+
   p <- length(x)
   mu <- colMeans(x_draws)
   md <- apply(x_draws, 2, stats::median)

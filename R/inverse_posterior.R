@@ -103,11 +103,13 @@ runifconvexhull <- function(n, X) {
 #'
 #' @description
 #' Approximates the inverse posterior distribution of the unobserved climate
-#' variables given the corresponding compositional fossil counts, and the
-#' posterior draws of parameters from the ZANIM-LN-BART model.
+#' variables given the corresponding fossil compositional counts, and
+#' posterior draws for the parameters of the ZANIM-LN-BART model.
 #'
 #' This is the main quantity of interest when performing pollen-based palaeoclimate
 #' reconstruction using the ZANIM-LN-BART model.
+#'
+#' See Menezes et al. (2026b) for further details.
 #'
 #' @param object An object of the R6 class `ZANIMLNBART`. The ZANIM-LN-BART model
 #' must have been fitted using a modern calibration data set.
@@ -143,18 +145,10 @@ runifconvexhull <- function(n, X) {
 #'
 #' This function implements the Bayesian modular framework proposed in
 #' in Menezes et al. (2026b) to perform palaeoclimate reconstruction.
+#' See the paper for further details.
 #'
-#' The function performs inverse prediction using a previously fitted
-#' ZANIM-LN-BART model.
-#' The ZANIM-LN-BART model is first fitted to a modern
-#' calibration data set in order to estimate the pollen-climate relationships
-#'
-#' Given one or more fossil assemblages, this function uses
-#' these posterior draws to approximate the cut posterior distribution of the
-#' corresponding latent climate variables.
-#'
-#' Several sampling algorithms are available, including sampling-importance-
-#' resampling (SIR), elliptical slice sampling (ESS), and constrained
+#' Three sampling algorithms are available: sampling importance resampling (SIR)
+#' which is the default, elliptical slice sampling (ESS), and constrained
 #' elliptical slice sampling (cESS).
 #'
 #' This function is a high-level interface to an efficient `C++` implementation.
