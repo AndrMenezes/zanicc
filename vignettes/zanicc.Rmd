@@ -1,5 +1,5 @@
 ---
-title: "zanicc: Bayesian nonparametric regression models for zero-inflated count-compositional data"
+title: "Bayesian nonparametric regression models for zero-inflated count-compositional data"
 author: "André Menezes and Keefe Murphy"
 date: "`r paste0('zanicc ', packageVersion('zanicc'), ', ' , Sys.Date())`"
 urlcolor: blue
@@ -8,7 +8,7 @@ output:
     toc: true
     toc_depth: 3
 vignette: >
-  %\VignetteIndexEntry{zanicc: Bayesian nonparametric regression models for zero-inflated count-compositional data}
+  %\VignetteIndexEntry{Bayesian nonparametric regression models for zero-inflated count-compositional data}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -53,8 +53,11 @@ The package also implements other models, including the ML-BART model of
 and the ZANIDM (ZIDM) linear regression model of
 [Koslovsky (2023)](https://doi.org/10.1111/biom.13853).
 We stress that the ML-BART model was introduced by
-[Murray (2021)](https://doi.org/10.1080/01621459.2020.1813587) in the context of multiclass classification problems; in this package, it can be employed with arbitrary numbers of sample-specific trials. 
-Another extension of ML-BART incorporating logistic-normal random effects, MLN-BART, is also provided.
+[Murray (2021)](https://doi.org/10.1080/01621459.2020.1813587) in the context of 
+multiclass classification problems; in this package, it can be employed with 
+arbitrary numbers of sample-specific trials. 
+Another extension of ML-BART incorporating logistic-normal random effects,
+MLN-BART, is also provided.
 
 The nonparametric models available in `zanicc` use ensembles of regression
 trees through appropriate Bayesian additive regression trees (BART) priors,
@@ -466,6 +469,8 @@ zanim_ln_bart <- zanicc(Y = Y, X_count = X, X_zi = X, model = "zanim_ln_bart",
                         ntrees_theta = NTREES, ntrees_zeta = NTREES, ndpost = NDPOST,
                         nskip = NSKIP, keep_draws = FALSE, save_trees = TRUE,
                         forests_dir = dir_forests)
+# Save the model object
+save_model(object = zanim_ln_bart, model_dir = "./", file_name = "zanim_ln_bart.rds")
 ```
 
 The directory contains several `.bin` files storing the category-specific regression 
