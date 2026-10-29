@@ -14,10 +14,10 @@ vignette: >
 ---
 
 ```{r setup, include = FALSE}
-knitr::opts_chunk$set(fig.width = 7, fig.height = 5, fig.align = "center", 
+knitr::opts_chunk$set(fig.width = 7, fig.height = 5, fig.align = "center",
                       fig.show = "hold", warning = FALSE,
                       out.width = "90%",
-                      message = FALSE, progress = FALSE, 
+                      message = FALSE, progress = FALSE,
                       collapse = TRUE, comment = "#>",
                       dev.args = list(family = "Palatino"))
 library(ggplot2)
@@ -33,12 +33,12 @@ r_outputs <- readRDS(file = "r_outputs_palaeoclimate.rds")
 
 # Introduction
 
-The goal of this vignette is to demonstrate how one can use the `zanicc` 
-package to perform pollen-based palaeoclimate reconstruction using the Bayesian 
+The goal of this vignette is to demonstrate how one can use the `zanicc`
+package to perform pollen-based palaeoclimate reconstruction using the Bayesian
 modular framework developed by
 [Menezes et al. (2026b)](https://arxiv.org/abs/2609.08866).
 The underlying generative model assumed for how the pollen compositions depend on
-the climate covariates is the ZANIM-LN-BART model introduced by 
+the climate covariates is the ZANIM-LN-BART model introduced by
 [Menezes et al. (2026)](https://arxiv.org/abs/2601.08067v2).
 We adopt this model because it respects the compositional nature of the pollen
 counts and provides substantial
@@ -50,10 +50,10 @@ provides a simplified representation of the proposed modular framework,
 in the form of a directed acyclic graph (DAG).
 We highlight three main features.
 First, it respects the ecological causal relationship that compositional counts
-$\mathbf{y}_i^m$ and $\mathbf{y}_s$ are affected by their corresponding 
+$\mathbf{y}_i^m$ and $\mathbf{y}_s$ are affected by their corresponding
 climate covariates (drivers) $\mathbf{x}_i^m$ and $\mathbf{x}_s$.
-Second, we assume a common set of parameters $\boldsymbol{\Psi}$ governing these 
-pollen-climate relationships for both the modern and fossil data sets. 
+Second, we assume a common set of parameters $\boldsymbol{\Psi}$ governing these
+pollen-climate relationships for both the modern and fossil data sets.
 Finally, the dashed lines connecting the model parameters,
 $\boldsymbol{\Psi}$, to the fossil pollen counts, $\mathbf{y}_s$,
 indicate that a modularisation occurs.
@@ -62,16 +62,16 @@ indicate that a modularisation occurs.
 knitr::include_graphics("./dag_palaeoclimate.png")
 ```
 
-Modularisation means that the underlying Bayesian model for pollen-based 
-climate reconstruction is made of two modules: 
+Modularisation means that the underlying Bayesian model for pollen-based
+climate reconstruction is made of two modules:
 (i) the **forward** module, which estimates
 the parameters $\boldsymbol{\Psi}$ governing the pollen-climate relationships,
 given the modern data $\{\mathbf{x}^m_i, \mathbf{y}_i^m\}$;
 and
-(ii) the **reconstruction** module, which infers the missing past climate 
+(ii) the **reconstruction** module, which infers the missing past climate
 $\mathbf{x}_s$ given the corresponding observed fossil pollen counts
 $\mathbf{y}_s$ and the estimated parameters $\boldsymbol{\Psi}$.
-From a computational point of view, Bayesian inference for the parameters 
+From a computational point of view, Bayesian inference for the parameters
 $\boldsymbol{\Psi}$ and the past climate $\mathbf{y}_s$ can be performed in two
 sequential stages.
 
@@ -89,7 +89,7 @@ str(pollen_climate)
 dim(pollen_climate$Y)
 ```
 
-In addition, there would be a fossil data set, which includes information only 
+In addition, there would be a fossil data set, which includes information only
 about the compositional pollen counts typically obtained for a single site (location)
 at different core depths.
 The fossil data set used in our paper
@@ -102,7 +102,7 @@ data(pollen_monticchio, package = "zanicc")
 str(pollen_monticchio)
 ```
 
-Importantly, both the modern and fossil data must contain compositional 
+Importantly, both the modern and fossil data must contain compositional
 counts for the same set of pollen taxa.
 In our analysis, there are $d=28$ pollen taxa.
 ```{r check-same-taxa}
@@ -134,20 +134,26 @@ the pollen-climate relationships under the ZANIM-LN-BART model.
 In essence, this means to run our efficient MCMC algorithm as discussed in the
 [other vignette](zanicc.html) about the regression models for count-compositional data.
 
-As in the [other vignette](zanicc.html), we use a small number of iterations as well as 
-category-specific regression trees.
+As in the [other vignette](zanicc.html), we use a relatively small number of
+iterations and regression trees for each category to keep the example
+computationally manageable.
 
 ```{r settings}
 NSKIP <- 1000L
 NDPOST <- 1000L
 NTREES <- 20L
 ```
+However, for real data analyses, we recommend increasing these values to
+improve the convergence of the algorihtm as well as the estimation
+of pollen-climate relationships.
+In our paper, for example, we used `NTREES <- 100L` and 
+`NDPOST <- NSKIP <- 5000L`.
 
 The implementation of the modular framework requires to save the posterior draws of
-$\boldsymbol{\Psi}$; that is, to save the posterior draws of the regression 
+$\boldsymbol{\Psi}$; that is, to save the posterior draws of the regression
 trees ensembles in some folder.
 This would be used to obtain the climate reconstructions.
-The code below fits the ZANIM-LN-BART and saves the posterior draws in the folder 
+The code below fits the ZANIM-LN-BART and saves the posterior draws in the folder
 `forests`.
 We also save the model object in the root folder using the function [save_model()]().
 
@@ -164,7 +170,7 @@ save_model(object = zanim_ln_bart, model_dir = "./", file_name = "zanim_ln_bart.
 
 # Reconstruction module
 
-In the reconstruction module, we invert the pollen-climate relationships given 
+In the reconstruction module, we invert the pollen-climate relationships given
 the fossil counts from the Monticchio site and the posterior draws of the
 parameters $\boldsymbol{\Psi}$.
 In essence, this means to compute the inverse posterior distribution of the
@@ -177,7 +183,7 @@ pollen counts are available for the same taxa as in our modern calibration data 
 
 The function [inverse_posterior_zanimlnbart()]() implements three different sampling
 schemes to approximate the posterior distribution of the past climate.
-Its first argument is the the model object `zanim_ln_bart` which we saved in 
+Its first argument is the the model object `zanim_ln_bart` which we saved in
 the previous Section.
 
 To load this object, we can use
@@ -186,21 +192,21 @@ zanim_ln_bart <- load_model(model_dir = "./", file_name = "zanim_ln_bart.rds")
 ```
 
 The three sampling schemes differ in terms of the techniques used to approximate the
-inverse posterior, but also the assumed prior distribution for the past 
+inverse posterior, but also the assumed prior distribution for the past
 climate.
 The default and recommended approach is based on sampling importance resampling (SIR),
 which assumes an uniform prior over the convex hull of the modern data climate.
-The other two are the elliptical slice sampling (ESS) algorithm of 
+The other two are the elliptical slice sampling (ESS) algorithm of
 [Murray et al. (2010)](), for which the underlying prior for the past climate vector
 is a multivariate normal distribution, and
 the constrained ESS (cESS), which is based on a multivariate truncated normal prior
 that restricts the underlying prior to the modern climate domain.
 Here, we use the SIR algorithm, as it showed better performance in several
-simulation and validation experiments presented in 
+simulation and validation experiments presented in
 [Menezes et al. (2026b)](https://arxiv.org/abs/2609.08866).
 
 For the SIR algorithm, we first need to generate uniform proposal values
-inside the convex hull of the modern data. 
+inside the convex hull of the modern data.
 This can be done using the function [runifconvexhull()]() as follows:
 
 ```{r proposals, eval=FALSE}
@@ -209,7 +215,7 @@ N_PROPOSAL <- 2000L
 x_proposal <- runifconvexhull(n = N_PROPOSAL, X = unique(X_modern))
 ```
 
-We can now reconstruct the past three-dimensional climate vector given the fossil 
+We can now reconstruct the past three-dimensional climate vector given the fossil
 pollen counts of LGdM using the following code:
 ```{r sir, eval=FALSE}
 monticchio_dir <- "./monticchio"
@@ -224,12 +230,12 @@ saveRDS(sir, file = "sir.rds")
 
 
 In the directory `"./monticchio"`, the posterior predictions of the
-ZANIM-LN-BART model at the proposal values are saved in the files `theta_ij.bin` 
+ZANIM-LN-BART model at the proposal values are saved in the files `theta_ij.bin`
 and `zeta_ij.bin`.
-This is useful when the user wants to obtain reconstructions for sets of fossil 
+This is useful when the user wants to obtain reconstructions for sets of fossil
 pollen counts at different sites using the same proposal values.
 
-We can inspect the time taken to compute the posterior predictions of the ZANIM-LN-BART 
+We can inspect the time taken to compute the posterior predictions of the ZANIM-LN-BART
 model using:
 ```{r elapsed-time-predict, eval=FALSE}
 attr(sir, "elapsed_time_predict")[3L]
@@ -275,7 +281,7 @@ for (k in seq_len(p)) {
 }
 data_posterior <- do.call(rbind, list_data)
 data_posterior$variable <- map_vars[data_posterior$variable]
-data_posterior$variable <- factor(data_posterior$variable, 
+data_posterior$variable <- factor(data_posterior$variable,
                                   levels = c("GDD5 (°C days)", "MTCO (°C)",
                                              "AET/PET"))
 # Plot
@@ -296,9 +302,9 @@ knitr::include_graphics("./reconstruction_p3.png")
 
 ## Reconstructing five climate variables
 
-Using our package it is also possible to reconstruct an arbitrary number of climate 
+Using our package it is also possible to reconstruct an arbitrary number of climate
 variables, albeit at the expense of increased computational time.
-Here, we will reconstruct $p=5$ climate variables, which are available in the 
+Here, we will reconstruct $p=5$ climate variables, which are available in the
 modern data set.
 For illustrative purposes, we will include the GDD0 and MTWA variables,
 though they are highly correlated to GDD5 and MTCO, respectively.
