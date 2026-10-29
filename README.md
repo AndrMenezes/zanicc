@@ -4,10 +4,11 @@
 # `zanicc` R package
 
 <!-- badges: start -->
+
 <!-- badges: end -->
 
 The `zanicc` R package implements Bayesian nonparametric models for the
-analysis of zero-inflated count count-compositional data. Its first main
+analysis of zero-inflated count-compositional data. Its first main
 contribution is an implementation of the models introduced in the paper
 [“Bayesian nonparametric models for zero-inflated count-compositional
 data using ensembles of regression

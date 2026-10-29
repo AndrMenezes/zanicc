@@ -103,7 +103,7 @@ runifconvexhull <- function(n, X) {
 #'
 #' @description
 #' Approximates the inverse posterior distribution of the unobserved climate
-#' variables given the corresponding fossil compositional counts, and
+#' variables given the corresponding compositional fossil counts, and
 #' posterior draws for the parameters of the ZANIM-LN-BART model.
 #'
 #' This is the main quantity of interest when performing pollen-based palaeoclimate

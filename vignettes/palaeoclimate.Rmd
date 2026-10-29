@@ -38,20 +38,21 @@ package to perform pollen-based palaeoclimate reconstruction using the Bayesian
 modular framework developed by
 [Menezes et al. (2026b)](https://arxiv.org/abs/2609.08866).
 The underlying generative model assumed for how the pollen compositions depend on
-the climate covariates is the ZANIM-LN-BART model introduce by 
+the climate covariates is the ZANIM-LN-BART model introduced by 
 [Menezes et al. (2026)](https://arxiv.org/abs/2601.08067v2).
-We adopt such model, because it respects the compositional nature of the pollen
+We adopt this model because it respects the compositional nature of the pollen
 counts and provides substantial
 flexibility to capture complex features present in the modern data set.
+Such features include zero-inflation and latent heterogeneity in the pollen counts, and nonlinearities and interactions in the pollen-climate relationships.
 
-Figure 1 extracted from [Menezes et al. (2026b)](https://arxiv.org/abs/2609.08866)
+Figure 1, extracted from [Menezes et al. (2026b)](https://arxiv.org/abs/2609.08866),
 provides a simplified representation of the proposed modular framework,
 in the form of a directed acyclic graph (DAG).
 We highlight three main features.
 First, it respects the ecological causal relationship that compositional counts
 $\mathbf{y}_i^m$ and $\mathbf{y}_s$ are affected by their corresponding 
 climate covariates (drivers) $\mathbf{x}_i^m$ and $\mathbf{x}_s$.
-Second, we assume a common set of parameters $\boldsymbol{\Psi}$ governing theses 
+Second, we assume a common set of parameters $\boldsymbol{\Psi}$ governing these 
 pollen-climate relationships for both the modern and fossil data sets. 
 Finally, the dashed lines connecting the model parameters,
 $\boldsymbol{\Psi}$, to the fossil pollen counts, $\mathbf{y}_s$,
@@ -63,23 +64,22 @@ knitr::include_graphics("./dag_palaeoclimate.png")
 
 Modularisation means that the underlying Bayesian model for pollen-based 
 climate reconstruction is made of two modules: 
-(i) the **forward** module, which estimate
+(i) the **forward** module, which estimates
 the parameters $\boldsymbol{\Psi}$ governing the pollen-climate relationships,
 given the modern data $\{\mathbf{x}^m_i, \mathbf{y}_i^m\}$;
 and
-(ii) the **reconstruction** module, which infer the missing past climate 
+(ii) the **reconstruction** module, which infers the missing past climate 
 $\mathbf{x}_s$ given the corresponding observed fossil pollen counts
-$\mathbf{y}_s$, and the estimated parameters $\boldsymbol{\Psi}$.
+$\mathbf{y}_s$ and the estimated parameters $\boldsymbol{\Psi}$.
 From a computational point of view, Bayesian inference for the parameters 
-$\boldsymbol{\Psi}$, and the past climate $\mathbf{y}_s$ can be performed in two
+$\boldsymbol{\Psi}$ and the past climate $\mathbf{y}_s$ can be performed in two
 sequential stages.
 
 # Data sets
 
-A typical pollen-based palaeoclimate reconstruction problem consist of two data
-sources.
-A modern calibration data set, which has information about the pollen 
-composition counts and climate covariates at different sample locations.
+A typical pollen-based palaeoclimate reconstruction problem consists of two data sources.
+The first is a a modern calibration data set, which has information about the compositional pollen
+counts and climate covariates at different sample locations.
 The modern data set used in our paper is available in the `zanicc` package, and
 can be loaded in R as follows
 ```{r modern-data}
@@ -90,19 +90,19 @@ dim(pollen_climate$Y)
 ```
 
 In addition, there would be a fossil data set, which includes information only 
-about the pollen composition counts typically obtained for a single site (location)
+about the compositional pollen counts typically obtained for a single site (location)
 at different core depths.
 The fossil data set used in our paper
 are fossil pollen records from _Lago Grande di Monticchio_ (LGdM),
 a lake situated in the crater of Monte Vulture in Basilicata,
 southern Italy.
-This data is also available in the `zanicc`, and can be loaded in R as follows:
+This data is also available in the `zanicc` package and can be loaded in R as follows:
 ```{r fossil-data}
 data(pollen_monticchio, package = "zanicc")
 str(pollen_monticchio)
 ```
 
-Importantly, both, the modern and fossil data must contain composition 
+Importantly, both the modern and fossil data must contain compositional 
 counts for the same set of pollen taxa.
 In our analysis, there are $d=28$ pollen taxa.
 ```{r check-same-taxa}
@@ -114,7 +114,8 @@ For a detailed analysis using the full data sets, we refer to
 Github repository
 [AndrMenezes/reproduce__palaeoclimate_zanim_ln_bart](https://github.com/AndrMenezes/reproduce__palaeoclimate_zanim_ln_bart/),
 which contains scripts to reproduce all analyses and simulations in the paper.
-Here, for illustrative purposes we will focus on subsets of both data sets.
+Here, for illustrative purposes, we will focus on subsets of both data sets.
+We consider a three-dimensional climate vector comprising the covariates GDD5, MTCO, and AET/PET.
 
 ```{r subset}
 set.seed(1212)
@@ -128,12 +129,12 @@ pollen_names <- colnames(Y_modern)
 
 # Forward module
 
-In the forward module, we estimate the parameters $\boldsymbol{\Psi}$ that governs
+In the forward module, we estimate the parameters $\boldsymbol{\Psi}$ which govern
 the pollen-climate relationships under the ZANIM-LN-BART model.
 In essence, this means to run our efficient MCMC algorithm as discussed in the
-[vignette]() about the regression models for count-compositional data.
+[other vignette](zanicc.html) about the regression models for count-compositional data.
 
-As in the other [vignette](), we use a small number of iterations as well as 
+As in the [other vignette](zanicc.html), we use a small number of iterations as well as 
 category-specific regression trees.
 
 ```{r settings}
@@ -143,10 +144,10 @@ NTREES <- 20L
 ```
 
 The implementation of the modular framework requires to save the posterior draws of
-$\boldsymbol{\Psi}$, that is, to save the posterior draws of the regression 
+$\boldsymbol{\Psi}$; that is, to save the posterior draws of the regression 
 trees ensembles in some folder.
 This would be used to obtain the climate reconstructions.
-The code below fit the ZANIM-LN-BART and save the posterior draws in the folder 
+The code below fits the ZANIM-LN-BART and saves the posterior draws in the folder 
 `forests`.
 We also save the model object in the root folder using the function [save_model()]().
 
@@ -165,18 +166,18 @@ save_model(object = zanim_ln_bart, model_dir = "./", file_name = "zanim_ln_bart.
 
 In the reconstruction module, we invert the pollen-climate relationships given 
 the fossil counts from the Monticchio site and the posterior draws of the
-parameter $\boldsymbol{\Psi}$.
+parameters $\boldsymbol{\Psi}$.
 In essence, this means to compute the inverse posterior distribution of the
 past climate variables.
-Importantly, the modular nature of our approach facilitates that the parameters of
+Importantly, the modular nature of our approach facilitates that the parameters of the
 ZANIM-LN-BART model, $\boldsymbol{\Psi}$, can be inferred only once using the
 modern data.
-Hence, one could obtain reconstructions for different fossil samples for which
+Hence, one could obtain reconstructions for any number of different fossil samples for which
 pollen counts are available for the same taxa as in our modern calibration data set.
 
 The function [inverse_posterior_zanimlnbart()]() implements three different sampling
 schemes to approximate the posterior distribution of the past climate.
-Its first argument is the the model object `zanim_ln_bart` which we save in 
+Its first argument is the the model object `zanim_ln_bart` which we saved in 
 the previous Section.
 
 To load this object, we can use
@@ -184,17 +185,17 @@ To load this object, we can use
 zanim_ln_bart <- load_model(model_dir = "./", file_name = "zanim_ln_bart.rds")
 ```
 
-The three sampling schemes differs in terms of technique used to approximate the
+The three sampling schemes differ in terms of the techniques used to approximate the
 inverse posterior, but also the assumed prior distribution for the past 
 climate.
-The default and recommended approach is the sampling importance resampling (SIR),
-which assumed an uniform prior over the convex hull of the modern data climate.
+The default and recommended approach is based on sampling importance resampling (SIR),
+which assumes an uniform prior over the convex hull of the modern data climate.
 The other two are the elliptical slice sampling (ESS) algorithm of 
-[Murray et al. (2010)](), which the underlying prior for the past climate vector
+[Murray et al. (2010)](), for which the underlying prior for the past climate vector
 is a multivariate normal distribution, and
 the constrained ESS (cESS), which is based on a multivariate truncated normal prior
 that restricts the underlying prior to the modern climate domain.
-Here, we use the SIR algorithm, as its performance was better in several
+Here, we use the SIR algorithm, as it showed better performance in several
 simulation and validation experiments presented in 
 [Menezes et al. (2026b)](https://arxiv.org/abs/2609.08866).
 
@@ -208,12 +209,7 @@ N_PROPOSAL <- 2000L
 x_proposal <- runifconvexhull(n = N_PROPOSAL, X = unique(X_modern))
 ```
 
-The function [inverse_posterior_zanimlnbart()]() can be used to reconstruct the 
-three dimension climate vector given the fossil pollen counts from 
-Given the proposal values, `x_proposal`, the object `zanim_ln_bart` with information 
-about the forward module
-
-We can now reconstruct the past three dimension climate vector given the fossil 
+We can now reconstruct the past three-dimensional climate vector given the fossil 
 pollen counts of LGdM using the following code:
 ```{r sir, eval=FALSE}
 monticchio_dir <- "./monticchio"
@@ -228,12 +224,12 @@ saveRDS(sir, file = "sir.rds")
 
 
 In the directory `"./monticchio"`, the posterior predictions of the
-ZANIM-LN-BART model at the proposal values are saved in the files `theta_ij` 
+ZANIM-LN-BART model at the proposal values are saved in the files `theta_ij.bin` 
 and `zeta_ij.bin`.
-This is useful when the user want to obtain reconstructions for set of fossil 
+This is useful when the user wants to obtain reconstructions for sets of fossil 
 pollen counts at different sites using the same proposal values.
 
-We can inspect the time take to compute the posterior predictions of ZANIM-LN-BART 
+We can inspect the time taken to compute the posterior predictions of the ZANIM-LN-BART 
 model using:
 ```{r elapsed-time-predict, eval=FALSE}
 attr(sir, "elapsed_time_predict")[3L]
@@ -242,7 +238,7 @@ attr(sir, "elapsed_time_predict")[3L]
 r_outputs$et_predict_p3
 ```
 
-While the time taken to run the SIR algorithm given the posterior predictions is:
+Furthermore, the time taken to run the SIR algorithm given the posterior predictions is:
 ```{r elapsed-time-sir, eval=FALSE}
 attr(sir, "elapsed_time")[3L]
 ```
@@ -252,7 +248,7 @@ r_outputs$et_sir_p3
 
 
 Each fossil sample $s\in\{1,\ldots, n_f\}$ in the LGdM site has an associated age in
-thousands of years before present, where `present' corresponds to 1950 AD.
+thousands of years before present, where 'present' corresponds to 1950 AD.
 This is stored in `attr(pollen_monticchio, "age")`.
 We can use this information to visualise the palaeoclimate reconstructions
 as time series plots, from youngest to oldest.
@@ -301,10 +297,10 @@ knitr::include_graphics("./reconstruction_p3.png")
 ## Reconstructing five climate variables
 
 Using our package it is also possible to reconstruct an arbitrary number of climate 
-variables, albeit to increase of computational time.
-Here, we will reconstruct $p=5$ climate variables, which is available in the 
+variables, albeit at the expense of increased computational time.
+Here, we will reconstruct $p=5$ climate variables, which are available in the 
 modern data set.
-For illustrative purposes we will include the GDD0 and MTWA variables,
+For illustrative purposes, we will include the GDD0 and MTWA variables,
 though they are highly correlated to GDD5 and MTCO, respectively.
 
 We first fit the ZANIM-LN-BART model with the additional climate variables.
@@ -321,7 +317,7 @@ save_model(object = zanim_ln_bart, model_dir = "./",
            file_name = "zanim_ln_bart_p5.rds")
 ```
 
-We then generate the uniform proposal in the convex hull for $p=5$ climate dimension.
+We then generate the uniform proposal in the convex hull for $p=5$ climate dimensions.
 ```{r proposals-p5, eval=FALSE}
 set.seed(1212)
 N_PROPOSAL <- 2000L
