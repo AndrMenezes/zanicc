@@ -33,7 +33,7 @@ theme_set(
 dir_forests <- "./forests"
 
 # Load capture outputs
-r_outputs <- readRDS("./r_outputs.rds")
+r_outputs <- readRDS("./r_outputs_zanicc.rds")
 ```
 
 
