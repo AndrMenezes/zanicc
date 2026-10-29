@@ -392,8 +392,6 @@ data_posterior_p5$variable <- map_vars[data_posterior_p5$variable]
 data_posterior_p5$variable <- factor(data_posterior_p5$variable,
                                      levels = c("GDD5 (°C days)", "MTCO (°C)",
                                                 "AET/PET"))
-data_posterior_p5 <- dplyr::as_tibble(data_posterior_p5)
-
 data_posterior$dim_p <- "p=3"
 data_posterior_p5$dim_p <- "p=5"
 data_posterior <- rbind(data_posterior, data_posterior_p5)
