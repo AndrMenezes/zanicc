@@ -4,7 +4,7 @@
 
 // Constructor for running MCMC
 MultinomialBART::MultinomialBART(const arma::umat &Y, const arma::mat &X)
-  : Y(Y), X(X) { //, rng()
+  : Y(Y), X(X) {
   d = Y.n_cols;
   n = X.n_rows;
   p = X.n_cols;
@@ -321,7 +321,6 @@ void MultinomialBART::SetMCMC(double v0, int ntrees_, int ndpost_, int nskip_,
   for (int i = 0; i < n; i++) {
     //Rcpp::Rcout << i  << " " << n_trials(i) << " " << R::rgamma((double)n_trials(i), 1.0) << "\n";
     phi(i) = R::rgamma((double)n_trials(i), 1.0); //n_trials(i)
-    // phi(i) = rng.gamma((double)n_trials(i), 1.0);
     //Rcpp::Rcout << phi(i) << "\n";
   }
 

@@ -2,12 +2,8 @@
 #define DMLINEARREG
 
 #include <RcppArmadillo.h>
-#include "rng2.h"
 
 class DMLinearReg {
-
-private:
-  RNG2 rng;
 
 public:
   DMLinearReg(const arma::umat &Y, const arma::mat &X);

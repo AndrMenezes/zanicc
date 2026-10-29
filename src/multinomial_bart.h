@@ -4,11 +4,9 @@
 #include <RcppArmadillo.h>
 #include "node.h"
 #include "rng.h"
-#include "rng2.h"
 
 class MultinomialBART {
-private:
-  RNG2 rng;
+
 public:
   MultinomialBART(const arma::umat &Y, const arma::mat &X);
   MultinomialBART(int d, int p);
