@@ -1292,7 +1292,7 @@ ZANIMRegression <- R6::R6Class(
 #'
 #' @references Menezes, A. F. B., Parnell, A. C., and Murphy, K. (2025), Finite mixture representations of
 #' zero-and-N-inflated distributions for count-compositional data. \emph{Journal of Multivariate Analysis},
-#' \strong{210:105492}. <https://doi.org/10.1016/j.jmva.2025.105492>.
+#' \strong{210:105492}. \doi{doi:10.1016/j.jmva.2025.105492}.
 #'
 #' Murray, I., Adams, R. and MacKay, D. (2010), Elliptical slice sampling, in Y. W. Teh & M. Titterington, eds,
 #' \emph{Proceedings of the Thirteenth International Conference on Artificial Intelligence and Statistics},
