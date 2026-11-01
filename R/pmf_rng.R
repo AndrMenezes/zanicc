@@ -24,7 +24,7 @@
 #'
 #' @references Menezes, A. F. B., Parnell, A. C., and Murphy, K. (2025), Finite mixture representations of
 #' zero-and-N-inflated distributions for count-compositional data. \emph{Journal of Multivariate Analysis},
-#' \strong{210:105492}. <https://doi.org/10.1016/j.jmva.2025.105492>.
+#' \strong{210:105492}. \doi{doi:10.1016/j.jmva.2025.105492}.
 #'
 #' @rdname zanim
 #' @export
@@ -179,7 +179,7 @@ covariance_zanim <- function(size, prob, zeta, j, h) {
 #'
 #' @references Menezes, A. F. B., Parnell, A. C., and Murphy, K. (2025), Finite mixture representations of
 #' zero-and-N -inflated distributions for count-compositional data. \emph{Journal of Multivariate Analysis},
-#' \strong{210:105492}. <https://doi.org/10.1016/j.jmva.2025.105492>.
+#' \strong{210:105492}. \doi{doi:10.1016/j.jmva.2025.105492}.
 
 #' @rdname zanidm
 #' @export
