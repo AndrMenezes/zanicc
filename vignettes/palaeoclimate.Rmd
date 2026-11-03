@@ -131,13 +131,12 @@ pollen_names <- colnames(Y_modern)
 
 In the forward module, we estimate the parameters $\boldsymbol{\Psi}$ which govern
 the pollen-climate relationships under the ZANIM-LN-BART model.
-In essence, this means to run our efficient MCMC algorithm as discussed in the
-[other vignette](zanicc.html) about the regression models for count-compositional data.
+In essence, this means to run our efficient MCMC as described in the other
+dedicated vignette about the regression models for count-compositional data.
+See `vignette("zanicc", package =  "zanicc")` for more information.
 
-As in the [other vignette](zanicc.html), we use a relatively small number of
-iterations and regression trees for each category to keep the example
-computationally manageable.
-
+Here, we use a relatively small number of iterations and regression trees for
+each category to keep the example computationally manageable.
 ```{r settings}
 NSKIP <- 1000L
 NDPOST <- 1000L
