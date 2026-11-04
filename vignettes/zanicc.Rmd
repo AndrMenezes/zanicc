@@ -66,14 +66,14 @@ the covariates to the parameters of the model.
 
 The following models are available through their corresponding `R6` class:
 
-- [`MultinomialBART`](): Multinomial logistic BART (ML-BART).
-- [`MultinomialLNBART`](): Multinomial logistic-normal BART (MLN-BART).
-- [`ZANIMBART`](): Zero-and-N-inflated multinomial logistic BART (ZANIM-BART).
-- [`ZANIMLNBART`](): Zero-and-N-inflated multinomial logistic-normal BART (ZANIM-LN-BART).
-- [`DMRegression`](): Dirichlet-multinomial log-linear regression (DM-reg).
-- [`ZANIDMRegression`](): Zero-and-N-inflated Dirichlet-multinomial linear regression (ZANIDM-reg).
-- [`ZANIMRegression`](): Zero-and-N-inflated multinomial logistic linear regression (ZANIM-reg).
-- [`ZANIMLNRegression`](): Zero-and-N-inflated multinomial logistic-normal linear regression (ZANIM-LN-reg).
+- `MultinomialBART`: Multinomial logistic BART (ML-BART).
+- `MultinomialLNBART`: Multinomial logistic-normal BART (MLN-BART).
+- `ZANIMBART`: Zero-and-N-inflated multinomial logistic BART (ZANIM-BART).
+- `ZANIMLNBART`: Zero-and-N-inflated multinomial logistic-normal BART (ZANIM-LN-BART).
+- `DMRegression`: Dirichlet-multinomial log-linear regression (DM-reg).
+- `ZANIDMRegression`: Zero-and-N-inflated Dirichlet-multinomial linear regression (ZANIDM-reg).
+- `ZANIMRegression`: Zero-and-N-inflated multinomial logistic linear regression (ZANIM-reg).
+- `ZANIMLNRegression`: Zero-and-N-inflated multinomial logistic-normal linear regression (ZANIM-LN-reg).
 
 Underlying the `R6` classes of each model, there are efficient C++ implementations
 of their MCMC algorithms for performing Bayesian inference.
@@ -86,7 +86,7 @@ with the count-compositional responses, and the covariates.
 `SetupMCMC`.
 
 However, the user does not need to know all these details, since the function
-[zanicc()]() acts as a wrapper for all available models, and it
+`zanicc()` acts as a wrapper for all available models, and it
 can be use for convenience when fitting the models.
 
 This vignette illustrates how the `zanicc` package is useful for modelling a
@@ -165,9 +165,9 @@ the help page of the R6 class of each model, see for example:
 ```
 
 Alternatively, the simplest way to fit the available models in the `zanicc` package is
-using the [zanicc()]() function, which internally dispatches the appropriate R6 class.
+using the `zanicc()` function, which internally dispatches the appropriate R6 class.
 The arguments available to the `setupMCMC` method of each R6 class can be passed
-through the [zanicc()]() wrapper, for advanced users who wish to deviate from the default arguments.
+through the `zanicc()` wrapper, for advanced users who wish to deviate from the default arguments.
 Here, we modify the number of burn-in and posterior samples to be $1000$ (each),
 and the number of trees to $20$ trees for the category-specific regression trees of
 the BART-based models.
@@ -333,27 +333,10 @@ Graphical comparisons allow us to assess whether the fitted model can reproduce
 key features of the observed data and to identify potential discrepancies 
 between the model and the data.
 
-<!-- A limitation of PPCs is that the observed data is used twice:  -->
-<!-- first, to estimate the posterior distribution of the model parameters and  -->
-<!-- construct the posterior predictive distribution, and second, -->
-<!-- to compute the observed diagnostic statistics. -->
-
-<!-- To address this limitation,  -->
-<!-- [Moran et al. (2024)](https://academic.oup.com/jrsssb/article/86/1/194/7274627)  -->
-<!-- introduced holdout predictive checks (HPCs). -->
-<!-- The idea is to partition the observed data into a training set, -->
-<!-- $y^{\mathrm{obs}}$, and a holdout set, $y^{\mathrm{new}}$. -->
-<!-- The posterior predictive distribution of the diagnostic statistics is constructed  -->
-<!-- using the training data, -->
-<!-- $p(d(y^{\mathrm{rep}}) \mid y^{\mathrm{obs}})$, and are compared with the observed statistics -->
-<!-- from the holdout data, $d(\mathrm{new})$. -->
-<!-- Because the holdout observations are not used to fit the model,  -->
-<!-- HPCs provide an alternative assessment of predictive adequacy. -->
-
 The `zanicc` package provide tools to perform PPCs for the implemented
 count-compositional models.
-The two main functions are [ppd()]() for generating the posterior predictive 
-distribution, and [plot_ppc()]() for plotting appropriate diagnostic statistics
+The two main functions are `ppd()` for generating the posterior predictive 
+distribution, and `plot_ppc()` for plotting appropriate diagnostic statistics
 comparing the observed data, $y^{\mathrm{obs}}$ to the reference
 (posterior predictive) distribution.
 In fact, each of the R6 classes of the count-compositional models implemented in `zanicc`
@@ -367,7 +350,7 @@ list_ppds <- lapply(list_models, ppd)
 
 The object `list_ppds` contains the the posterior predictive distribution for
 each model.
-The [plot_ppc()]() function simultaneously displays four diagnostic statistics
+The `plot_ppc()` function simultaneously displays four diagnostic statistics
 that capture different aspects of count-compositional data:
 
 - multiple dispersion index (MDI): summarises the overdispersion across the taxa.
@@ -391,7 +374,7 @@ According to the results above, we observe that the ZANIM-LN-BART model provides
 the best overall fit, since the empirical values of the diagnostic statistics 
 lie in regions of moderate-to-high posterior predictive probability.
 
-To conclude this part, we stress that the [stat_ppc()]() function allows 
+To conclude this part, we stress that the `stat_ppc()` function allows 
 users to perform PPCs using their own diagnostic statistics for a given model.
 For example, we can use the 
 [Hellinger distance](https://en.wikipedia.org/wiki/Hellinger_distance) to
@@ -455,7 +438,7 @@ This functionality is particularly appealing for models that use a BART prior.
 
 To compute posterior predictions for BART-based models, users must save the
 posterior draws of the regression trees. This can be done by calling the 
-[zanicc()]() function with `save_trees = TRUE` and specifying an appropriate
+`zanicc()` function with `save_trees = TRUE` and specifying an appropriate
 directory through the `forests_dir` argument.
 The posterior draws of the regression tree ensembles will be saved in this directory.
 
@@ -481,7 +464,7 @@ through its Cholesky decomposition (`chol_Sigma_V.bin`).
 
 For the pollen-climate data analysis, we aim to obtain posterior predictions of 
 the model parameters at climate locations surrounding the observed climate values.
-The function [create_rectangular_grid()]() generates a rectangular grid of
+The function `create_rectangular_grid()` generates a rectangular grid of
 covariate values spanning the observed three-dimensional modern climate space.
 
 ```{r create-rectangular-grid}
@@ -497,7 +480,7 @@ points(X_grid[, "aet.pet"], X_grid[, "mtco"], col = "red", pch = 4)
 graphics.off()
 ```
 
-We can then use the [predict()]() method with the new data set `X_grid` to
+We can then use the `predict()` method with the new data set `X_grid` to
 compute posterior predictions for the category-specific compositional probabilities 
 and structural zero probabilities.
 Predictions can be loaded directly into the R session by setting `load = TRUE`.
@@ -512,7 +495,7 @@ post_pred_zeta <- predict(object = zanim_ln_bart, newdata = X_grid, type = "zeta
 ```
 
 If the predictions have been saved to disk, they can be loaded into R using the 
-[load_bin_predictions()]() function, as follows:
+`load_bin_predictions()` function, as follows:
 ```{r load-bin-pred, eval=FALSE}
 post_pred_theta <- load_bin_predictions(fname = "./theta_ij.bin", n = nrow(X_grid), 
                                         d = ncol(Y), m = NDPOST)
@@ -521,7 +504,7 @@ post_pred_zeta <- load_bin_predictions(fname = "./zeta_ij.bin", n = nrow(X_grid)
 ```
 
 
-Next, we use the [summarise_draws()]() function to obtain posterior summaries of
+Next, we use the `summarise_draws()` function to obtain posterior summaries of
 the predicted parameters.
 
 ```{r summarise-draws, eval=FALSE}

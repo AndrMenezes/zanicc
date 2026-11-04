@@ -154,7 +154,8 @@ trees ensembles in some folder.
 This would be used to obtain the climate reconstructions.
 The code below fits the ZANIM-LN-BART and saves the posterior draws in the folder
 `forests`.
-We also save the model object in the root folder using the function [save_model()]().
+We also save the model object in the root folder using the function
+`save_model()`.
 
 ```{r forward-module, eval=FALSE}
 dir_forests <- "./forests"
@@ -180,7 +181,7 @@ modern data.
 Hence, one could obtain reconstructions for any number of different fossil samples for which
 pollen counts are available for the same taxa as in our modern calibration data set.
 
-The function [inverse_posterior_zanimlnbart()]() implements three different sampling
+The function `inverse_posterior_zanimlnbart()` implements three different sampling
 schemes to approximate the posterior distribution of the past climate.
 Its first argument is the the model object `zanim_ln_bart` which we saved in
 the previous Section.
@@ -207,7 +208,7 @@ simulation and validation experiments presented in
 
 For the SIR algorithm, we first need to generate uniform proposal values
 inside the convex hull of the modern data.
-This can be done using the function [runifconvexhull()]() as follows:
+This can be done using the function `runifconvexhull()` as follows:
 
 ```{r proposals, eval=FALSE}
 set.seed(1212)
