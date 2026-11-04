@@ -1,8 +1,7 @@
 ## zanicc 0.1.0
 
-- Fixed invalid URLs in the palaeoclimate.Rmd vignette.
-- Rewrite DESCRIPTION Title field to title case.
-- Fixed URLs which should used `\doi{}`.  
+- Fixed invalid URLs with Empty URL palaeoclimate.Rmd and zanicc.Rmd vignettes.
+
 
 ### R CMD check results
 
